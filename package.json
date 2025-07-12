@@ -1,0 +1,31 @@
+{
+  "name": "life-upgrade-system",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "人生升級系統 - AI驅動的遊戲化自我成長平台",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "@vueuse/core": "^11.3.0",
+    "pinia": "^2.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "~5.7.2",
+    "vue-tsc": "^2.2.0",
+    "vite": "^6.0.3",
+    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.0",
+    "@types/node": "^22.10.3"
+  }
+}

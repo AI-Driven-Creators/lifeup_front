@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-lexend bg-primary-50;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-primary-200 text-primary-800 px-4 py-2 rounded-lg font-medium hover:bg-primary-300 transition-colors;
+  }
+  
+  .card {
+    @apply bg-primary-100 rounded-xl shadow-sm border border-gray-100 p-4;
+  }
+  
+  .progress-bar {
+    @apply bg-gray-200 rounded-full h-2 overflow-hidden;
+  }
+  
+  .progress-fill {
+    @apply bg-primary-600 h-full transition-all duration-300 ease-out;
+  }
+  
+  .text-primary {
+    @apply text-primary-800;
+  }
+  
+  .text-secondary {
+    @apply text-primary-700;
+  }
+}
