@@ -39,13 +39,17 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  type: 'main' | 'side' | 'challenge' | 'daily';
+  type: 'main' | 'side' | 'challenge' | 'daily' | 'subtask';
   difficulty: 1 | 2 | 3 | 4 | 5;
   experience: number;
   estimatedTime?: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed' | 'paused' | 'cancelled';
   deadline?: Date;
   attributes?: Partial<UserAttributes>;
+  // 任務層級相關
+  parent_task_id?: string;
+  is_parent_task?: boolean;
+  task_order?: number;
 }
 
 // AI教練相關類型

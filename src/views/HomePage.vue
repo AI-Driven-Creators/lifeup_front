@@ -31,11 +31,11 @@
     <!-- 任務列表 -->
     <div v-else class="px-4 py-4 space-y-4">
       <!-- 任務狀態概覽 -->
-      <div v-if="dailyTasks.length > 0" class="bg-white rounded-lg p-4 shadow-sm">
+      <div v-if="homepageTasks.length > 0" class="bg-white rounded-lg p-4 shadow-sm">
         <div class="flex justify-between items-center text-sm">
-          <span class="text-gray-600">今日進度</span>
+          <span class="text-gray-600">進行中任務</span>
           <span class="font-medium">
-            {{ completedTasksCount }}/{{ dailyTasks.length }} 完成
+            {{ activeTasks.length }} 個進行中
           </span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
@@ -48,14 +48,14 @@
       
       <!-- 任務卡片列表 -->
       <TaskCard
-        v-for="task in dailyTasks"
+        v-for="task in activeTasks"
         :key="task.id"
         :task="task"
         @toggle="toggleTask"
       />
       
       <!-- 空狀態 -->
-      <div v-if="dailyTasks.length === 0" class="text-center py-12">
+      <div v-if="activeTasks.length === 0" class="text-center py-12">
         <div class="text-6xl mb-4">📝</div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">還沒有任務</h3>
         <p class="text-gray-600 mb-4">開始添加一些任務來規劃你的一天吧！</p>
@@ -70,7 +70,7 @@
     
     <!-- 懸浮刷新按鈕 -->
     <button
-      v-if="!loading && dailyTasks.length > 0"
+      v-if="!loading && activeTasks.length > 0"
       @click="refreshTasks"
       class="fixed bottom-20 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
       title="刷新任務"
@@ -86,15 +86,19 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskCard from '@/components/features/TaskCard.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
+import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 
 const taskStore = useTaskStore()
 const userStore = useUserStore()
 
-// 從 store 獲取任務，篩選出每日任務類型
-const dailyTasks = computed(() => {
-  return taskStore.tasks.filter(task => 
-    task.type === 'daily' || task.type === 'main' || task.type === 'side'
+// 首頁任務：進行中的子任務和大任務
+const homepageTasks = ref<Task[]>([])
+
+// 從首頁任務中篩選出進行中的任務
+const activeTasks = computed(() => {
+  return homepageTasks.value.filter(task => 
+    task.status === 'in_progress' || task.status === 'pending'
   )
 })
 
@@ -103,13 +107,13 @@ const error = ref<string | null>(null)
 
 // 計算完成的任務數量
 const completedTasksCount = computed(() => {
-  return dailyTasks.value.filter(task => task.status === 'completed').length
+  return homepageTasks.value.filter(task => task.status === 'completed').length
 })
 
 // 計算進度百分比
 const progressPercentage = computed(() => {
-  if (dailyTasks.value.length === 0) return 0
-  return Math.round((completedTasksCount.value / dailyTasks.value.length) * 100)
+  if (homepageTasks.value.length === 0) return 0
+  return Math.round((completedTasksCount.value / homepageTasks.value.length) * 100)
 })
 
 // 切換任務狀態
@@ -136,16 +140,21 @@ const toggleTask = async (taskId: string) => {
   }
 }
 
-// 載入任務數據
-const loadTasks = async () => {
+// 載入首頁任務數據
+const loadHomepageTasks = async () => {
   loading.value = true
   error.value = null
   
   try {
-    await taskStore.fetchTasks()
+    const response = await apiClient.getHomepageTasks()
+    if (response.success) {
+      homepageTasks.value = response.data.map(taskStore.transformBackendTask)
+    } else {
+      error.value = response.message
+    }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '載入任務失敗'
-    console.error('Failed to load tasks:', err)
+    error.value = err instanceof Error ? err.message : '載入首頁任務失敗'
+    console.error('Failed to load homepage tasks:', err)
   } finally {
     loading.value = false
   }
@@ -153,21 +162,12 @@ const loadTasks = async () => {
 
 // 頁面載入時獲取任務
 onMounted(async () => {
-  await loadTasks()
-  
-  // 如果沒有任務，添加一些示例任務
-  if (taskStore.tasks.length === 0) {
-    try {
-      await taskStore.addSampleTasks()
-    } catch (err) {
-      console.warn('Failed to add sample tasks:', err)
-    }
-  }
+  await loadHomepageTasks()
 })
 
 // 重新載入任務
 const refreshTasks = () => {
-  loadTasks()
+  loadHomepageTasks()
 }
 
 // 添加示例任務

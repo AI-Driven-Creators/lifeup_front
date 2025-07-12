@@ -8,6 +8,7 @@
         :key="task.id"
         :task="task"
         @toggle="(taskId) => $emit('toggle', taskId)"
+        @taskUpdated="(updatedTask) => $emit('taskUpdated', updatedTask)"
       />
     </div>
   </div>
@@ -24,6 +25,7 @@ interface Props {
 
 interface Emits {
   (e: 'toggle', taskId: string): void
+  (e: 'taskUpdated', task: Task): void
 }
 
 defineProps<Props>()

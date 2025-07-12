@@ -23,7 +23,56 @@
         </p>
       </div>
       
+      <!-- 大任務控制按鈕 -->
+      <div v-if="task.is_parent_task" class="ml-4 flex space-x-2">
+        <button 
+          v-if="task.status === 'pending'"
+          class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+          @click="handleStartTask"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? '處理中...' : '開始' }}
+        </button>
+        
+        <button 
+          v-if="task.status === 'in_progress'"
+          class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 transition-colors"
+          @click="handlePauseTask"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? '處理中...' : '暫停' }}
+        </button>
+        
+        <button 
+          v-if="task.status === 'paused'"
+          class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+          @click="handleStartTask"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? '處理中...' : '繼續' }}
+        </button>
+        
+        <button 
+          v-if="['pending', 'in_progress', 'paused'].includes(task.status)"
+          class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+          @click="handleCancelTask"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? '處理中...' : '取消' }}
+        </button>
+        
+        <span v-if="task.status === 'completed'" class="px-3 py-1 bg-gray-400 text-white rounded text-sm">
+          已完成
+        </span>
+        
+        <span v-if="task.status === 'cancelled'" class="px-3 py-1 bg-gray-400 text-white rounded text-sm">
+          已取消
+        </span>
+      </div>
+      
+      <!-- 一般任務切換按鈕 -->
       <button 
+        v-else
         class="btn-primary ml-4"
         :class="{ 'bg-gray-400': task.status === 'completed' }"
         @click="handleToggle"
@@ -57,7 +106,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { Task } from '@/types'
+import { apiClient } from '@/services/api'
 
 interface Props {
   task: Task
@@ -65,13 +116,80 @@ interface Props {
 
 interface Emits {
   (e: 'toggle', taskId: string): void
+  (e: 'taskUpdated', task: Task): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+const isLoading = ref(false)
+
 const handleToggle = () => {
   emit('toggle', props.task.id)
+}
+
+const handleStartTask = async () => {
+  isLoading.value = true
+  try {
+    const response = await apiClient.startTask(props.task.id)
+    if (response.success) {
+      // 更新任務狀態
+      const updatedTask = { ...props.task, status: 'in_progress' as const }
+      emit('taskUpdated', updatedTask)
+      console.log(response.message)
+    } else {
+      alert(`開始任務失敗: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('Failed to start task:', error)
+    alert('開始任務失敗')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handlePauseTask = async () => {
+  isLoading.value = true
+  try {
+    const response = await apiClient.pauseTask(props.task.id)
+    if (response.success) {
+      // 更新任務狀態
+      const updatedTask = { ...props.task, status: 'paused' as const }
+      emit('taskUpdated', updatedTask)
+      console.log(response.message)
+    } else {
+      alert(`暫停任務失敗: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('Failed to pause task:', error)
+    alert('暫停任務失敗')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleCancelTask = async () => {
+  if (!confirm('確定要取消此任務嗎？相關的子任務將會被刪除。')) {
+    return
+  }
+  
+  isLoading.value = true
+  try {
+    const response = await apiClient.cancelTask(props.task.id)
+    if (response.success) {
+      // 更新任務狀態
+      const updatedTask = { ...props.task, status: 'cancelled' as const }
+      emit('taskUpdated', updatedTask)
+      console.log(response.message)
+    } else {
+      alert(`取消任務失敗: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('Failed to cancel task:', error)
+    alert('取消任務失敗')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const getTypeLabel = (type: Task['type']) => {

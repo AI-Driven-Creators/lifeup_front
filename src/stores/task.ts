@@ -58,7 +58,10 @@ export const useTaskStore = defineStore('task', {
         const backendTaskData = {
           title: taskData.title,
           description: taskData.description,
-          priority: taskData.difficulty, // 後端用 priority，前端用 difficulty
+          priority: taskData.difficulty,
+          task_type: taskData.type,
+          difficulty: taskData.difficulty,
+          experience: this.calculateExperience(taskData.difficulty),
           user_id: 'd487f83e-dadd-4616-aeb2-959d6af9963b', // 使用實際用戶ID
         };
 
@@ -74,6 +77,28 @@ export const useTaskStore = defineStore('task', {
       } catch (error) {
         this.error = error instanceof Error ? error.message : '創建任務失敗';
         console.error('Failed to create task:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchTasksByType(taskType: Task['type']) {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        const response = await apiClient.getTasksByType(taskType);
+        if (response.success) {
+          const tasks = response.data.map(this.transformBackendTask);
+          return tasks;
+        } else {
+          this.error = response.message;
+          throw new Error(response.message);
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '獲取任務失敗';
+        console.error('Failed to fetch tasks by type:', error);
         throw error;
       } finally {
         this.loading = false;
@@ -124,13 +149,17 @@ export const useTaskStore = defineStore('task', {
         id: backendTask.id || '',
         title: backendTask.title || '',
         description: backendTask.description,
-        type: this.mapPriorityToType(backendTask.priority), // 根據優先級映射任務類型
-        difficulty: Math.min(5, Math.max(1, backendTask.priority || 1)) as Task['difficulty'],
-        experience: this.calculateExperience(backendTask.priority || 1),
-        estimatedTime: this.estimateTime(backendTask.priority || 1),
+        type: (backendTask.task_type as Task['type']) || this.mapPriorityToType(backendTask.priority),
+        difficulty: Math.min(5, Math.max(1, backendTask.difficulty || backendTask.priority || 1)) as Task['difficulty'],
+        experience: backendTask.experience || this.calculateExperience(backendTask.difficulty || backendTask.priority || 1),
+        estimatedTime: this.estimateTime(backendTask.difficulty || backendTask.priority || 1),
         status: this.mapBackendStatus(backendTask.status),
         deadline: backendTask.due_date ? new Date(backendTask.due_date) : undefined,
-        attributes: this.generateAttributes(backendTask.priority || 1),
+        attributes: this.generateAttributes(backendTask.difficulty || backendTask.priority || 1),
+        // 任務層級相關
+        parent_task_id: backendTask.parent_task_id,
+        is_parent_task: Boolean(backendTask.is_parent_task),
+        task_order: backendTask.task_order,
       };
     },
 
@@ -140,6 +169,8 @@ export const useTaskStore = defineStore('task', {
         case 0: return 'pending';
         case 1: return 'in_progress';
         case 2: return 'completed';
+        case 3: return 'cancelled';
+        case 4: return 'paused';
         default: return 'pending';
       }
     },

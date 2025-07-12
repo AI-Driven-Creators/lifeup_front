@@ -3,12 +3,39 @@
     <!-- 頁面標題 -->
     <PageHeader title="任務" />
     
-    <div class="px-4 py-6 space-y-6">
+    <!-- 載入狀態 -->
+    <div v-if="loading" class="px-4 py-8 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">載入任務中...</p>
+    </div>
+    
+    <!-- 錯誤狀態 -->
+    <div v-else-if="error" class="px-4 py-4">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center">
+          <div class="text-red-600 mr-3">⚠️</div>
+          <div>
+            <h3 class="text-red-800 font-medium">載入失敗</h3>
+            <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+          </div>
+        </div>
+        <button 
+          @click="loadTasksByType"
+          class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+        >
+          重試
+        </button>
+      </div>
+    </div>
+    
+    <!-- 任務列表 -->
+    <div v-else class="px-4 py-6 space-y-6">
       <!-- 主線任務 -->
       <TaskSection
         title="主線任務"
         :tasks="mainTasks"
         @toggle="toggleTask"
+        @taskUpdated="handleTaskUpdate"
       />
       
       <!-- 支線任務 -->
@@ -16,6 +43,7 @@
         title="支線任務"
         :tasks="sideTasks"
         @toggle="toggleTask"
+        @taskUpdated="handleTaskUpdate"
       />
       
       <!-- 挑戰任務 -->
@@ -23,6 +51,7 @@
         title="挑戰任務"
         :tasks="challengeTasks"
         @toggle="toggleTask"
+        @taskUpdated="handleTaskUpdate"
       />
       
       <!-- 每日任務 -->
@@ -30,80 +59,108 @@
         title="每日任務"
         :tasks="dailyTasks"
         @toggle="toggleTask"
+        @taskUpdated="handleTaskUpdate"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskSection from '@/components/features/TaskSection.vue'
+import { useTaskStore } from '@/stores/task'
+import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
 
-// 模擬任務資料
-const mainTasks = ref<Task[]>([
-  {
-    id: 'main-1',
-    title: '展開新的職場生涯',
-    description: '制定職業發展計劃，提升專業技能',
-    type: 'main',
-    difficulty: 3,
-    experience: 150,
-    status: 'pending'
-  }
-])
+const taskStore = useTaskStore()
+const userStore = useUserStore()
 
-const sideTasks = ref<Task[]>([
-  {
-    id: 'side-1',
-    title: '學習一門新語言',
-    description: '掌握基本對話能力',
-    type: 'side',
-    difficulty: 2,
-    experience: 100,
-    status: 'pending'
-  },
-  {
-    id: 'side-2',
-    title: '精通一項新技能',
-    description: '深入學習並實踐',
-    type: 'side',
-    difficulty: 1,
-    experience: 50,
-    status: 'pending'
-  }
-])
+const mainTasks = ref<Task[]>([])
+const sideTasks = ref<Task[]>([])
+const challengeTasks = ref<Task[]>([])
+const dailyTasks = ref<Task[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-const challengeTasks = ref<Task[]>([
-  {
-    id: 'challenge-1',
-    title: '完成一個馬拉松',
-    description: '準備並完成42公里長跑',
-    type: 'challenge',
-    difficulty: 5,
-    experience: 500,
-    status: 'pending'
-  }
-])
-
-const dailyTasks = ref<Task[]>([
-  {
-    id: 'daily-1',
-    title: '靜心入定 15 分鐘',
-    description: '專注呼吸，放鬆身心',
-    type: 'daily',
-    difficulty: 1,
-    experience: 20,
-    status: 'pending'
-  }
-])
-
-const toggleTask = (taskId: string) => {
-  const allTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
-  const task = allTasks.find(t => t.id === taskId)
-  if (task) {
-    task.status = task.status === 'completed' ? 'pending' : 'completed'
+// 載入不同類型的任務
+const loadTasksByType = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    const [main, side, challenge, daily] = await Promise.all([
+      taskStore.fetchTasksByType('main'),
+      taskStore.fetchTasksByType('side'),
+      taskStore.fetchTasksByType('challenge'),
+      taskStore.fetchTasksByType('daily')
+    ])
+    
+    mainTasks.value = main
+    sideTasks.value = side
+    challengeTasks.value = challenge
+    dailyTasks.value = daily
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '載入任務失敗'
+    console.error('Failed to load tasks by type:', err)
+  } finally {
+    loading.value = false
   }
 }
+
+// 切換任務狀態
+const toggleTask = async (taskId: string) => {
+  try {
+    await taskStore.toggleTaskStatus(taskId)
+    
+    // 計算經驗值獎勵
+    const allTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
+    const task = allTasks.find(t => t.id === taskId)
+    if (task && task.status === 'completed') {
+      // 任務完成時增加經驗值和屬性
+      userStore.updateExperience(task.experience)
+      
+      // 根據任務類型增加對應屬性
+      if (task.attributes) {
+        Object.entries(task.attributes).forEach(([attr, value]) => {
+          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
+        })
+      }
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '更新任務狀態失敗'
+    console.error('Failed to toggle task:', err)
+  }
+}
+
+// 處理任務更新
+const handleTaskUpdate = (updatedTask: Task) => {
+  const updateTaskInList = (taskList: Task[]) => {
+    const index = taskList.findIndex(t => t.id === updatedTask.id)
+    if (index !== -1) {
+      taskList[index] = updatedTask
+    }
+  }
+  
+  // 根據任務類型更新對應的列表
+  switch (updatedTask.type) {
+    case 'main':
+      updateTaskInList(mainTasks.value)
+      break
+    case 'side':
+      updateTaskInList(sideTasks.value)
+      break
+    case 'challenge':
+      updateTaskInList(challengeTasks.value)
+      break
+    case 'daily':
+      updateTaskInList(dailyTasks.value)
+      break
+  }
+}
+
+// 頁面載入時獲取任務
+onMounted(() => {
+  loadTasksByType()
+})
 </script>
