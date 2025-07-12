@@ -68,6 +68,13 @@ export class ApiClient {
     });
   }
 
+  async updateTask(id: string, updateData: {title?: string, description?: string, status?: number, priority?: number, due_date?: string}) {
+    return this.request<{success: boolean, data: any, message: string}>(`/api/tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
   // 技能相關 API
   async getSkills() {
     return this.request<{success: boolean, data: any[], message: string}>('/api/skills');

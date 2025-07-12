@@ -3,85 +3,180 @@
     <!-- 頁面標題 -->
     <PageHeader title="每日任務" />
     
-    <!-- 每日任務列表 -->
-    <div class="px-4 py-4 space-y-4">
+    <!-- 載入狀態 -->
+    <div v-if="loading" class="px-4 py-8 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">載入任務中...</p>
+    </div>
+    
+    <!-- 錯誤狀態 -->
+    <div v-else-if="error" class="px-4 py-4">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center">
+          <div class="text-red-600 mr-3">⚠️</div>
+          <div>
+            <h3 class="text-red-800 font-medium">載入失敗</h3>
+            <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+          </div>
+        </div>
+        <button 
+          @click="refreshTasks"
+          class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+        >
+          重試
+        </button>
+      </div>
+    </div>
+    
+    <!-- 任務列表 -->
+    <div v-else class="px-4 py-4 space-y-4">
+      <!-- 任務狀態概覽 -->
+      <div v-if="dailyTasks.length > 0" class="bg-white rounded-lg p-4 shadow-sm">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-600">今日進度</span>
+          <span class="font-medium">
+            {{ completedTasksCount }}/{{ dailyTasks.length }} 完成
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+          <div 
+            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            :style="{ width: progressPercentage + '%' }"
+          ></div>
+        </div>
+      </div>
+      
+      <!-- 任務卡片列表 -->
       <TaskCard
         v-for="task in dailyTasks"
         :key="task.id"
         :task="task"
         @toggle="toggleTask"
       />
+      
+      <!-- 空狀態 -->
+      <div v-if="dailyTasks.length === 0" class="text-center py-12">
+        <div class="text-6xl mb-4">📝</div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">還沒有任務</h3>
+        <p class="text-gray-600 mb-4">開始添加一些任務來規劃你的一天吧！</p>
+        <button 
+          @click="addSampleTasks"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          添加示例任務
+        </button>
+      </div>
     </div>
+    
+    <!-- 懸浮刷新按鈕 -->
+    <button
+      v-if="!loading && dailyTasks.length > 0"
+      @click="refreshTasks"
+      class="fixed bottom-20 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+      title="刷新任務"
+    >
+      🔄
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskCard from '@/components/features/TaskCard.vue'
+import { useTaskStore } from '@/stores/task'
+import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
 
-const dailyTasks = ref<Task[]>([
-  {
-    id: '1',
-    title: '早晨靜思',
-    type: 'daily',
-    difficulty: 1,
-    experience: 20,
-    estimatedTime: '上午 10:00',
-    status: 'pending'
-  },
-  {
-    id: '2', 
-    title: '午餐休息',
-    type: 'daily',
-    difficulty: 1,
-    experience: 15,
-    estimatedTime: '中午 12:00',
-    status: 'pending'
-  },
-  {
-    id: '3',
-    title: '項目 X 工作',
-    type: 'daily', 
-    difficulty: 3,
-    experience: 50,
-    estimatedTime: '下午 2:00',
-    status: 'pending'
-  },
-  {
-    id: '4',
-    title: '運動',
-    type: 'daily',
-    difficulty: 2,
-    experience: 30,
-    estimatedTime: '下午 4:00', 
-    status: 'pending'
-  },
-  {
-    id: '5',
-    title: '晚餐',
-    type: 'daily',
-    difficulty: 1,
-    experience: 15,
-    estimatedTime: '下午 6:00',
-    status: 'pending'
-  },
-  {
-    id: '6',
-    title: '閱讀書籍',
-    type: 'daily',
-    difficulty: 2,
-    experience: 25,
-    estimatedTime: '晚上 8:00',
-    status: 'pending'
-  }
-])
+const taskStore = useTaskStore()
+const userStore = useUserStore()
 
-const toggleTask = (taskId: string) => {
-  const task = dailyTasks.value.find(t => t.id === taskId)
-  if (task) {
-    task.status = task.status === 'completed' ? 'pending' : 'completed'
+// 從 store 獲取任務，篩選出每日任務類型
+const dailyTasks = computed(() => {
+  return taskStore.tasks.filter(task => 
+    task.type === 'daily' || task.type === 'main' || task.type === 'side'
+  )
+})
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+// 計算完成的任務數量
+const completedTasksCount = computed(() => {
+  return dailyTasks.value.filter(task => task.status === 'completed').length
+})
+
+// 計算進度百分比
+const progressPercentage = computed(() => {
+  if (dailyTasks.value.length === 0) return 0
+  return Math.round((completedTasksCount.value / dailyTasks.value.length) * 100)
+})
+
+// 切換任務狀態
+const toggleTask = async (taskId: string) => {
+  try {
+    await taskStore.toggleTaskStatus(taskId)
+    
+    // 計算經驗值獎勵
+    const task = taskStore.tasks.find(t => t.id === taskId)
+    if (task && task.status === 'completed') {
+      // 任務完成時增加經驗值和屬性
+      userStore.updateExperience(task.experience)
+      
+      // 根據任務類型增加對應屬性
+      if (task.attributes) {
+        Object.entries(task.attributes).forEach(([attr, value]) => {
+          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
+        })
+      }
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '更新任務狀態失敗'
+    console.error('Failed to toggle task:', err)
+  }
+}
+
+// 載入任務數據
+const loadTasks = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    await taskStore.fetchTasks()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '載入任務失敗'
+    console.error('Failed to load tasks:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 頁面載入時獲取任務
+onMounted(async () => {
+  await loadTasks()
+  
+  // 如果沒有任務，添加一些示例任務
+  if (taskStore.tasks.length === 0) {
+    try {
+      await taskStore.addSampleTasks()
+    } catch (err) {
+      console.warn('Failed to add sample tasks:', err)
+    }
+  }
+})
+
+// 重新載入任務
+const refreshTasks = () => {
+  loadTasks()
+}
+
+// 添加示例任務
+const addSampleTasks = async () => {
+  try {
+    await taskStore.addSampleTasks()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '添加示例任務失敗'
+    console.error('Failed to add sample tasks:', err)
   }
 }
 </script>

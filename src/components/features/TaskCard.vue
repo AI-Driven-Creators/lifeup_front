@@ -5,11 +5,14 @@
       <div class="flex-shrink-0">
         <div
           class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-          :class="task.status === 'completed' 
-            ? 'bg-primary-500 border-primary-500' 
-            : 'border-gray-300 hover:border-primary-400'"
+          :class="{
+            'bg-green-500 border-green-500': task.status === 'completed',
+            'bg-blue-500 border-blue-500': task.status === 'in_progress',
+            'border-gray-300 hover:border-primary-400': task.status === 'pending'
+          }"
         >
           <span v-if="task.status === 'completed'" class="text-white text-sm">✓</span>
+          <span v-else-if="task.status === 'in_progress'" class="text-white text-xs">▶</span>
         </div>
       </div>
       
@@ -23,15 +26,24 @@
             {{ task.title }}
           </h3>
           <button 
-            class="btn-secondary text-sm px-3 py-1"
-            :class="{ 'opacity-50': task.status === 'completed' }"
+            class="text-sm px-3 py-1 rounded-lg transition-colors"
+            :class="{
+              'bg-green-100 text-green-700 hover:bg-green-200': task.status === 'completed',
+              'bg-blue-100 text-blue-700 hover:bg-blue-200': task.status === 'in_progress',
+              'bg-gray-100 text-gray-700 hover:bg-gray-200': task.status === 'pending'
+            }"
           >
-            開始
+            {{ task.status === 'completed' ? '已完成' : task.status === 'in_progress' ? '進行中' : '開始' }}
           </button>
         </div>
         
         <div class="flex items-center justify-between mt-1">
-          <span class="text-sm text-primary-700">{{ task.estimatedTime }}</span>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-primary-700">{{ task.estimatedTime }}</span>
+            <span v-if="task.status === 'in_progress'" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              進行中
+            </span>
+          </div>
           <span class="text-sm text-primary-600 font-medium">+{{ task.experience }} XP</span>
         </div>
       </div>

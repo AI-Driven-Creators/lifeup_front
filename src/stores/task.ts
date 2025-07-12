@@ -59,7 +59,7 @@ export const useTaskStore = defineStore('task', {
           title: taskData.title,
           description: taskData.description,
           priority: taskData.difficulty, // 後端用 priority，前端用 difficulty
-          user_id: 'default_user', // 暫時使用固定用戶ID
+          user_id: 'd487f83e-dadd-4616-aeb2-959d6af9963b', // 使用實際用戶ID
         };
 
         const response = await apiClient.createTask(backendTaskData);
@@ -84,17 +84,38 @@ export const useTaskStore = defineStore('task', {
       const task = this.tasks.find(t => t.id === taskId);
       if (!task) return;
 
-      // 目前後端沒有更新任務狀態的 API，我們先在前端模擬
+      // 計算下一個狀態
+      let nextStatus: number;
+      let nextStatusString: Task['status'];
+      
       if (task.status === 'pending') {
-        task.status = 'in_progress';
+        nextStatus = 1; // 進行中
+        nextStatusString = 'in_progress';
       } else if (task.status === 'in_progress') {
-        task.status = 'completed';
+        nextStatus = 2; // 已完成
+        nextStatusString = 'completed';
       } else {
-        task.status = 'pending';
+        nextStatus = 0; // 待完成
+        nextStatusString = 'pending';
       }
 
-      // TODO: 當後端增加任務狀態更新 API 時，在這裡調用
-      console.log(`Task ${taskId} status changed to ${task.status}`);
+      try {
+        // 呼叫後端 API 更新任務狀態
+        const response = await apiClient.updateTask(taskId, {
+          status: nextStatus
+        });
+
+        if (response.success) {
+          // 更新前端狀態
+          task.status = nextStatusString;
+          console.log(`Task ${taskId} status changed to ${task.status}`);
+        } else {
+          throw new Error(response.message);
+        }
+      } catch (error) {
+        console.error('Failed to update task status:', error);
+        throw error;
+      }
     },
 
     // 將後端任務數據轉換為前端格式
@@ -125,9 +146,9 @@ export const useTaskStore = defineStore('task', {
 
     // 根據優先級映射任務類型
     mapPriorityToType(priority?: number): Task['type'] {
-      if (!priority) return 'side';
+      if (!priority) return 'daily';
       if (priority >= 3) return 'main';
-      if (priority === 2) return 'challenge';
+      if (priority === 2) return 'daily';
       return 'side';
     },
 
