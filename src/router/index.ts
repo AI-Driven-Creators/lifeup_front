@@ -28,6 +28,11 @@ const router = createRouter({
       path: '/coach',
       name: 'coach',
       component: () => import('@/views/CoachChatPage.vue')
+    },
+    {
+      path: '/api-test',
+      name: 'api-test',
+      component: () => import('@/views/ApiTestPage.vue')
     }
   ]
 })
