@@ -57,13 +57,13 @@
       <!-- 空狀態 -->
       <div v-if="activeTasks.length === 0" class="text-center py-12">
         <div class="text-6xl mb-4">📝</div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">還沒有任務</h3>
-        <p class="text-gray-600 mb-4">開始添加一些任務來規劃你的一天吧！</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">沒有進行中的任務</h3>
+        <p class="text-gray-600 mb-4">首頁只顯示進行中的任務。開始一個任務來查看它！</p>
         <button 
-          @click="addSampleTasks"
+          @click="$router.push('/mission')"
           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          添加示例任務
+          前往任務頁面
         </button>
       </div>
     </div>
@@ -98,7 +98,7 @@ const homepageTasks = ref<Task[]>([])
 // 從首頁任務中篩選出進行中的任務
 const activeTasks = computed(() => {
   return homepageTasks.value.filter(task => 
-    task.status === 'in_progress' || task.status === 'pending'
+    task.status === 'in_progress'
   )
 })
 
@@ -170,13 +170,4 @@ const refreshTasks = () => {
   loadHomepageTasks()
 }
 
-// 添加示例任務
-const addSampleTasks = async () => {
-  try {
-    await taskStore.addSampleTasks()
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : '添加示例任務失敗'
-    console.error('Failed to add sample tasks:', err)
-  }
-}
 </script>

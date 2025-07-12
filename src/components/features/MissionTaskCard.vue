@@ -197,7 +197,8 @@ const getTypeLabel = (type: Task['type']) => {
     main: '主線',
     side: '支線', 
     challenge: '挑戰',
-    daily: '每日'
+    daily: '每日',
+    subtask: '子任務'
   }
   return labels[type]
 }
@@ -207,7 +208,8 @@ const getTypeStyle = (type: Task['type']) => {
     main: 'bg-blue-100 text-blue-800',
     side: 'bg-green-100 text-green-800',
     challenge: 'bg-purple-100 text-purple-800',
-    daily: 'bg-orange-100 text-orange-800'
+    daily: 'bg-orange-100 text-orange-800',
+    subtask: 'bg-gray-100 text-gray-800'
   }
   return styles[type]
 }
