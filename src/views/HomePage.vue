@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <div class="min-h-screen bg-white">
     <!-- 頁面標題 -->
     <PageHeader title="每日任務" />
     
@@ -29,25 +29,9 @@
     </div>
     
     <!-- 任務列表 -->
-    <div v-else class="px-4 py-4 space-y-4">
-      <!-- 任務狀態概覽 -->
-      <div v-if="homepageTasks.length > 0" class="bg-white rounded-lg p-4 shadow-sm">
-        <div class="flex justify-between items-center text-sm">
-          <span class="text-gray-600">進行中任務</span>
-          <span class="font-medium">
-            {{ activeTasks.length }} 個進行中
-          </span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-          <div 
-            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            :style="{ width: progressPercentage + '%' }"
-          ></div>
-        </div>
-      </div>
-      
+    <div v-else class="pb-4">
       <!-- 任務卡片列表 -->
-      <TaskCard
+      <DailyTaskCard
         v-for="task in activeTasks"
         :key="task.id"
         :task="task"
@@ -55,7 +39,7 @@
       />
       
       <!-- 空狀態 -->
-      <div v-if="activeTasks.length === 0" class="text-center py-12">
+      <div v-if="activeTasks.length === 0" class="text-center py-12 px-4">
         <div class="text-6xl mb-4">📝</div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">沒有進行中的任務</h3>
         <p class="text-gray-600 mb-4">首頁只顯示進行中的任務。開始一個任務來查看它！</p>
@@ -83,7 +67,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import TaskCard from '@/components/features/TaskCard.vue'
+import DailyTaskCard from '@/components/features/DailyTaskCard.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'

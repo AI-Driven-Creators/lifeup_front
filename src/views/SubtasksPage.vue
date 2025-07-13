@@ -200,11 +200,33 @@ const loadSubtasks = async () => {
   error.value = null
   
   try {
+    // 首先獲取所有任務
     const response = await apiClient.getTasks()
     if (response.success) {
-      // 只獲取子任務（有 parent_task_id 的任務）
       const allTasks = response.data.map(taskStore.transformBackendTask)
-      subtasks.value = allTasks.filter(task => task.parent_task_id)
+      
+      // 找出所有進行中的大任務
+      const activeParentTasks = allTasks.filter(task => 
+        task.is_parent_task && task.status === 'in_progress'
+      )
+      
+      // 獲取所有進行中大任務的子任務
+      const allSubtasks: Task[] = []
+      
+      for (const parentTask of activeParentTasks) {
+        try {
+          const subtaskResponse = await apiClient.getSubtasks(parentTask.id)
+          if (subtaskResponse.success) {
+            const subtasks = subtaskResponse.data.map(taskStore.transformBackendTask)
+            allSubtasks.push(...subtasks)
+          }
+        } catch (err) {
+          console.error(`Failed to load subtasks for ${parentTask.title}:`, err)
+        }
+      }
+      
+      // 按照任務順序排序
+      subtasks.value = allSubtasks.sort((a, b) => (a.task_order || 0) - (b.task_order || 0))
     } else {
       error.value = response.message
     }

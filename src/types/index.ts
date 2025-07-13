@@ -45,6 +45,7 @@ export interface Task {
   estimatedTime?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'paused' | 'cancelled';
   deadline?: Date;
+  scheduled_time?: string; // 預定時間
   attributes?: Partial<UserAttributes>;
   // 任務層級相關
   parent_task_id?: string;
