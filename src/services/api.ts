@@ -119,6 +119,12 @@ export class ApiClient {
     });
   }
 
+  async restartTask(id: string) {
+    return this.request<{success: boolean, data: any, message: string}>(`/api/tasks/${id}/restart`, {
+      method: 'PUT',
+    });
+  }
+
   async getSubtasks(parentTaskId: string) {
     return this.request<{success: boolean, data: any[], message: string}>(`/api/tasks/${parentTaskId}/subtasks`);
   }

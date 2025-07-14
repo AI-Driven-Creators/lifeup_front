@@ -8,11 +8,13 @@
           :class="{
             'bg-green-500 border-green-500': task.status === 'completed',
             'bg-blue-500 border-blue-500': task.status === 'in_progress',
+            'bg-gray-500 border-gray-500': task.status === 'paused',
             'border-gray-300 hover:border-primary-400': task.status === 'pending'
           }"
         >
           <span v-if="task.status === 'completed'" class="text-white text-sm">✓</span>
           <span v-else-if="task.status === 'in_progress'" class="text-white text-xs">▶</span>
+          <span v-else-if="task.status === 'paused'" class="text-white text-xs">⏸</span>
         </div>
       </div>
       
@@ -30,10 +32,16 @@
             :class="{
               'bg-green-100 text-green-700 hover:bg-green-200': task.status === 'completed',
               'bg-blue-100 text-blue-700 hover:bg-blue-200': task.status === 'in_progress',
+              'bg-orange-100 text-orange-700 hover:bg-orange-200': task.status === 'paused',
               'bg-gray-100 text-gray-700 hover:bg-gray-200': task.status === 'pending'
             }"
           >
-            {{ task.status === 'completed' ? '已完成' : task.status === 'in_progress' ? '進行中' : '開始' }}
+            {{ 
+              task.status === 'completed' ? '已完成' : 
+              task.status === 'in_progress' ? '進行中' : 
+              task.status === 'paused' ? '已暫停' : 
+              '開始' 
+            }}
           </button>
         </div>
         
@@ -42,6 +50,9 @@
             <span class="text-sm text-primary-700">{{ task.estimatedTime }}</span>
             <span v-if="task.status === 'in_progress'" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
               進行中
+            </span>
+            <span v-else-if="task.status === 'paused'" class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+              已暫停
             </span>
           </div>
           <span class="text-sm text-primary-600 font-medium">+{{ task.experience }} XP</span>

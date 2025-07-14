@@ -35,6 +35,12 @@
         >
           <span class="text-white text-xs">✓</span>
         </div>
+        <div 
+          v-else-if="task.status === 'paused'"
+          class="w-5 h-5 bg-current rounded flex items-center justify-center"
+        >
+          <span class="text-white text-xs">⏸</span>
+        </div>
       </button>
     </div>
   </div>
@@ -82,6 +88,8 @@ const getStatusButtonClass = (status: Task['status']) => {
       return 'bg-warm-gray-800 border-warm-gray-800'
     case 'in_progress':
       return 'bg-warm-gray-200 border-warm-gray-400'
+    case 'paused':
+      return 'bg-warm-gray-400 border-warm-gray-400'
     default:
       return 'bg-transparent border-warm-gray-300 hover:border-warm-gray-400'
   }

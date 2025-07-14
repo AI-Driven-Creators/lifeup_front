@@ -160,6 +160,9 @@ export const useTaskStore = defineStore('task', {
         parent_task_id: backendTask.parent_task_id,
         is_parent_task: Boolean(backendTask.is_parent_task),
         task_order: backendTask.task_order,
+        // 取消計數相關
+        cancel_count: backendTask.cancel_count,
+        last_cancelled_at: backendTask.last_cancelled_at,
       };
     },
 

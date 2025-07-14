@@ -16,6 +16,9 @@
           <span class="flex items-center text-primary-600 font-medium">
             成長：{{ task.experience }} XP
           </span>
+          <span v-if="task.cancel_count && task.cancel_count > 0" class="flex items-center text-red-600 font-medium">
+            取消次數：{{ task.cancel_count }}
+          </span>
         </div>
         
         <p v-if="task.description" class="text-sm text-primary-700 mb-3">
@@ -65,9 +68,14 @@
           已完成
         </span>
         
-        <span v-if="task.status === 'cancelled'" class="px-3 py-1 bg-gray-400 text-white rounded text-sm">
-          已取消
-        </span>
+        <button 
+          v-if="task.status === 'cancelled'"
+          class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+          @click="handleRestartTask"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? '處理中...' : '重新開始' }}
+        </button>
       </div>
       
       <!-- 一般任務切換按鈕 -->
@@ -177,8 +185,13 @@ const handleCancelTask = async () => {
   try {
     const response = await apiClient.cancelTask(props.task.id)
     if (response.success) {
-      // 更新任務狀態
-      const updatedTask = { ...props.task, status: 'cancelled' as const }
+      // 更新任務狀態和取消計數
+      const updatedTask = { 
+        ...props.task, 
+        status: 'cancelled' as const,
+        cancel_count: response.data?.cancel_count || (props.task.cancel_count || 0) + 1,
+        last_cancelled_at: response.data?.last_cancelled_at
+      }
       emit('taskUpdated', updatedTask)
       console.log(response.message)
     } else {
@@ -187,6 +200,30 @@ const handleCancelTask = async () => {
   } catch (error) {
     console.error('Failed to cancel task:', error)
     alert('取消任務失敗')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleRestartTask = async () => {
+  if (!confirm(`確定要重新開始此任務嗎？這是第${(props.task.cancel_count || 0) + 1}次嘗試。`)) {
+    return
+  }
+  
+  isLoading.value = true
+  try {
+    const response = await apiClient.restartTask(props.task.id)
+    if (response.success) {
+      // 更新任務狀態為待開始
+      const updatedTask = { ...props.task, status: 'pending' as const }
+      emit('taskUpdated', updatedTask)
+      console.log(response.message)
+    } else {
+      alert(`重新開始任務失敗: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('Failed to restart task:', error)
+    alert('重新開始任務失敗')
   } finally {
     isLoading.value = false
   }

@@ -51,6 +51,11 @@ export interface Task {
   parent_task_id?: string;
   is_parent_task?: boolean;
   task_order?: number;
+  // 取消計數相關
+  cancel_count?: number;
+  last_cancelled_at?: string;
+  // 父任務狀態（用於子任務）
+  parentTaskStatus?: 'pending' | 'in_progress' | 'completed' | 'paused' | 'cancelled';
 }
 
 // AI教練相關類型

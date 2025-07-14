@@ -32,7 +32,7 @@
     <div v-else class="px-4 py-4 space-y-4">
       <!-- 子任務狀態概覽 -->
       <div v-if="subtasks.length > 0" class="bg-white rounded-lg p-4 shadow-sm">
-        <div class="grid grid-cols-3 gap-4 text-center text-sm">
+        <div class="grid grid-cols-4 gap-3 text-center text-sm">
           <div>
             <span class="block text-gray-600">待處理</span>
             <span class="block font-medium text-orange-600">{{ pendingCount }}</span>
@@ -40,6 +40,10 @@
           <div>
             <span class="block text-gray-600">進行中</span>
             <span class="block font-medium text-blue-600">{{ inProgressCount }}</span>
+          </div>
+          <div>
+            <span class="block text-gray-600">已暫停</span>
+            <span class="block font-medium text-gray-600">{{ pausedCount }}</span>
           </div>
           <div>
             <span class="block text-gray-600">已完成</span>
@@ -109,11 +113,11 @@
             <!-- 狀態控制 -->
             <div class="ml-4">
               <button
-                @click="toggleSubtaskStatus(subtask.id)"
-                :class="getStatusButtonClass(subtask.status)"
+                @click="toggleSubtaskStatus(subtask)"
+                :class="getStatusButtonClass(subtask)"
                 class="px-3 py-1 rounded text-sm font-medium transition-colors"
               >
-                {{ getStatusText(subtask.status) }}
+                {{ getStatusText(subtask) }}
               </button>
             </div>
           </div>
@@ -188,6 +192,7 @@ const filteredSubtasks = computed(() => {
 const pendingCount = computed(() => subtasks.value.filter(t => t.status === 'pending').length)
 const inProgressCount = computed(() => subtasks.value.filter(t => t.status === 'in_progress').length)
 const completedCount = computed(() => subtasks.value.filter(t => t.status === 'completed').length)
+const pausedCount = computed(() => subtasks.value.filter(t => t.status === 'paused').length)
 
 const progressPercentage = computed(() => {
   if (subtasks.value.length === 0) return 0
@@ -205,9 +210,9 @@ const loadSubtasks = async () => {
     if (response.success) {
       const allTasks = response.data.map(taskStore.transformBackendTask)
       
-      // 找出所有進行中的大任務
+      // 找出所有進行中和暫停的大任務
       const activeParentTasks = allTasks.filter(task => 
-        task.is_parent_task && task.status === 'in_progress'
+        task.is_parent_task && (task.status === 'in_progress' || task.status === 'paused')
       )
       
       // 獲取所有進行中大任務的子任務
@@ -217,7 +222,10 @@ const loadSubtasks = async () => {
         try {
           const subtaskResponse = await apiClient.getSubtasks(parentTask.id)
           if (subtaskResponse.success) {
-            const subtasks = subtaskResponse.data.map(taskStore.transformBackendTask)
+            const subtasks = subtaskResponse.data.map(taskStore.transformBackendTask).map(subtask => ({
+              ...subtask,
+              parentTaskStatus: parentTask.status // 添加父任務狀態信息
+            }))
             allSubtasks.push(...subtasks)
           }
         } catch (err) {
@@ -239,16 +247,21 @@ const loadSubtasks = async () => {
 }
 
 // 切換子任務狀態
-const toggleSubtaskStatus = async (taskId: string) => {
+const toggleSubtaskStatus = async (subtask: any) => {
+  // 如果是因為父任務暫停而暫停，則不允許操作
+  if (subtask.status === 'paused' && subtask.parentTaskStatus === 'paused') {
+    return
+  }
+  
   try {
-    await taskStore.toggleTaskStatus(taskId)
+    await taskStore.toggleTaskStatus(subtask.id)
     
     // 更新本地子任務狀態
-    const taskIndex = subtasks.value.findIndex(t => t.id === taskId)
+    const taskIndex = subtasks.value.findIndex(t => t.id === subtask.id)
     if (taskIndex !== -1) {
-      const updatedTask = taskStore.tasks.find(t => t.id === taskId)
+      const updatedTask = taskStore.tasks.find(t => t.id === subtask.id)
       if (updatedTask) {
-        subtasks.value[taskIndex] = { ...updatedTask }
+        subtasks.value[taskIndex] = { ...updatedTask, parentTaskStatus: subtask.parentTaskStatus }
       }
     }
   } catch (err) {
@@ -275,24 +288,30 @@ const getStatusBorderClass = (status: string) => {
 }
 
 // 獲取狀態按鈕樣式
-const getStatusButtonClass = (status: string) => {
-  switch (status) {
+const getStatusButtonClass = (subtask: any) => {
+  switch (subtask.status) {
     case 'pending': return 'bg-orange-100 text-orange-800 hover:bg-orange-200'
     case 'in_progress': return 'bg-blue-100 text-blue-800 hover:bg-blue-200'
     case 'completed': return 'bg-green-100 text-green-800 hover:bg-green-200'
-    case 'paused': return 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+    case 'paused': 
+      // 如果是因為父任務暫停而暫停，使用不可點擊的樣式
+      return subtask.parentTaskStatus === 'paused' 
+        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
     case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-200'
     default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200'
   }
 }
 
 // 獲取狀態文字
-const getStatusText = (status: string) => {
-  switch (status) {
+const getStatusText = (subtask: any) => {
+  switch (subtask.status) {
     case 'pending': return '開始'
     case 'in_progress': return '完成'
     case 'completed': return '已完成'
-    case 'paused': return '繼續'
+    case 'paused': 
+      // 判斷是否因為父任務暫停而暫停
+      return subtask.parentTaskStatus === 'paused' ? '主任務暫停中' : '繼續'
     case 'cancelled': return '已取消'
     default: return '未知'
   }
