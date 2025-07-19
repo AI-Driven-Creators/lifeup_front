@@ -111,8 +111,18 @@
             </div>
             
             <!-- 狀態控制 -->
-            <div class="ml-4">
+            <div class="ml-4 flex flex-col items-end space-y-2">
+              <!-- 狀態標籤 -->
+              <div 
+                :class="getStatusLabelClass(subtask)"
+                class="px-2 py-1 rounded-full text-xs font-medium"
+              >
+                {{ getStatusLabel(subtask) }}
+              </div>
+              
+              <!-- 操作按鈕 (僅在未完成時顯示) -->
               <button
+                v-if="subtask.status !== 'completed'"
                 @click="toggleSubtaskStatus(subtask)"
                 :class="getStatusButtonClass(subtask)"
                 class="px-3 py-1 rounded text-sm font-medium transition-colors"
@@ -314,6 +324,30 @@ const getStatusText = (subtask: any) => {
       return subtask.parentTaskStatus === 'paused' ? '主任務暫停中' : '繼續'
     case 'cancelled': return '已取消'
     default: return '未知'
+  }
+}
+
+// 獲取狀態標籤文字
+const getStatusLabel = (subtask: any) => {
+  switch (subtask.status) {
+    case 'pending': return '待處理'
+    case 'in_progress': return '進行中'
+    case 'completed': return '已完成'
+    case 'paused': return '已暫停'
+    case 'cancelled': return '已取消'
+    default: return '未知'
+  }
+}
+
+// 獲取狀態標籤樣式
+const getStatusLabelClass = (subtask: any) => {
+  switch (subtask.status) {
+    case 'pending': return 'bg-orange-100 text-orange-800'
+    case 'in_progress': return 'bg-blue-100 text-blue-800'
+    case 'completed': return 'bg-green-100 text-green-800'
+    case 'paused': return 'bg-gray-100 text-gray-800'
+    case 'cancelled': return 'bg-red-100 text-red-800'
+    default: return 'bg-gray-100 text-gray-800'
   }
 }
 
