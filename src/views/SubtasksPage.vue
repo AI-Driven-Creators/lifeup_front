@@ -243,8 +243,29 @@ const loadSubtasks = async () => {
         }
       }
       
-      // 按照任務順序排序
-      subtasks.value = allSubtasks.sort((a, b) => (a.task_order || 0) - (b.task_order || 0))
+      // 按照狀態優先級和任務順序排序
+      subtasks.value = allSubtasks.sort((a, b) => {
+        // 定義狀態優先級：待處理(0) > 進行中(1) > 已完成(2) > 其他(3)
+        const getStatusPriority = (status: string) => {
+          switch (status) {
+            case 'pending': return 0
+            case 'in_progress': return 1
+            case 'completed': return 2
+            default: return 3 // paused, cancelled 等其他狀態
+          }
+        }
+        
+        const priorityA = getStatusPriority(a.status)
+        const priorityB = getStatusPriority(b.status)
+        
+        // 如果狀態優先級相同，則按任務順序排序
+        if (priorityA === priorityB) {
+          return (a.task_order || 0) - (b.task_order || 0)
+        }
+        
+        // 否則按狀態優先級排序
+        return priorityA - priorityB
+      })
     } else {
       error.value = response.message
     }
