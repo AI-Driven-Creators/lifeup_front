@@ -27,6 +27,7 @@ const MissionIcon = () => '📋'
 const SubtaskIcon = () => '📝'
 const SkillIcon = () => '🌳'
 const CoachIcon = () => '🤖'
+const PersonalIcon = () => '👤'
 
 const route = useRoute()
 
@@ -35,6 +36,7 @@ const navItems = [
   { name: 'mission', path: '/mission', label: '任務', icon: MissionIcon },
   { name: 'subtasks', path: '/subtasks', label: '子任務', icon: SubtaskIcon },
   { name: 'skills', path: '/skills', label: '技能', icon: SkillIcon },
+  { name: 'personal', path: '/personal', label: '我的', icon: PersonalIcon },
   { name: 'coach', path: '/coach', label: '小教練', icon: CoachIcon }
 ]
 </script>

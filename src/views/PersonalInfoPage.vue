@@ -10,6 +10,9 @@
       <!-- 冒險統計 -->
       <AdventureStats :user="userStore.user" />
       
+      <!-- 成就 -->
+      <AchievementSection />
+      
       <!-- 今天的成長 -->
       <TodayGrowth :progress="userStore.todayProgress" />
       
@@ -26,6 +29,7 @@
 import PageHeader from '@/components/layout/PageHeader.vue'
 import UserLevelCard from '@/components/features/UserLevelCard.vue'
 import AdventureStats from '@/components/features/AdventureStats.vue'
+import AchievementSection from '@/components/features/AchievementSection.vue'
 import TodayGrowth from '@/components/features/TodayGrowth.vue'
 import AttributesRadar from '@/components/features/AttributesRadar.vue'
 import GrowthAdvice from '@/components/features/GrowthAdvice.vue'

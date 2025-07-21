@@ -1,17 +1,23 @@
 <template>
   <div class="space-y-4">
     <!-- 平衡提醒 -->
-    <div class="card">
-      <h3 class="text-lg font-bold text-primary-900 mb-2">平衡提醒</h3>
-      <p class="text-primary-700 text-sm">
+    <div class="card bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+      <h3 class="text-lg font-bold text-yellow-900 mb-2 flex items-center">
+        <span class="mr-2">⚖️</span>
+        平衡提醒
+      </h3>
+      <p class="text-yellow-800 text-sm leading-relaxed">
         專注於發展所有屬性，以實現和諧發展。
       </p>
     </div>
     
     <!-- 改進建議 -->
-    <div class="card">
-      <h3 class="text-lg font-bold text-primary-900 mb-2">改進建議</h3>
-      <p class="text-primary-700 text-sm">
+    <div class="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <h3 class="text-lg font-bold text-blue-900 mb-2 flex items-center">
+        <span class="mr-2">💡</span>
+        改進建議
+      </h3>
+      <p class="text-blue-800 text-sm leading-relaxed">
         {{ improvementSuggestion }}
       </p>
     </div>

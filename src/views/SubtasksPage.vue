@@ -354,7 +354,7 @@ const revertSubtaskStatus = async (subtask: any) => {
   error.value = null
   
   try {
-    console.log('嘗試回復子任務狀態:', subtask.id, '當前狀態:', subtask.status)
+    console.log('嘗試回復子任務狀態:', subtask.id, '當前狀態:', subtask.status, 'reverse: true')
     
     await taskStore.toggleTaskStatus(subtask.id, subtask.status, true) // reverse = true
     

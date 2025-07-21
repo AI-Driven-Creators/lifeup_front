@@ -106,6 +106,8 @@ export const useTaskStore = defineStore('task', {
     },
 
     async toggleTaskStatus(taskId: string, currentStatus?: Task['status'], reverse: boolean = false) {
+      console.log(`toggleTaskStatus called: taskId=${taskId}, currentStatus=${currentStatus}, reverse=${reverse}`);
+      
       // 首先嘗試從 store 中找到任務
       let task = this.tasks.find(t => t.id === taskId);
       let taskStatus = task?.status || currentStatus;
@@ -135,19 +137,26 @@ export const useTaskStore = defineStore('task', {
       let nextStatus: number;
       let nextStatusString: Task['status'];
       
+      console.log(`Status transition logic: taskStatus=${taskStatus}, reverse=${reverse}`);
+      
       if (reverse) {
+        console.log('執行反向切換邏輯');
         // 反向切換：回復到前一個狀態
         if (taskStatus === 'completed') {
           nextStatus = 1; // 回復到進行中
           nextStatusString = 'in_progress';
+          console.log('completed -> in_progress');
         } else if (taskStatus === 'in_progress') {
           nextStatus = 0; // 回復到待處理
           nextStatusString = 'pending';
+          console.log('in_progress -> pending');
         } else {
           nextStatus = 0; // pending狀態無法再往回
           nextStatusString = 'pending';
+          console.log('default -> pending');
         }
       } else {
+        console.log('執行正向切換邏輯');
         // 正向切換：進入下一個狀態
         if (taskStatus === 'pending') {
           nextStatus = 1; // 進行中
@@ -155,14 +164,19 @@ export const useTaskStore = defineStore('task', {
         } else if (taskStatus === 'in_progress') {
           nextStatus = 2; // 已完成
           nextStatusString = 'completed';
+        } else if (taskStatus === 'completed') {
+          // 已完成的任務正向切換應該重置到待處理（重做）
+          nextStatus = 0; // 重置到待處理
+          nextStatusString = 'pending';
         } else {
-          nextStatus = 0; // 待完成
+          // 其他狀態（paused, cancelled等）默認到待處理
+          nextStatus = 0; // 待處理
           nextStatusString = 'pending';
         }
       }
 
       try {
-        console.log(`更新任務狀態: ${taskId} 從 ${taskStatus} 到 ${nextStatusString}`);
+        console.log(`更新任務狀態: ${taskId} 從 ${taskStatus} 到 ${nextStatusString} (reverse: ${reverse})`);
         
         // 呼叫後端 API 更新任務狀態
         const response = await apiClient.updateTask(taskId, {
