@@ -35,6 +35,11 @@ const router = createRouter({
       component: () => import('@/views/SubtasksPage.vue')
     },
     {
+      path: '/task/:id',
+      name: 'task-detail',
+      component: () => import('@/views/TaskDetailPage.vue')
+    },
+    {
       path: '/api-test',
       name: 'api-test',
       component: () => import('@/views/ApiTestPage.vue')

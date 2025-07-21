@@ -105,35 +105,76 @@ export const useTaskStore = defineStore('task', {
       }
     },
 
-    async toggleTaskStatus(taskId: string) {
-      const task = this.tasks.find(t => t.id === taskId);
-      if (!task) return;
+    async toggleTaskStatus(taskId: string, currentStatus?: Task['status'], reverse: boolean = false) {
+      // 首先嘗試從 store 中找到任務
+      let task = this.tasks.find(t => t.id === taskId);
+      let taskStatus = task?.status || currentStatus;
+
+      // 如果沒有找到任務且沒有提供當前狀態，先獲取任務信息
+      if (!taskStatus) {
+        try {
+          const response = await apiClient.getTasks();
+          if (response.success) {
+            const allTasks = response.data.map(this.transformBackendTask);
+            const foundTask = allTasks.find(t => t.id === taskId);
+            if (foundTask) {
+              taskStatus = foundTask.status;
+            } else {
+              throw new Error('找不到指定的任務');
+            }
+          } else {
+            throw new Error(response.message);
+          }
+        } catch (error) {
+          console.error('Failed to fetch task for status update:', error);
+          throw error;
+        }
+      }
 
       // 計算下一個狀態
       let nextStatus: number;
       let nextStatusString: Task['status'];
       
-      if (task.status === 'pending') {
-        nextStatus = 1; // 進行中
-        nextStatusString = 'in_progress';
-      } else if (task.status === 'in_progress') {
-        nextStatus = 2; // 已完成
-        nextStatusString = 'completed';
+      if (reverse) {
+        // 反向切換：回復到前一個狀態
+        if (taskStatus === 'completed') {
+          nextStatus = 1; // 回復到進行中
+          nextStatusString = 'in_progress';
+        } else if (taskStatus === 'in_progress') {
+          nextStatus = 0; // 回復到待處理
+          nextStatusString = 'pending';
+        } else {
+          nextStatus = 0; // pending狀態無法再往回
+          nextStatusString = 'pending';
+        }
       } else {
-        nextStatus = 0; // 待完成
-        nextStatusString = 'pending';
+        // 正向切換：進入下一個狀態
+        if (taskStatus === 'pending') {
+          nextStatus = 1; // 進行中
+          nextStatusString = 'in_progress';
+        } else if (taskStatus === 'in_progress') {
+          nextStatus = 2; // 已完成
+          nextStatusString = 'completed';
+        } else {
+          nextStatus = 0; // 待完成
+          nextStatusString = 'pending';
+        }
       }
 
       try {
+        console.log(`更新任務狀態: ${taskId} 從 ${taskStatus} 到 ${nextStatusString}`);
+        
         // 呼叫後端 API 更新任務狀態
         const response = await apiClient.updateTask(taskId, {
           status: nextStatus
         });
 
         if (response.success) {
-          // 更新前端狀態
-          task.status = nextStatusString;
-          console.log(`Task ${taskId} status changed to ${task.status}`);
+          // 如果任務在 store 中，更新前端狀態
+          if (task) {
+            task.status = nextStatusString;
+          }
+          console.log(`Task ${taskId} status changed to ${nextStatusString}`);
         } else {
           throw new Error(response.message);
         }

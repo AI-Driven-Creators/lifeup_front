@@ -1,5 +1,8 @@
 <template>
-  <div class="card hover:shadow-md transition-shadow">
+  <div 
+    class="card hover:shadow-md transition-shadow cursor-pointer"
+    @click="handleCardClick"
+  >
     <div class="flex items-center justify-between">
       <div class="flex-1 min-w-0">
         <h3 
@@ -31,7 +34,7 @@
         <button 
           v-if="task.status === 'pending'"
           class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
-          @click="handleStartTask"
+          @click.stop="handleStartTask"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '開始' }}
@@ -40,7 +43,7 @@
         <button 
           v-if="task.status === 'in_progress'"
           class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 transition-colors"
-          @click="handlePauseTask"
+          @click.stop="handlePauseTask"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '暫停' }}
@@ -49,7 +52,7 @@
         <button 
           v-if="task.status === 'paused'"
           class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-          @click="handleStartTask"
+          @click.stop="handleStartTask"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '繼續' }}
@@ -58,7 +61,7 @@
         <button 
           v-if="['pending', 'in_progress', 'paused'].includes(task.status)"
           class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-          @click="handleCancelTask"
+          @click.stop="handleCancelTask"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '取消' }}
@@ -71,7 +74,7 @@
         <button 
           v-if="task.status === 'cancelled'"
           class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-          @click="handleRestartTask"
+          @click.stop="handleRestartTask"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '重新開始' }}
@@ -83,7 +86,7 @@
         v-else
         class="btn-primary ml-4"
         :class="{ 'bg-gray-400': task.status === 'completed' }"
-        @click="handleToggle"
+        @click.stop="handleToggle"
       >
         {{ task.status === 'completed' ? '已完成' : '開始' }}
       </button>
@@ -115,6 +118,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Task } from '@/types'
 import { apiClient } from '@/services/api'
 
@@ -129,11 +133,24 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const router = useRouter()
 
 const isLoading = ref(false)
 
 const handleToggle = () => {
   emit('toggle', props.task.id)
+}
+
+// 處理卡片點擊，跳轉到任務詳情頁面
+const handleCardClick = (event: Event) => {
+  // 防止按鈕點擊事件冒泡到卡片
+  const target = event.target as HTMLElement
+  if (target.tagName === 'BUTTON' || target.closest('button')) {
+    return
+  }
+  
+  // 跳轉到任務詳情頁面
+  router.push(`/task/${props.task.id}`)
 }
 
 const handleStartTask = async () => {

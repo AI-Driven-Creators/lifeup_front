@@ -120,15 +120,37 @@
                 {{ getStatusLabel(subtask) }}
               </div>
               
-              <!-- 操作按鈕 (僅在未完成時顯示) -->
-              <button
-                v-if="subtask.status !== 'completed'"
-                @click="toggleSubtaskStatus(subtask)"
-                :class="getStatusButtonClass(subtask)"
-                class="px-3 py-1 rounded text-sm font-medium transition-colors"
-              >
-                {{ getStatusText(subtask) }}
-              </button>
+              <!-- 操作按鈕組 -->
+              <div class="flex space-x-2">
+                <!-- 主要操作按鈕 -->
+                <button
+                  v-if="subtask.status !== 'completed'"
+                  @click="toggleSubtaskStatus(subtask)"
+                  :disabled="loading || (subtask.status === 'paused' && subtask.parentTaskStatus === 'paused')"
+                  :class="[
+                    getStatusButtonClass(subtask),
+                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                  ]"
+                  class="px-3 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  {{ loading ? '處理中...' : getStatusText(subtask) }}
+                </button>
+                
+                <!-- 回復按鈕 (僅在進行中和已完成時顯示) -->
+                <button
+                  v-if="['in_progress', 'completed'].includes(subtask.status)"
+                  @click="revertSubtaskStatus(subtask)"
+                  :disabled="loading"
+                  :class="[
+                    'px-2 py-1 rounded text-xs font-medium transition-colors border',
+                    'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-400',
+                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                  ]"
+                  :title="getRevertButtonTitle(subtask)"
+                >
+                  {{ loading ? '...' : '↶' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -281,23 +303,84 @@ const loadSubtasks = async () => {
 const toggleSubtaskStatus = async (subtask: any) => {
   // 如果是因為父任務暫停而暫停，則不允許操作
   if (subtask.status === 'paused' && subtask.parentTaskStatus === 'paused') {
+    console.log('父任務暫停中，無法操作子任務')
     return
   }
   
+  // 防止重複點擊
+  if (loading.value) {
+    return
+  }
+  
+  loading.value = true
+  error.value = null
+  
   try {
-    await taskStore.toggleTaskStatus(subtask.id)
+    console.log('嘗試切換子任務狀態:', subtask.id, '當前狀態:', subtask.status)
     
-    // 更新本地子任務狀態
-    const taskIndex = subtasks.value.findIndex(t => t.id === subtask.id)
-    if (taskIndex !== -1) {
-      const updatedTask = taskStore.tasks.find(t => t.id === subtask.id)
-      if (updatedTask) {
-        subtasks.value[taskIndex] = { ...updatedTask, parentTaskStatus: subtask.parentTaskStatus }
-      }
-    }
+    await taskStore.toggleTaskStatus(subtask.id, subtask.status)
+    
+    // 重新載入子任務列表以確保數據一致性
+    await loadSubtasks()
+    
+    console.log('子任務狀態更新成功')
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新子任務狀態失敗'
     console.error('Failed to toggle subtask status:', err)
+    
+    // 顯示錯誤提示
+    setTimeout(() => {
+      error.value = null
+    }, 3000)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 回復子任務狀態到上一個階段
+const revertSubtaskStatus = async (subtask: any) => {
+  // 如果是因為父任務暫停而暫停，則不允許操作
+  if (subtask.status === 'paused' && subtask.parentTaskStatus === 'paused') {
+    console.log('父任務暫停中，無法操作子任務')
+    return
+  }
+  
+  // 防止重複點擊
+  if (loading.value) {
+    return
+  }
+  
+  loading.value = true
+  error.value = null
+  
+  try {
+    console.log('嘗試回復子任務狀態:', subtask.id, '當前狀態:', subtask.status)
+    
+    await taskStore.toggleTaskStatus(subtask.id, subtask.status, true) // reverse = true
+    
+    // 重新載入子任務列表以確保數據一致性
+    await loadSubtasks()
+    
+    console.log('子任務狀態回復成功')
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '回復子任務狀態失敗'
+    console.error('Failed to revert subtask status:', err)
+    
+    // 顯示錯誤提示
+    setTimeout(() => {
+      error.value = null
+    }, 3000)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 獲取回復按鈕的提示文字
+const getRevertButtonTitle = (subtask: any) => {
+  switch (subtask.status) {
+    case 'completed': return '回復到進行中'
+    case 'in_progress': return '回復到待處理'
+    default: return '回復'
   }
 }
 
