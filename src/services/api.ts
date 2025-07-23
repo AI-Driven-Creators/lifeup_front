@@ -152,6 +152,42 @@ export class ApiClient {
       body: JSON.stringify({ message }),
     });
   }
+
+  // ChatGPT 
+  async sendMessageToChatGPT(message: string) {
+    const apiUrl = 'https://api.openai.com/v1/responses';
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY; // 確保已經設置了環境變量
+    const prompt = "你是一位專業的教練，請根據給定的訊息提供建議。一律使用繁體中文回答。";
+
+    const requestBody = {
+      model: 'gpt-4o-mini', // 確保使用的模型名稱正確，根據您的情況調整
+      input: [
+        { role: 'system', content: prompt }, // 系統提示
+        { role: 'user', content: message }   // 用戶輸入的消息
+      ],
+    };
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`ChatGPT API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data; // 返回 ChatGPT 的回覆數據
+    } catch (error) {
+      console.error('ChatGPT Request Error:', error);
+      throw error;
+    }
+  }
 }
 
 // 創建全局 API 實例

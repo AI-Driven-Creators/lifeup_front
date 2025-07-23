@@ -51,7 +51,11 @@ npm run build
 
 # 預覽構建結果
 npm run preview
+
+# 環境變數
+cp .env.example .env # 請填上你的 openai api_key
 ```
+
 
 ## 專案結構
 

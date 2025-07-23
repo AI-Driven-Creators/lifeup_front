@@ -10,6 +10,7 @@
         :key="message.id"
         :message="message"
       />
+      <div v-if="loading" class="text-gray-400 text-sm">教練正在輸入...</div>
     </div>
     
     <!-- 快速回覆按鈕 -->
@@ -27,12 +28,13 @@
     </div>
     
     <!-- 輸入區域 -->
-    <ChatInput @send="sendMessage" />
+    <ChatInput @send="sendMessage" :disabled="loading" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { apiClient } from '@/services/api'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import ChatMessage from '@/components/features/ChatMessage.vue'
 import ChatInput from '@/components/features/ChatInput.vue'
@@ -76,8 +78,40 @@ const quickReplies = ref<string[]>([
   '設定目標'
 ])
 
-const sendMessage = (content: string) => {
-  // 添加用戶訊息
+const loading = ref(false)
+
+// const sendMessage = async (content: string) => {
+//   const userMessage: ChatMessageType = {
+//     id: Date.now().toString(),
+//     role: 'user',
+//     content,
+//     timestamp: new Date()
+//   }
+//   messages.value.push(userMessage)
+//   quickReplies.value = []
+//   loading.value = true
+
+//   try {
+//     const res = await apiClient.sendMessage(content)
+//     const coachMessage: ChatMessageType = {
+//       id: (Date.now() + 1).toString(),
+//       role: 'coach',
+//       content: res.data.reply || res.data.content || '（沒有回覆內容）',
+//       timestamp: new Date()
+//     }
+//     messages.value.push(coachMessage)
+//   } catch (e) {
+//     messages.value.push({
+//       id: (Date.now() + 2).toString(),
+//       role: 'coach',
+//       content: '發生錯誤，請稍後再試。',
+//       timestamp: new Date()
+//     })
+//   } finally {
+//     loading.value = false
+//   }
+// }
+const sendMessage = async (content: string) => {
   const userMessage: ChatMessageType = {
     id: Date.now().toString(),
     role: 'user',
@@ -85,19 +119,30 @@ const sendMessage = (content: string) => {
     timestamp: new Date()
   }
   messages.value.push(userMessage)
-  
-  // 清除快速回覆
   quickReplies.value = []
-  
-  // 模擬AI回覆
-  setTimeout(() => {
+  loading.value = true
+
+  try {
+    // 使用 sendMessageToChatGPT，而不是 sendMessage
+    const res = await apiClient.sendMessageToChatGPT(content);
+
+    // 更新這裡：正確解析 ChatGPT 的回覆
     const coachMessage: ChatMessageType = {
       id: (Date.now() + 1).toString(),
       role: 'coach',
-      content: '謝謝你的分享！讓我為你制定一個個性化的成長計劃...',
+      content: res.output[0].content[0].text || '（沒有回覆內容）',
       timestamp: new Date()
     }
     messages.value.push(coachMessage)
-  }, 1000)
+  } catch (e) {
+    messages.value.push({
+      id: (Date.now() + 2).toString(),
+      role: 'coach',
+      content: '發生錯誤，請稍後再試。',
+      timestamp: new Date()
+    })
+  } finally {
+    loading.value = false
+  }
 }
 </script>
