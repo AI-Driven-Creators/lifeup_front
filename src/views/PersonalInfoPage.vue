@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import UserLevelCard from '@/components/features/UserLevelCard.vue'
 import AdventureStats from '@/components/features/AdventureStats.vue'
@@ -36,4 +37,17 @@ import GrowthAdvice from '@/components/features/GrowthAdvice.vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+
+// 頁面載入時獲取最新的遊戲化用戶數據
+onMounted(async () => {
+  try {
+    // 先獲取用戶列表來找到實際的用戶ID
+    const usersResponse = await userStore.fetchFirstAvailableUser()
+    if (!usersResponse) {
+      console.warn('No users found, using default data')
+    }
+  } catch (error) {
+    console.error('Failed to load user data:', error)
+  }
+})
 </script>

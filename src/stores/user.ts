@@ -53,16 +53,54 @@ export const useUserStore = defineStore('user', {
       this.error = null;
       
       try {
-        const response = await apiClient.getUser(userId);
-        if (response.success && response.data) {
-          // 更新用戶基本資料，保留現有的遊戲化數據結構
-          this.user.id = response.data.id || this.user.id;
-          this.user.name = response.data.name || this.user.name;
+        // 首先嘗試獲取完整的遊戲化用戶數據
+        const gamifiedResponse = await apiClient.getGamifiedUserData(userId);
+        if (gamifiedResponse.success && gamifiedResponse.data) {
+          // 使用從後端獲取的完整遊戲化數據更新用戶資料
+          const data = gamifiedResponse.data;
+          console.log('收到遊戲化數據:', data);
           
-          // 如果後端沒有這些數據，保持現有值
-          // TODO: 當後端增加這些欄位時，從 API 獲取
+          // 安全地更新用戶資料
+          this.user = {
+            id: data.id || this.user.id,
+            name: data.name || this.user.name,
+            level: data.level || 1,
+            experience: data.experience || 0,
+            maxExperience: data.maxExperience || 100,
+            title: data.title || '新手冒險者',
+            adventureDays: data.adventureDays || 1,
+            consecutiveLoginDays: data.consecutiveLoginDays || 1,
+            personaType: data.personaType || 'internal',
+            attributes: {
+              intelligence: (data.attributes && data.attributes.intelligence) || 50,
+              endurance: (data.attributes && data.attributes.endurance) || 50,
+              creativity: (data.attributes && data.attributes.creativity) || 50,
+              social: (data.attributes && data.attributes.social) || 50,
+              focus: (data.attributes && data.attributes.focus) || 50,
+              adaptability: (data.attributes && data.attributes.adaptability) || 50
+            }
+          };
+          
+          // 更新今日進度
+          if (data.todayProgress) {
+            this.todayProgress = {
+              completedTasks: data.todayProgress.completedTasks || 0,
+              totalTasks: data.todayProgress.totalTasks || 0,
+              experienceGained: data.todayProgress.experienceGained || 0,
+              attributeGains: data.todayProgress.attributeGains || {}
+            };
+          }
+          
+          console.log('已更新用戶資料:', this.user);
         } else {
-          this.error = response.message || '獲取用戶資料失敗';
+          // 如果遊戲化數據獲取失敗，嘗試獲取基本用戶數據
+          const response = await apiClient.getUser(userId);
+          if (response.success && response.data) {
+            this.user.id = response.data.id || this.user.id;
+            this.user.name = response.data.name || this.user.name;
+          } else {
+            this.error = response.message || '獲取用戶資料失敗';
+          }
         }
       } catch (error) {
         this.error = error instanceof Error ? error.message : '網路錯誤';
@@ -142,6 +180,34 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         console.warn('Failed to fetch user data, using default values');
         // 使用預設值，不影響應用正常運行
+      }
+    },
+
+    // 獲取第一個可用用戶
+    async fetchFirstAvailableUser() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // 先獲取用戶列表
+        const usersResponse = await apiClient.getUsers();
+        if (usersResponse.success && usersResponse.data && usersResponse.data.length > 0) {
+          const firstUser = usersResponse.data[0];
+          console.log('Found user:', firstUser);
+          
+          // 使用第一個用戶的ID獲取完整數據
+          await this.fetchUser(firstUser.id);
+          return true;
+        } else {
+          console.warn('No users found in database');
+          return false;
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '網路錯誤';
+        console.error('Failed to fetch users:', error);
+        return false;
+      } finally {
+        this.loading = false;
       }
     },
 
