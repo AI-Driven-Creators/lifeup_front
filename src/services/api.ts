@@ -2,7 +2,7 @@
 export class ApiClient {
   private baseURL: string;
 
-  constructor(baseURL: string = 'http://localhost:8081') {
+  constructor(baseURL: string = 'http://localhost:8080') {
     this.baseURL = baseURL;
   }
 
@@ -57,7 +57,7 @@ export class ApiClient {
   }
 
   async getGamifiedUserData(id: string) {
-    return this.request<{success: boolean, data: any, message: string}>(`/api/users/${id}/gamified`);
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${id}/gamified`);
   }
 
   // 任務相關 API
