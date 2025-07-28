@@ -7,32 +7,29 @@ export const useUserStore = defineStore('user', {
     loading: false,
     error: null as string | null,
     user: {
-      id: '1',
-      name: '小雅',
-      level: 12,
-      experience: 2340,
-      maxExperience: 2500,
-      title: '自律達人',
-      adventureDays: 87,
-      consecutiveLoginDays: 12,
+      id: '',
+      name: '載入中...',
+      level: 0,
+      experience: 0,
+      maxExperience: 100,
+      title: '載入中...',
+      adventureDays: 0,
+      consecutiveLoginDays: 0,
       personaType: 'internal' as const,
       attributes: {
-        intelligence: 82,
-        endurance: 45,
-        creativity: 75,
-        social: 52,
-        focus: 68,
-        adaptability: 58
+        intelligence: 0,
+        endurance: 0,
+        creativity: 0,
+        social: 0,
+        focus: 0,
+        adaptability: 0
       }
     } as User,
     todayProgress: {
-      completedTasks: 3,
-      totalTasks: 5,
-      experienceGained: 150,
-      attributeGains: {
-        intelligence: 2,
-        endurance: 1
-      }
+      completedTasks: 0,
+      totalTasks: 0,
+      experienceGained: 0,
+      attributeGains: {}
     }
   }),
 

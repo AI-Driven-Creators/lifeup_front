@@ -157,6 +157,26 @@ export class ApiClient {
     });
   }
 
+  // 成就相關 API
+  async getAchievements() {
+    return this.request<{success: boolean, data: any[], message: string}>('/api/achievements');
+  }
+
+  async getUserAchievements(userId: string) {
+    return this.request<{success: boolean, data: any[], message: string}>(`/api/users/${userId}/achievements`);
+  }
+
+  async unlockUserAchievement(userId: string, achievementId: string) {
+    return this.request<{success: boolean, data: any, message: string}>(`/api/users/${userId}/achievements/${achievementId}/unlock`, {
+      method: 'POST',
+    });
+  }
+
+  // 週屬性相關 API
+  async getWeeklyAttributes(userId: string, weeksAgo: number = 0) {
+    return this.request<{success: boolean, data: any, message: string}>(`/api/users/${userId}/attributes/weekly/${weeksAgo}`);
+  }
+
   // ChatGPT 
   async sendMessageToChatGPT(message: string) {
     const apiUrl = 'https://api.openai.com/v1/responses';

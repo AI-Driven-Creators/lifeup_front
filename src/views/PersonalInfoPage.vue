@@ -8,13 +8,13 @@
       <UserLevelCard :user="userStore.user" />
       
       <!-- 冒險統計 -->
-      <AdventureStats :user="userStore.user" />
+      <AdventureStats :user="userStore.user" :loading="userStore.loading" />
       
       <!-- 成就 -->
       <AchievementSection />
       
       <!-- 今天的成長 -->
-      <TodayGrowth :progress="userStore.todayProgress" />
+      <TodayGrowth :progress="userStore.todayProgress" :loading="userStore.loading" />
       
       <!-- 屬性雷達圖 -->
       <AttributesRadar :attributes="userStore.user.attributes" />
