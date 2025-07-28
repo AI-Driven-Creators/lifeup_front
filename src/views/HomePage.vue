@@ -30,6 +30,21 @@
     
     <!-- 任務列表 -->
     <div v-else class="pb-4">
+      <!-- 心理測驗按鈕 -->
+      <div class="px-4 pt-4 pb-2">
+        <button 
+          @click="$router.push('/personality-test')"
+          class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl py-4 px-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+        >
+          <div class="flex items-center justify-center space-x-3">
+            <span class="text-2xl">🧠</span>
+            <div class="text-left">
+              <div class="font-bold text-lg">人格特質測驗</div>
+              <div class="text-sm opacity-90">了解你的內在驅動力</div>
+            </div>
+          </div>
+        </button>
+      </div>
       <!-- 任務卡片列表 -->
       <DailyTaskCard
         v-for="task in activeTasks"
