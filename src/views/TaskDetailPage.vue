@@ -54,15 +54,45 @@
           等級：{{ task.difficulty }} | 成長：{{ task.experience }} XP
         </p>
         
+        <!-- 任務日期顯示 -->
+        <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1">
+          📅 {{ formatTaskDate((task as any).task_date) }}
+        </p>
+        
         <!-- 任務描述 -->
         <p v-if="task.description" class="text-primary-700 text-sm mt-3">
           {{ task.description }}
         </p>
+        
+        <!-- 任務狀態標籤 -->
+        <div class="mt-3 flex items-center space-x-2">
+          <span class="status-badge text-xs px-2 py-1 rounded-full" :class="getStatusBadgeClass(task.status)">
+            {{ getStatusDisplayText(task.status) }}
+          </span>
+          <!-- 重複性任務標記 -->
+          <span v-if="(task as any).is_recurring" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
+            重複性任務
+          </span>
+        </div>
+        
+        <!-- 任務進度條 -->
+        <div v-if="task.progress" class="mt-4">
+          <TaskProgressBar 
+            :progress="task.progress" 
+            :showDailyStats="(task as any).is_recurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
+          />
+        </div>
       </div>
 
       <!-- 完成任務區域 -->
       <div v-if="task.is_parent_task && subtasks.length > 0" class="bg-white px-4 py-5">
-        <h3 class="text-xl font-bold text-primary-900 mb-4">完成任務</h3>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-primary-900">完成任務</h3>
+          <!-- 每日任務提示 -->
+          <div v-if="isDailyTask" class="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-full">
+            📅 顯示最近3天（包含今天）
+          </div>
+        </div>
         
         <div class="space-y-3">
           <div
@@ -75,6 +105,11 @@
               <div class="flex-1">
                 <h4 class="font-medium text-gray-900">{{ subtask.title }}</h4>
                 <p v-if="subtask.description" class="text-gray-600 text-sm mt-1">{{ subtask.description }}</p>
+                
+                <!-- 任務日期顯示 -->
+                <p v-if="(subtask as any).task_date" class="text-xs text-gray-500 mt-1">
+                  📅 {{ formatTaskDate((subtask as any).task_date) }}
+                </p>
                 
                 <!-- 任務屬性 -->
                 <div class="flex items-center space-x-4 mt-3 text-xs text-gray-500">
@@ -107,7 +142,7 @@
                 <div class="flex space-x-2">
                   <!-- 主要操作按鈕 -->
                   <button
-                    v-if="subtask.status !== 'completed'"
+                    v-if="!['completed', 'daily_completed'].includes(subtask.status)"
                     @click="toggleSubtaskStatus(subtask)"
                     :disabled="isLoading || (subtask.status === 'paused' && task?.status === 'paused')"
                     :class="[
@@ -119,9 +154,9 @@
                     {{ isLoading ? '處理中...' : getStatusText(subtask) }}
                   </button>
                   
-                  <!-- 回復按鈕 (僅在進行中和已完成時顯示) -->
+                  <!-- 回復按鈕 (僅在已完成時顯示，每日任務不顯示回復按鈕) -->
                   <button
-                    v-if="['in_progress', 'completed'].includes(subtask.status)"
+                    v-if="!isDailyTask && ['in_progress', 'completed', 'daily_in_progress', 'daily_completed'].includes(subtask.status)"
                     @click="revertSubtaskStatus(subtask)"
                     :disabled="isLoading"
                     :class="[
@@ -180,6 +215,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
+import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -191,32 +227,53 @@ const subtasks = ref<Task[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const isLoading = ref(false)
+const isDailyTask = ref(false)
 
 // 排序後的子任務
 const sortedSubtasks = computed(() => {
   if (!subtasks.value) return []
   
   return [...subtasks.value].sort((a, b) => {
-    // 定義狀態優先級：待處理(0) > 進行中(1) > 已完成(2) > 其他(3)
-    const getStatusPriority = (status: string) => {
-      switch (status) {
-        case 'pending': return 0
-        case 'in_progress': return 1
-        case 'completed': return 2
-        default: return 3 // paused, cancelled 等其他狀態
+    // 對於每日任務，簡化排序邏輯
+    if (isDailyTask.value) {
+      // 每日任務：未完成的在前，已完成的在後
+      const getDailyStatusPriority = (status: string) => {
+        switch (status) {
+          case 'daily_not_completed': return 0
+          case 'daily_completed': return 1
+          default: return 2
+        }
       }
+      
+      const priorityA = getDailyStatusPriority(a.status)
+      const priorityB = getDailyStatusPriority(b.status)
+      
+      if (priorityA === priorityB) {
+        return (a.task_order || 0) - (b.task_order || 0)
+      }
+      return priorityA - priorityB
+    } else {
+      // 普通任務：保持原有排序邏輯
+      const getStatusPriority = (status: string) => {
+        switch (status) {
+          case 'pending': return 0
+          case 'in_progress': 
+          case 'daily_in_progress': return 1
+          case 'completed':
+          case 'daily_completed': return 2
+          case 'daily_not_completed': return 3
+          default: return 4 // paused, cancelled 等其他狀態
+        }
+      }
+      
+      const priorityA = getStatusPriority(a.status)
+      const priorityB = getStatusPriority(b.status)
+      
+      if (priorityA === priorityB) {
+        return (a.task_order || 0) - (b.task_order || 0)
+      }
+      return priorityA - priorityB
     }
-    
-    const priorityA = getStatusPriority(a.status)
-    const priorityB = getStatusPriority(b.status)
-    
-    // 如果狀態優先級相同，則按任務順序排序
-    if (priorityA === priorityB) {
-      return (a.task_order || 0) - (b.task_order || 0)
-    }
-    
-    // 否則按狀態優先級排序
-    return priorityA - priorityB
   })
 })
 
@@ -250,9 +307,29 @@ const loadTaskDetail = async () => {
       
       task.value = foundTask
 
+      // 載入任務進度數據
+      if (foundTask.is_parent_task || (foundTask as any).is_recurring) {
+        try {
+          const progressResponse = await apiClient.getTaskProgress(taskId)
+          if (progressResponse.success) {
+            task.value.progress = progressResponse.data
+          }
+        } catch (err) {
+          console.warn('Failed to load task progress:', err)
+          // 進度載入失敗不影響任務顯示
+        }
+      }
+
       // 如果是大任務，載入子任務
       if (foundTask.is_parent_task) {
-        const subtaskResponse = await apiClient.getSubtasks(taskId)
+        // 判斷是否為每日任務（重複性任務或任務類型為 daily）
+        isDailyTask.value = (foundTask as any).is_recurring || foundTask.type === 'daily'
+        
+        const subtaskResponse = await apiClient.getSubtasks(taskId, {
+          daily: isDailyTask.value,
+          days: isDailyTask.value ? 3 : undefined // 每日任務只查詢最近3天
+        })
+        
         if (subtaskResponse.success) {
           subtasks.value = subtaskResponse.data
             .map(taskStore.transformBackendTask)
@@ -370,6 +447,9 @@ const getStatusBorderClass = (status: string) => {
     case 'pending': return 'border-orange-400'
     case 'in_progress': return 'border-blue-400'
     case 'completed': return 'border-green-400'
+    case 'daily_in_progress': return 'border-blue-500'
+    case 'daily_completed': return 'border-green-500'
+    case 'daily_not_completed': return 'border-red-500'
     case 'paused': return 'border-gray-400'
     case 'cancelled': return 'border-red-400'
     default: return 'border-gray-200'
@@ -382,6 +462,9 @@ const getStatusButtonClass = (subtask: Task) => {
     case 'pending': return 'bg-orange-100 text-orange-800 hover:bg-orange-200'
     case 'in_progress': return 'bg-blue-100 text-blue-800 hover:bg-blue-200'
     case 'completed': return 'bg-green-100 text-green-800 hover:bg-green-200'
+    case 'daily_in_progress': return 'bg-blue-200 text-blue-800 hover:bg-blue-300'
+    case 'daily_completed': return 'bg-green-200 text-green-800 hover:bg-green-300'
+    case 'daily_not_completed': return 'bg-red-200 text-red-800 hover:bg-red-300'
     case 'paused': 
       // 如果是因為父任務暫停而暫停，使用不可點擊的樣式
       return task.value?.status === 'paused'
@@ -392,17 +475,35 @@ const getStatusButtonClass = (subtask: Task) => {
   }
 }
 
-// 獲取狀態文字
+// 獲取狀態文字 (用於按鈕)
 const getStatusText = (subtask: Task) => {
   switch (subtask.status) {
     case 'pending': return '開始'
     case 'in_progress': return '完成'
+    case 'daily_in_progress': return '完成'
     case 'completed': return '已完成'
+    case 'daily_completed': return '今日已完成'
+    case 'daily_not_completed': return '標記完成'
     case 'paused': 
       // 判斷是否因為父任務暫停而暫停
       return task.value?.status === 'paused' ? '主任務暫停中' : '繼續'
     case 'cancelled': return '已取消'
     default: return '未知'
+  }
+}
+
+// 獲取狀態文字 (用於顯示)
+const getStatusDisplayText = (status: string) => {
+  switch (status) {
+    case 'pending': return '待處理'
+    case 'in_progress': return '進行中'
+    case 'completed': return '已完成'
+    case 'daily_in_progress': return '今日任務進行中'
+    case 'daily_completed': return '今日任務完成'
+    case 'daily_not_completed': return '今日任務未完成'
+    case 'paused': return '已暫停'
+    case 'cancelled': return '已取消'
+    default: return '未知狀態'
   }
 }
 
@@ -412,6 +513,9 @@ const getStatusLabel = (subtask: Task) => {
     case 'pending': return '待處理'
     case 'in_progress': return '進行中'
     case 'completed': return '已完成'
+    case 'daily_in_progress': return '今日進行中'
+    case 'daily_completed': return '每日已完成'
+    case 'daily_not_completed': return '每日未完成'
     case 'paused': return '已暫停'
     case 'cancelled': return '已取消'
     default: return '未知'
@@ -424,9 +528,26 @@ const getStatusLabelClass = (subtask: Task) => {
     case 'pending': return 'bg-orange-100 text-orange-800'
     case 'in_progress': return 'bg-blue-100 text-blue-800'
     case 'completed': return 'bg-green-100 text-green-800'
+    case 'daily_in_progress': return 'bg-blue-100 text-blue-700'
+    case 'daily_completed': return 'bg-green-100 text-green-700'
+    case 'daily_not_completed': return 'bg-red-100 text-red-700'
     case 'paused': return 'bg-gray-100 text-gray-800'
     case 'cancelled': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+// 獲取狀態標籤樣式 (用於父任務)
+const getStatusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'completed': return 'bg-gray-100 text-gray-700'
+    case 'daily_completed': return 'bg-green-100 text-green-700'
+    case 'daily_not_completed': return 'bg-red-100 text-red-700'
+    case 'in_progress': return 'bg-orange-100 text-orange-700'
+    case 'daily_in_progress': return 'bg-blue-100 text-blue-700'
+    case 'paused': return 'bg-yellow-100 text-yellow-700'
+    case 'cancelled': return 'bg-red-100 text-red-700'
+    default: return 'bg-gray-100 text-gray-500'
   }
 }
 
@@ -434,8 +555,38 @@ const getStatusLabelClass = (subtask: Task) => {
 const getRevertButtonTitle = (subtask: Task) => {
   switch (subtask.status) {
     case 'completed': return '回復到進行中'
+    case 'daily_completed': return '回復到今日進行中'
+    case 'daily_not_completed': return '回復到今日進行中'
     case 'in_progress': return '回復到待處理'
+    case 'daily_in_progress': return '回復到待處理'
     default: return '回復'
+  }
+}
+
+// 格式化任務日期顯示
+const formatTaskDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString + 'T00:00:00') // 確保正確解析日期
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    const dayBeforeYesterday = new Date(today)
+    dayBeforeYesterday.setDate(today.getDate() - 2)
+    
+    // 格式化為 YYYY-MM-DD 進行比較
+    const dateStr = date.toISOString().split('T')[0]
+    const todayStr = today.toISOString().split('T')[0]
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0]
+    
+    if (dateStr === todayStr) {
+      return '今天'
+    } else {
+      // 其他日期顯示月/日格式
+      return `${date.getMonth() + 1}/${date.getDate()}`
+    }
+  } catch {
+    return dateString
   }
 }
 

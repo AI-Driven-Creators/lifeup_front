@@ -22,7 +22,11 @@
             {{ task.title }}
           </h3>
           <div class="flex items-center space-x-2">
-            <p class="task-time text-sm text-warm-gray-600">
+            <!-- 任務日期（每日任務顯示日期，其他任務顯示時間） -->
+            <p v-if="task.task_date" class="task-date text-sm text-warm-gray-600">
+              {{ formatTaskDate(task.task_date) }}
+            </p>
+            <p v-else class="task-time text-sm text-warm-gray-600">
               {{ formatTime(task.scheduled_time) }}
             </p>
             <span class="status-badge text-xs px-2 py-1 rounded-full" :class="getStatusBadgeClass(task.status)">
@@ -99,7 +103,11 @@ const confirmDialogTitle = computed(() => {
   if (props.task.status === 'completed' || props.task.status === 'daily_completed') {
     return props.task.status === 'daily_completed' ? '取消今日任務完成' : '取消完成任務'
   } else {
-    return props.task.status === 'daily_in_progress' ? '完成今日任務' : '完成任務'
+    if (props.task.status === 'daily_in_progress' || props.task.status === 'daily_not_completed') {
+      return '完成今日任務'
+    } else {
+      return '完成任務'
+    }
   }
 })
 
@@ -108,8 +116,11 @@ const confirmDialogMessage = computed(() => {
     const taskType = props.task.status === 'daily_completed' ? '今日任務' : '任務'
     return `確定要將「${props.task.title}」設為未完成嗎？`
   } else {
-    const taskType = props.task.status === 'daily_in_progress' ? '今日任務' : '任務'
-    return `確定要完成「${props.task.title}」嗎？`
+    if (props.task.status === 'daily_in_progress' || props.task.status === 'daily_not_completed') {
+      return `確定要完成「${props.task.title}」嗎？`
+    } else {
+      return `確定要完成「${props.task.title}」嗎？`
+    }
   }
 })
 
@@ -156,6 +167,8 @@ const getStatusButtonClass = (status: Task['status']) => {
       return 'bg-warm-gray-200 border-warm-gray-400'
     case 'daily_in_progress':
       return 'bg-blue-200 border-blue-400' // 每日任務進行中用藍色區分
+    case 'daily_not_completed':
+      return 'bg-red-200 border-red-400' // 每日任務未完成用紅色區分
     case 'paused':
       return 'bg-warm-gray-400 border-warm-gray-400'
     default:
@@ -176,6 +189,8 @@ const getStatusText = (status: Task['status']) => {
       return '今日任務進行中'
     case 'daily_completed':
       return '今日任務完成'
+    case 'daily_not_completed':
+      return '今日任務未完成'
     case 'paused':
       return '已暫停'
     case 'cancelled':
@@ -192,6 +207,8 @@ const getStatusBadgeClass = (status: Task['status']) => {
       return 'bg-gray-100 text-gray-700'
     case 'daily_completed':
       return 'bg-green-100 text-green-700'
+    case 'daily_not_completed':
+      return 'bg-red-100 text-red-700'
     case 'in_progress':
       return 'bg-orange-100 text-orange-700'
     case 'daily_in_progress':
@@ -202,6 +219,33 @@ const getStatusBadgeClass = (status: Task['status']) => {
       return 'bg-red-100 text-red-700'
     default:
       return 'bg-gray-100 text-gray-500'
+  }
+}
+
+// 格式化任務日期顯示
+const formatTaskDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString + 'T00:00:00') // 確保正確解析日期
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    const dayBeforeYesterday = new Date(today)
+    dayBeforeYesterday.setDate(today.getDate() - 2)
+    
+    // 格式化為 YYYY-MM-DD 進行比較
+    const dateStr = date.toISOString().split('T')[0]
+    const todayStr = today.toISOString().split('T')[0]
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0]
+    
+    if (dateStr === todayStr) {
+      return '今天'
+    } else {
+      // 其他日期顯示月/日格式
+      return `${date.getMonth() + 1}/${date.getDate()}`
+    }
+  } catch {
+    return dateString
   }
 }
 

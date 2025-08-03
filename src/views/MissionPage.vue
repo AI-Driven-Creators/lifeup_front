@@ -30,6 +30,14 @@
     
     <!-- 任務列表 -->
     <div v-else class="px-4 py-6 space-y-6">
+      <!-- 每日任務 -->
+      <TaskSection
+        title="每日任務"
+        :tasks="dailyTasks"
+        @toggle="toggleTask"
+        @taskUpdated="handleTaskUpdate"
+      />
+
       <!-- 主線任務 -->
       <TaskSection
         title="主線任務"
@@ -50,14 +58,6 @@
       <TaskSection
         title="挑戰任務"
         :tasks="challengeTasks"
-        @toggle="toggleTask"
-        @taskUpdated="handleTaskUpdate"
-      />
-      
-      <!-- 每日任務 -->
-      <TaskSection
-        title="每日任務"
-        :tasks="dailyTasks"
         @toggle="toggleTask"
         @taskUpdated="handleTaskUpdate"
       />

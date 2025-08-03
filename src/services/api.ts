@@ -129,8 +129,19 @@ export class ApiClient {
     });
   }
 
-  async getSubtasks(parentTaskId: string) {
-    return this.request<{ success: boolean, data: any[], message: string }>(`/api/tasks/${parentTaskId}/subtasks`);
+  async getSubtasks(parentTaskId: string, options?: { daily?: boolean, days?: number }) {
+    const params = new URLSearchParams();
+    if (options?.daily) {
+      params.append('daily', 'true');
+    }
+    if (options?.days) {
+      params.append('days', options.days.toString());
+    }
+    
+    const queryString = params.toString();
+    const url = queryString ? `/api/tasks/${parentTaskId}/subtasks?${queryString}` : `/api/tasks/${parentTaskId}/subtasks`;
+    
+    return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
   // 技能相關 API

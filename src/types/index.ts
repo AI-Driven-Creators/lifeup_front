@@ -43,9 +43,10 @@ export interface Task {
   difficulty: 1 | 2 | 3 | 4 | 5;
   experience: number;
   estimatedTime?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'paused' | 'cancelled' | 'daily_in_progress' | 'daily_completed';
+  status: 'pending' | 'in_progress' | 'completed' | 'paused' | 'cancelled' | 'daily_in_progress' | 'daily_completed' | 'daily_not_completed';
   deadline?: Date;
   scheduled_time?: string; // 預定時間
+  task_date?: string; // 任務日期（用於日常子任務）
   attributes?: Partial<UserAttributes>;
   // 任務層級相關
   parent_task_id?: string;

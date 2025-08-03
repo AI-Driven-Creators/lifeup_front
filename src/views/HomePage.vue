@@ -94,10 +94,10 @@ const userStore = useUserStore()
 // 首頁任務：進行中的子任務和大任務
 const homepageTasks = ref<Task[]>([])
 
-// 從首頁任務中篩選出可顯示的任務（進行中、每日進行中、每日已完成）
+// 從首頁任務中篩選出可顯示的任務（進行中、每日進行中、每日已完成、每日未完成）
 const activeTasks = computed(() => {
   return homepageTasks.value.filter(task => 
-    ['in_progress', 'daily_in_progress', 'daily_completed'].includes(task.status)
+    ['in_progress', 'daily_in_progress', 'daily_completed', 'daily_not_completed'].includes(task.status)
   )
 })
 

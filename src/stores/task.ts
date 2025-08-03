@@ -158,6 +158,10 @@ export const useTaskStore = defineStore('task', {
           nextStatus = 0; // 回復到待處理
           nextStatusString = 'pending';
           console.log('daily_in_progress -> pending');
+        } else if (taskStatus === 'daily_not_completed') {
+          nextStatus = 0; // 回復到待處理
+          nextStatusString = 'pending';
+          console.log('daily_not_completed -> pending');
         } else {
           nextStatus = 0; // pending狀態無法再往回
           nextStatusString = 'pending';
@@ -189,6 +193,10 @@ export const useTaskStore = defineStore('task', {
           // 每日已完成的任務正向切換應該重置到每日進行中（重做）
           nextStatus = 5; // 重置到每日進行中
           nextStatusString = 'daily_in_progress';
+        } else if (taskStatus === 'daily_not_completed') {
+          // 每日未完成的任務正向切換應該到每日已完成
+          nextStatus = 6; // 每日已完成
+          nextStatusString = 'daily_completed';
         } else {
           // 其他狀態（paused, cancelled等）默認到待處理
           nextStatus = 0; // 待處理
@@ -222,6 +230,11 @@ export const useTaskStore = defineStore('task', {
     // 將後端任務數據轉換為前端格式
     transformBackendTask(backendTask: any): Task {
       console.log('轉換任務數據:', backendTask.title, 'parent_task_title:', backendTask.parent_task_title)
+      
+      // 直接使用後端返回的狀態，因為後端已經統一處理了每日任務的狀態
+      const status = this.mapBackendStatus(backendTask.status)
+      console.log('最終狀態:', status, '後端狀態值:', backendTask.status)
+      
       return {
         id: backendTask.id || '',
         title: backendTask.title || '',
@@ -230,8 +243,9 @@ export const useTaskStore = defineStore('task', {
         difficulty: Math.min(5, Math.max(1, backendTask.difficulty || backendTask.priority || 1)) as Task['difficulty'],
         experience: backendTask.experience || this.calculateExperience(backendTask.difficulty || backendTask.priority || 1),
         estimatedTime: this.estimateTime(backendTask.difficulty || backendTask.priority || 1),
-        status: this.mapBackendStatus(backendTask.status),
+        status: status,
         deadline: backendTask.due_date ? new Date(backendTask.due_date) : undefined,
+        task_date: backendTask.task_date, // 任務日期
         attributes: this.generateAttributes(backendTask.difficulty || backendTask.priority || 1),
         // 任務層級相關
         parent_task_id: backendTask.parent_task_id,
@@ -254,6 +268,7 @@ export const useTaskStore = defineStore('task', {
         case 4: return 'paused';
         case 5: return 'daily_in_progress';
         case 6: return 'daily_completed';
+        case 7: return 'daily_not_completed';
         default: return 'pending';
       }
     },
