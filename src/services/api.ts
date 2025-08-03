@@ -177,6 +177,11 @@ export class ApiClient {
     return this.request<{success: boolean, data: any, message: string}>(`/api/users/${userId}/attributes/weekly/${weeksAgo}`);
   }
 
+  // 任務進度相關 API
+  async getTaskProgress(taskId: string) {
+    return this.request<{success: boolean, data: any, message: string}>(`/api/tasks/${taskId}/progress`);
+  }
+
   // ChatGPT 
   async sendMessageToChatGPT(message: string) {
     const apiUrl = 'https://api.openai.com/v1/responses';

@@ -14,12 +14,21 @@
         
         <!-- 任務信息 -->
         <div class="task-info flex-1">
+          <!-- 父任務名稱（如果存在） -->
+          <p v-if="task.parent_task_title" class="parent-task-title text-xs text-warm-gray-500 mb-1">
+            {{ task.parent_task_title }}
+          </p>
           <h3 class="task-title text-base font-medium text-warm-gray-900 mb-1 leading-tight">
             {{ task.title }}
           </h3>
-          <p class="task-time text-sm text-warm-gray-600">
-            {{ formatTime(task.scheduled_time) }}
-          </p>
+          <div class="flex items-center space-x-2">
+            <p class="task-time text-sm text-warm-gray-600">
+              {{ formatTime(task.scheduled_time) }}
+            </p>
+            <span class="status-badge text-xs px-2 py-1 rounded-full" :class="getStatusBadgeClass(task.status)">
+              {{ getStatusText(task.status) }}
+            </span>
+          </div>
         </div>
       </div>
       
@@ -27,10 +36,10 @@
       <button 
         class="status-button w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all"
         :class="getStatusButtonClass(task.status)"
-        @click="handleToggle"
+        @click="handleTaskClick"
       >
         <div 
-          v-if="task.status === 'completed'"
+          v-if="task.status === 'completed' || task.status === 'daily_completed'"
           class="w-5 h-5 bg-current rounded flex items-center justify-center"
         >
           <span class="text-white text-xs">✓</span>
@@ -43,11 +52,33 @@
         </div>
       </button>
     </div>
+    
+    <!-- 任務進度條 -->
+    <div v-if="task.progress" class="mt-3">
+      <TaskProgressBar 
+        :progress="task.progress" 
+        :showDailyStats="task.parent_task_id !== undefined || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
+      />
+    </div>
+    
+    <!-- 確認對話框 -->
+    <ConfirmDialog
+      v-model:visible="showConfirmDialog"
+      :title="confirmDialogTitle"
+      :message="confirmDialogMessage"
+      confirm-text="是"
+      cancel-text="否"
+      @confirm="handleConfirmToggle"
+      @cancel="handleCancelToggle"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import type { Task } from '@/types'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
 
 interface Props {
   task: Task
@@ -60,8 +91,41 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const handleToggle = () => {
+// 確認對話框狀態
+const showConfirmDialog = ref(false)
+
+// 確認對話框標題和訊息
+const confirmDialogTitle = computed(() => {
+  if (props.task.status === 'completed' || props.task.status === 'daily_completed') {
+    return props.task.status === 'daily_completed' ? '取消今日任務完成' : '取消完成任務'
+  } else {
+    return props.task.status === 'daily_in_progress' ? '完成今日任務' : '完成任務'
+  }
+})
+
+const confirmDialogMessage = computed(() => {
+  if (props.task.status === 'completed' || props.task.status === 'daily_completed') {
+    const taskType = props.task.status === 'daily_completed' ? '今日任務' : '任務'
+    return `確定要將「${props.task.title}」設為未完成嗎？`
+  } else {
+    const taskType = props.task.status === 'daily_in_progress' ? '今日任務' : '任務'
+    return `確定要完成「${props.task.title}」嗎？`
+  }
+})
+
+// 處理任務點擊
+const handleTaskClick = () => {
+  showConfirmDialog.value = true
+}
+
+// 確認切換任務狀態
+const handleConfirmToggle = () => {
   emit('toggle', props.task.id)
+}
+
+// 取消切換
+const handleCancelToggle = () => {
+  // 不執行任何操作，對話框會自動關閉
 }
 
 // 根據任務類型獲取圖標
@@ -86,12 +150,58 @@ const getStatusButtonClass = (status: Task['status']) => {
   switch (status) {
     case 'completed':
       return 'bg-warm-gray-800 border-warm-gray-800'
+    case 'daily_completed':
+      return 'bg-green-600 border-green-600' // 每日任務完成用綠色區分
     case 'in_progress':
       return 'bg-warm-gray-200 border-warm-gray-400'
+    case 'daily_in_progress':
+      return 'bg-blue-200 border-blue-400' // 每日任務進行中用藍色區分
     case 'paused':
       return 'bg-warm-gray-400 border-warm-gray-400'
     default:
       return 'bg-transparent border-warm-gray-300 hover:border-warm-gray-400'
+  }
+}
+
+// 獲取狀態文本
+const getStatusText = (status: Task['status']) => {
+  switch (status) {
+    case 'pending':
+      return '待處理'
+    case 'in_progress':
+      return '進行中'
+    case 'completed':
+      return '已完成'
+    case 'daily_in_progress':
+      return '今日任務進行中'
+    case 'daily_completed':
+      return '今日任務完成'
+    case 'paused':
+      return '已暫停'
+    case 'cancelled':
+      return '已取消'
+    default:
+      return '未知狀態'
+  }
+}
+
+// 獲取狀態標籤樣式
+const getStatusBadgeClass = (status: Task['status']) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-gray-100 text-gray-700'
+    case 'daily_completed':
+      return 'bg-green-100 text-green-700'
+    case 'in_progress':
+      return 'bg-orange-100 text-orange-700'
+    case 'daily_in_progress':
+      return 'bg-blue-100 text-blue-700'
+    case 'paused':
+      return 'bg-yellow-100 text-yellow-700'
+    case 'cancelled':
+      return 'bg-red-100 text-red-700'
+    default:
+      return 'bg-gray-100 text-gray-500'
   }
 }
 
@@ -162,6 +272,14 @@ const formatTime = (timeString?: string) => {
   font-weight: 400;
   font-size: 14px;
   color: rgba(140, 127, 94, 1);
+}
+
+.parent-task-title {
+  /* 父任務標題樣式 */
+  font-family: 'Lexend', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(168, 162, 158, 1);
 }
 
 .status-button {

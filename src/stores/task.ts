@@ -146,10 +146,18 @@ export const useTaskStore = defineStore('task', {
           nextStatus = 1; // 回復到進行中
           nextStatusString = 'in_progress';
           console.log('completed -> in_progress');
+        } else if (taskStatus === 'daily_completed') {
+          nextStatus = 5; // 回復到每日進行中
+          nextStatusString = 'daily_in_progress';
+          console.log('daily_completed -> daily_in_progress');
         } else if (taskStatus === 'in_progress') {
           nextStatus = 0; // 回復到待處理
           nextStatusString = 'pending';
           console.log('in_progress -> pending');
+        } else if (taskStatus === 'daily_in_progress') {
+          nextStatus = 0; // 回復到待處理
+          nextStatusString = 'pending';
+          console.log('daily_in_progress -> pending');
         } else {
           nextStatus = 0; // pending狀態無法再往回
           nextStatusString = 'pending';
@@ -159,15 +167,28 @@ export const useTaskStore = defineStore('task', {
         console.log('執行正向切換邏輯');
         // 正向切換：進入下一個狀態
         if (taskStatus === 'pending') {
-          nextStatus = 1; // 進行中
-          nextStatusString = 'in_progress';
+          // 檢查是否為重複性任務（如果有is_recurring屬性或parent_task_id）
+          if (task?.parent_task_id) {
+            nextStatus = 5; // 每日進行中
+            nextStatusString = 'daily_in_progress';
+          } else {
+            nextStatus = 1; // 進行中
+            nextStatusString = 'in_progress';
+          }
         } else if (taskStatus === 'in_progress') {
           nextStatus = 2; // 已完成
           nextStatusString = 'completed';
+        } else if (taskStatus === 'daily_in_progress') {
+          nextStatus = 6; // 每日已完成
+          nextStatusString = 'daily_completed';
         } else if (taskStatus === 'completed') {
           // 已完成的任務正向切換應該重置到待處理（重做）
           nextStatus = 0; // 重置到待處理
           nextStatusString = 'pending';
+        } else if (taskStatus === 'daily_completed') {
+          // 每日已完成的任務正向切換應該重置到每日進行中（重做）
+          nextStatus = 5; // 重置到每日進行中
+          nextStatusString = 'daily_in_progress';
         } else {
           // 其他狀態（paused, cancelled等）默認到待處理
           nextStatus = 0; // 待處理
@@ -200,6 +221,7 @@ export const useTaskStore = defineStore('task', {
 
     // 將後端任務數據轉換為前端格式
     transformBackendTask(backendTask: any): Task {
+      console.log('轉換任務數據:', backendTask.title, 'parent_task_title:', backendTask.parent_task_title)
       return {
         id: backendTask.id || '',
         title: backendTask.title || '',
@@ -213,6 +235,7 @@ export const useTaskStore = defineStore('task', {
         attributes: this.generateAttributes(backendTask.difficulty || backendTask.priority || 1),
         // 任務層級相關
         parent_task_id: backendTask.parent_task_id,
+        parent_task_title: backendTask.parent_task_title,
         is_parent_task: Boolean(backendTask.is_parent_task),
         task_order: backendTask.task_order,
         // 取消計數相關
@@ -229,6 +252,8 @@ export const useTaskStore = defineStore('task', {
         case 2: return 'completed';
         case 3: return 'cancelled';
         case 4: return 'paused';
+        case 5: return 'daily_in_progress';
+        case 6: return 'daily_completed';
         default: return 'pending';
       }
     },

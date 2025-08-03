@@ -94,10 +94,10 @@ const userStore = useUserStore()
 // 首頁任務：進行中的子任務和大任務
 const homepageTasks = ref<Task[]>([])
 
-// 從首頁任務中篩選出進行中的任務
+// 從首頁任務中篩選出可顯示的任務（進行中、每日進行中、每日已完成）
 const activeTasks = computed(() => {
   return homepageTasks.value.filter(task => 
-    task.status === 'in_progress'
+    ['in_progress', 'daily_in_progress', 'daily_completed'].includes(task.status)
   )
 })
 
@@ -118,11 +118,19 @@ const progressPercentage = computed(() => {
 // 切換任務狀態
 const toggleTask = async (taskId: string) => {
   try {
+    // 先從本地任務中找到任務
+    const task = homepageTasks.value.find(t => t.id === taskId)
+    const wasCompleted = task?.status === 'completed'
+    
     await taskStore.toggleTaskStatus(taskId)
     
-    // 計算經驗值獎勵
-    const task = taskStore.tasks.find(t => t.id === taskId)
-    if (task && task.status === 'completed') {
+    // 更新本地任務狀態
+    if (task) {
+      task.status = task.status === 'completed' ? 'in_progress' : 'completed'
+    }
+    
+    // 如果任務剛完成（從其他狀態變成completed），增加經驗值和屬性
+    if (task && task.status === 'completed' && !wasCompleted) {
       // 任務完成時增加經驗值和屬性
       userStore.updateExperience(task.experience)
       
@@ -133,6 +141,10 @@ const toggleTask = async (taskId: string) => {
         })
       }
     }
+    
+    // 重新載入任務以確保狀態同步
+    await loadHomepageTasks()
+    
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新任務狀態失敗'
     console.error('Failed to toggle task:', err)
@@ -146,8 +158,46 @@ const loadHomepageTasks = async () => {
   
   try {
     const response = await apiClient.getHomepageTasks()
+    console.log('首頁任務API響應:', response)
     if (response.success) {
-      homepageTasks.value = response.data.map(taskStore.transformBackendTask)
+      console.log('原始API數據:', response.data)
+      const tasks = response.data.map(taskStore.transformBackendTask)
+      console.log('轉換後的任務數據:', tasks)
+      
+      // 調試：顯示每個任務的狀態
+      tasks.forEach((task, index) => {
+        console.log(`任務 ${index + 1}: ${task.title} - 狀態: ${task.status}`)
+      })
+      
+      // 為每個父任務載入進度數據
+      console.log('總共載入了', tasks.length, '個任務')
+      
+      const tasksWithProgress = await Promise.all(
+        tasks.map(async (task) => {
+          console.log(`檢查任務 ${task.title}: is_parent_task=${task.is_parent_task}, type=${task.type}`)
+          
+          // 為所有首頁任務載入進度（現在都是有父任務的子任務）
+          if (task.parent_task_id) {
+            console.log(`開始載入任務 ${task.title} 的進度（父任務: ${task.parent_task_title}）`)
+            try {
+              const progressResponse = await apiClient.getTaskProgress(task.parent_task_id)
+              console.log(`任務 ${task.title} 的父任務進度API回應:`, progressResponse)
+              if (progressResponse.success) {
+                task.progress = progressResponse.data
+                console.log(`任務 ${task.title} 的父任務進度數據:`, task.progress)
+              }
+            } catch (err) {
+              console.warn(`Failed to load progress for task ${task.parent_task_id}:`, err)
+              // 進度載入失敗不影響任務顯示
+            }
+          } else {
+            console.log(`跳過任務 ${task.title} 的進度載入（無父任務）`)
+          }
+          return task
+        })
+      )
+      
+      homepageTasks.value = tasksWithProgress
     } else {
       error.value = response.message
     }
