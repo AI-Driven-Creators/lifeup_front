@@ -27,6 +27,9 @@
         <p v-if="task.description" class="text-sm text-primary-700 mb-3">
           {{ task.description }}
         </p>
+        
+        <!-- 技能標籤 -->
+        <SkillTags :skill-tags="task.skillTags" />
       </div>
       
       <!-- 大任務控制按鈕 -->
@@ -121,6 +124,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Task } from '@/types'
 import { apiClient } from '@/services/api'
+import SkillTags from '@/components/common/SkillTags.vue'
 
 interface Props {
   task: Task

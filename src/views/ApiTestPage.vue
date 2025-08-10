@@ -54,6 +54,9 @@
         <button @click="taskStore.addSampleTasks()" class="btn-secondary ml-2">
           添加示例任務
         </button>
+        <button @click="updateExistingTasksWithSkills" class="btn-secondary ml-2">
+          為現有任務添加技能標籤
+        </button>
         <div v-if="taskStore.error" class="text-red-600 text-sm">
           錯誤：{{ taskStore.error }}
         </div>
@@ -74,6 +77,18 @@
                     <span class="px-2 py-1 bg-blue-100 rounded">{{ task.type }}</span>
                     <span class="px-2 py-1 bg-yellow-100 rounded">{{ task.difficulty }}⭐</span>
                     <span class="px-2 py-1 bg-green-100 rounded">+{{ task.experience }} EXP</span>
+                  </div>
+                  <!-- 技能標籤 -->
+                  <div v-if="task.skillTags && task.skillTags.length > 0" class="mt-2">
+                    <div class="flex flex-wrap gap-1">
+                      <span 
+                        v-for="skill in task.skillTags" 
+                        :key="skill"
+                        class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs"
+                      >
+                        🎯 {{ skill }}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <button 
@@ -272,6 +287,171 @@ async function testCreateTask() {
   } catch (error) {
     console.error('Failed to create task:', error)
   }
+}
+
+// 為現有任務添加技能標籤
+async function updateExistingTasksWithSkills() {
+  try {
+    console.log('開始為現有任務添加技能標籤...')
+    
+    // 先獲取所有現有任務
+    await taskStore.fetchTasks()
+    const tasks = taskStore.tasks
+
+    console.log('找到', tasks.length, '個現有任務')
+
+    // 為每個任務根據標題和類型分配技能標籤
+    for (const task of tasks) {
+      const skillTags = autoAssignSkillTags(task)
+      
+      console.log(`處理任務"${task.title}" (${task.type}) - 現有技能:`, task.skillTags, '- 新技能:', skillTags)
+      
+      // 強制更新所有任務（不管是否已有技能標籤）
+      if (skillTags.length > 0) {
+        console.log(`為任務"${task.title}"強制分配技能:`, skillTags)
+        
+        try {
+          // 更新任務，添加技能標籤
+          const response = await apiClient.updateTask(task.id, {
+            skill_tags: skillTags
+          })
+          
+          if (response.success) {
+            console.log(`✅ 任務"${task.title}"技能標籤更新成功`)
+            // 更新本地任務數據
+            task.skillTags = skillTags
+          } else {
+            console.error(`❌ 任務"${task.title}"技能標籤更新失敗:`, response.message)
+          }
+        } catch (error) {
+          console.error(`❌ 更新任務"${task.title}"時發生錯誤:`, error)
+        }
+        
+        // 添加延遲避免API請求過快
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+
+    console.log('✅ 所有任務技能標籤更新完成')
+    alert('技能標籤更新完成！')
+    
+    // 重新獲取任務以確保數據同步
+    await taskStore.fetchTasks()
+    
+  } catch (error) {
+    console.error('❌ 更新任務技能標籤時發生錯誤:', error)
+    alert('更新失敗：' + (error instanceof Error ? error.message : '未知錯誤'))
+  }
+}
+
+// 根據任務標題和類型自動分配技能標籤
+function autoAssignSkillTags(task: Task): string[] {
+  const title = task.title.toLowerCase()
+  let skills: string[] = []
+
+  console.log(`分析任務: "${task.title}" (${task.type}, 難度:${task.difficulty})`)
+
+  // 根據關鍵字匹配技能
+  const skillMappings = {
+    // 技術相關
+    'vue': ['Python 程式設計'],
+    'rust': ['Python 程式設計'],
+    '程式': ['Python 程式設計'],
+    '程序': ['Python 程式設計'],  
+    '代碼': ['Python 程式設計'],
+    '開發': ['Python 程式設計'],
+    '專案': ['Python 程式設計'],
+    'python': ['Python 程式設計'],
+    'javascript': ['Python 程式設計'],
+    '設計': ['UI/UX 設計'],
+    'ui': ['UI/UX 設計'],
+    'ux': ['UI/UX 設計'],
+    '介面': ['UI/UX 設計'],
+    
+    // 軟技能相關
+    '學習': ['時間管理'],
+    '計劃': ['時間管理'],
+    '規劃': ['時間管理'],
+    '時間': ['時間管理'],
+    '管理': ['時間管理'],
+    '閱讀': ['時間管理'],
+    '完成': ['時間管理'],
+    '作息': ['時間管理'],
+    '健康': ['時間管理'],
+    '證照': ['時間管理'],
+    '考試': ['時間管理'],
+    '準備': ['時間管理'],
+    '掌握': ['時間管理'],
+    '建立': ['時間管理'],
+    '溝通': ['溝通協作'],
+    '協作': ['溝通協作'],
+    '討論': ['溝通協作'],
+    '會議': ['溝通協作'],
+    '團隊': ['溝通協作'],
+  }
+
+  // 檢查任務標題中的關鍵字
+  Object.entries(skillMappings).forEach(([keyword, associatedSkills]) => {
+    if (title.includes(keyword)) {
+      console.log(`找到關鍵字 "${keyword}" -> 技能:`, associatedSkills)
+      skills.push(...associatedSkills)
+    }
+  })
+
+  // 強制根據任務類型分配技能（確保每個任務都有技能）
+  switch (task.type) {
+    case 'main':
+      if (!skills.some(s => s.includes('程式設計'))) {
+        skills.push('Python 程式設計')
+        console.log('主線任務添加: Python 程式設計')
+      }
+      break
+    case 'side':
+      if (!skills.some(s => s.includes('時間管理'))) {
+        skills.push('時間管理')
+        console.log('支線任務添加: 時間管理')
+      }
+      break
+    case 'challenge':
+      if (!skills.some(s => s.includes('程式設計'))) {
+        skills.push('Python 程式設計')
+        console.log('挑戰任務添加: Python 程式設計')
+      }
+      if (!skills.some(s => s.includes('溝通協作'))) {
+        skills.push('溝通協作')
+        console.log('挑戰任務添加: 溝通協作')
+      }
+      break
+    case 'daily':
+      if (!skills.some(s => s.includes('時間管理'))) {
+        skills.push('時間管理')
+        console.log('每日任務添加: 時間管理')
+      }
+      break
+    case 'subtask':
+      if (!skills.some(s => s.includes('時間管理'))) {
+        skills.push('時間管理')
+        console.log('子任務添加: 時間管理')
+      }
+      break
+    default:
+      skills.push('時間管理')
+      console.log('默認添加: 時間管理')
+      break
+  }
+
+  // 根據難度添加額外技能
+  if (task.difficulty >= 4) {
+    if (!skills.includes('溝通協作')) {
+      skills.push('溝通協作')
+      console.log('高難度任務添加: 溝通協作')
+    }
+  }
+
+  // 去重並返回
+  const finalSkills = [...new Set(skills)]
+  console.log(`最終技能標籤:`, finalSkills)
+  return finalSkills
 }
 
 // 測試技能 API

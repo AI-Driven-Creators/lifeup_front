@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
+import { useSkillStore } from './skill'
 import type { Task } from '@/types'
 
 export const useTaskStore = defineStore('task', {
@@ -49,6 +50,7 @@ export const useTaskStore = defineStore('task', {
       description?: string;
       type: Task['type'];
       difficulty: Task['difficulty'];
+      skillTags?: string[];
     }) {
       this.loading = true;
       this.error = null;
@@ -63,6 +65,7 @@ export const useTaskStore = defineStore('task', {
           difficulty: taskData.difficulty,
           experience: this.calculateExperience(taskData.difficulty),
           user_id: 'd487f83e-dadd-4616-aeb2-959d6af9963b', // 使用實際用戶ID
+          skill_tags: taskData.skillTags || [], // 添加技能標籤
         };
 
         const response = await apiClient.createTask(backendTaskData);
@@ -218,6 +221,11 @@ export const useTaskStore = defineStore('task', {
             task.status = nextStatusString;
           }
           console.log(`Task ${taskId} status changed to ${nextStatusString}`);
+          
+          // 如果任務完成，觸發技能經驗值更新
+          if (nextStatusString === 'completed' || nextStatusString === 'daily_completed') {
+            await this.handleTaskCompletion(task);
+          }
         } else {
           throw new Error(response.message);
         }
@@ -247,6 +255,7 @@ export const useTaskStore = defineStore('task', {
         deadline: backendTask.due_date ? new Date(backendTask.due_date) : undefined,
         task_date: backendTask.task_date, // 任務日期
         attributes: this.generateAttributes(backendTask.difficulty || backendTask.priority || 1),
+        skillTags: this.parseSkillTags(backendTask.skill_tags), // 解析技能標籤
         // 任務層級相關
         parent_task_id: backendTask.parent_task_id,
         parent_task_title: backendTask.parent_task_title,
@@ -300,6 +309,17 @@ export const useTaskStore = defineStore('task', {
       };
     },
 
+    // 解析技能標籤JSON字符串
+    parseSkillTags(skillTagsJson?: string): string[] {
+      if (!skillTagsJson) return [];
+      try {
+        return JSON.parse(skillTagsJson);
+      } catch (error) {
+        console.warn('解析技能標籤失敗:', error);
+        return [];
+      }
+    },
+
     // 清空所有任務（開發用）
     clearTasks() {
       this.tasks = [];
@@ -313,18 +333,21 @@ export const useTaskStore = defineStore('task', {
           description: '專注學習30分鐘',
           type: 'daily' as const,
           difficulty: 2 as const,
+          skillTags: ['時間管理'] // 直接添加技能標籤
         },
         {
           title: '練習程式設計',
           description: '完成一個小專案',
           type: 'main' as const,
           difficulty: 4 as const,
+          skillTags: ['Python 程式設計', '溝通協作'] // 高難度需要多技能
         },
         {
           title: '閱讀技術文章',
           description: '學習新技術知識',
           type: 'side' as const,
           difficulty: 3 as const,
+          skillTags: ['時間管理'] // 閱讀相關技能
         },
       ];
 
@@ -334,6 +357,81 @@ export const useTaskStore = defineStore('task', {
         } catch (error) {
           console.error('Failed to create sample task:', error);
         }
+      }
+    },
+
+    // 處理任務完成，觸發技能經驗值獲得
+    async handleTaskCompletion(task: Task | null) {
+      if (!task) {
+        console.log('❌ handleTaskCompletion: task 為空');
+        return;
+      }
+
+      const skillStore = useSkillStore();
+      
+      try {
+        console.log(`🎯 任務完成: ${task.title} (難度: ${task.difficulty})`);
+        console.log('🔍 任務技能標籤:', task.skillTags);
+        
+        // 基本經驗值計算：任務難度 * 20
+        const baseExperience = task.difficulty * 20;
+        console.log('💰 基本經驗值:', baseExperience);
+        
+        // 根據任務類型和屬性分配技能經驗值
+        const skillExperienceUpdates: Array<{skillId: string, experience: number, reason: string}> = [];
+        
+        // 獲取所有技能用於查找對應技能
+        if (skillStore.skills.length === 0) {
+          console.log('📚 技能列表為空，正在獲取...');
+          await skillStore.fetchSkills();
+        }
+        console.log('📚 當前技能列表:', skillStore.skills.map(s => s.name));
+        
+        // 根據任務技能標籤給相應技能增加經驗值
+        if (task.skillTags && task.skillTags.length > 0) {
+          console.log(`🏷️ 處理 ${task.skillTags.length} 個技能標籤:`, task.skillTags);
+          for (const skillTag of task.skillTags) {
+            // 根據技能名稱找到對應的技能
+            const targetSkill = skillStore.skills.find(skill => skill.name === skillTag);
+            if (targetSkill) {
+              console.log(`✅ 找到對應技能: ${skillTag} -> ${targetSkill.id}`);
+              skillExperienceUpdates.push({
+                skillId: targetSkill.id,
+                experience: baseExperience,
+                reason: `完成任務: ${task.title}`
+              });
+            } else {
+              console.warn(`❌ 找不到技能: ${skillTag}`);
+            }
+          }
+        } else {
+          console.log('⚠️ 任務沒有技能標籤');
+        }
+        
+        // 如果沒有特定屬性，給所有技能少量經驗值
+        if (skillExperienceUpdates.length === 0) {
+          for (const skill of skillStore.skills) {
+            skillExperienceUpdates.push({
+              skillId: skill.id,
+              experience: baseExperience / 2,
+              reason: `完成任務: ${task.title}`
+            });
+          }
+        }
+        
+        // 批量更新技能經驗值
+        for (const update of skillExperienceUpdates) {
+          try {
+            await skillStore.addSkillExperience(update.skillId, update.experience, update.reason);
+          } catch (error) {
+            console.error(`更新技能 ${update.skillId} 經驗值失敗:`, error);
+          }
+        }
+        
+        console.log(`✅ 任務完成獎勵發放完畢！更新了 ${skillExperienceUpdates.length} 個技能`);
+        
+      } catch (error) {
+        console.error('處理任務完成獎勵時發生錯誤:', error);
       }
     },
   },

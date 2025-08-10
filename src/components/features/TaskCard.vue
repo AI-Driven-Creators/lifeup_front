@@ -57,6 +57,9 @@
           </div>
           <span class="text-sm text-primary-600 font-medium">+{{ task.experience }} XP</span>
         </div>
+        
+        <!-- 技能標籤 -->
+        <SkillTags :skill-tags="task.skillTags" />
       </div>
     </div>
   </div>
@@ -64,6 +67,7 @@
 
 <script setup lang="ts">
 import type { Task } from '@/types'
+import SkillTags from '@/components/common/SkillTags.vue'
 
 interface Props {
   task: Task

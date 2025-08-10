@@ -100,6 +100,12 @@ const loadTasksByType = async () => {
     sideTasks.value = side
     challengeTasks.value = challenge
     dailyTasks.value = daily
+    
+    // 調試：檢查技能標籤
+    console.log('主線任務技能標籤:', main.map(t => ({ title: t.title, skillTags: t.skillTags })))
+    console.log('支線任務技能標籤:', side.map(t => ({ title: t.title, skillTags: t.skillTags })))
+    console.log('挑戰任務技能標籤:', challenge.map(t => ({ title: t.title, skillTags: t.skillTags })))
+    console.log('每日任務技能標籤:', daily.map(t => ({ title: t.title, skillTags: t.skillTags })))
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入任務失敗'
     console.error('Failed to load tasks by type:', err)

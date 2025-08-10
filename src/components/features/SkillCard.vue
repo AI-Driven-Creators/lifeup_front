@@ -1,5 +1,5 @@
 <template>
-  <div class="card hover:shadow-md transition-shadow cursor-pointer">
+  <div class="card hover:shadow-md transition-shadow cursor-pointer" @click="handleSkillClick">
     <div class="text-center space-y-3">
       <!-- 技能圖標 -->
       <div class="text-2xl">{{ skill.icon }}</div>
@@ -39,6 +39,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Skill } from '@/types'
 
 interface Props {
@@ -46,8 +47,18 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
 
 const experienceProgress = computed(() => {
   return (props.skill.experience / props.skill.maxExperience) * 100
 })
+
+const handleSkillClick = () => {
+  // 跳轉到技能相關任務頁面
+  router.push({
+    name: 'skill-tasks',
+    params: { skillName: props.skill.name },
+    query: { id: props.skill.id }
+  })
+}
 </script>

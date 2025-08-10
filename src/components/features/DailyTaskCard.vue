@@ -33,6 +33,9 @@
               {{ getStatusText(task.status) }}
             </span>
           </div>
+          
+          <!-- 技能標籤 -->
+          <SkillTags :skill-tags="task.skillTags" class="mt-1" />
         </div>
       </div>
       
@@ -83,6 +86,7 @@ import { ref, computed } from 'vue'
 import type { Task } from '@/types'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
+import SkillTags from '@/components/common/SkillTags.vue'
 
 interface Props {
   task: Task

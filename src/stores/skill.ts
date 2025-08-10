@@ -82,22 +82,50 @@ export const useSkillStore = defineStore('skill', {
     },
 
     // 增加技能經驗值
-    addSkillExperience(skillId: string, experience: number) {
-      const skill = this.skills.find(s => s.id === skillId);
-      if (!skill) return;
-
-      skill.experience += experience;
-      
-      // 檢查是否升級
-      while (skill.experience >= skill.maxExperience && skill.level < 5) {
-        skill.experience -= skill.maxExperience;
-        skill.level += 1;
-        skill.maxExperience = this.calculateMaxExperience(skill.level);
+    async addSkillExperience(skillId: string, experience: number, reason?: string) {
+      try {
+        // 調用後端API更新技能經驗值
+        const response = await apiClient.updateSkillExperience(skillId, experience, reason);
         
-        console.log(`${skill.name} 升級到 ${skill.level} 級！`);
+        if (response.success && response.data) {
+          // 更新本地技能資料
+          const skill = this.skills.find(s => s.id === skillId);
+          if (skill && response.data.skill) {
+            const updatedSkill = response.data.skill;
+            skill.experience = updatedSkill.experience || 0;
+            skill.level = updatedSkill.level || 1;
+            skill.maxExperience = updatedSkill.max_experience || 100;
+          }
+          
+          // 如果升級了，顯示升級訊息
+          if (response.data.level_up) {
+            console.log(`🎉 ${skill?.name} 升級到 ${response.data.new_level} 級！獲得經驗值: ${experience}`);
+          } else {
+            console.log(`⭐ ${skill?.name} 獲得經驗值: ${experience}`);
+          }
+          
+          return response.data;
+        } else {
+          throw new Error(response.message);
+        }
+      } catch (error) {
+        console.error('更新技能經驗值失敗:', error);
+        // 如果API失敗，回退到本地更新（為了不中斷使用者體驗）
+        const skill = this.skills.find(s => s.id === skillId);
+        if (skill) {
+          skill.experience += experience;
+          
+          // 檢查是否升級
+          while (skill.experience >= skill.maxExperience && skill.level < 5) {
+            skill.experience -= skill.maxExperience;
+            skill.level += 1;
+            skill.maxExperience = this.calculateMaxExperience(skill.level);
+            
+            console.log(`${skill.name} 升級到 ${skill.level} 級！（本地更新）`);
+          }
+        }
+        throw error;
       }
-
-      // TODO: 當後端增加技能經驗值更新 API 時，在這裡調用
     },
 
     // 將後端技能數據轉換為前端格式

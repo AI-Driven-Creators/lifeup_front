@@ -48,6 +48,7 @@ export interface Task {
   scheduled_time?: string; // 預定時間
   task_date?: string; // 任務日期（用於日常子任務）
   attributes?: Partial<UserAttributes>;
+  skillTags?: string[]; // 相關技能標籤
   // 任務層級相關
   parent_task_id?: string;
   parent_task_title?: string; // 父任務標題

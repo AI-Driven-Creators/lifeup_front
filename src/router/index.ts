@@ -25,6 +25,11 @@ const router = createRouter({
       component: () => import('@/views/SkillListPage.vue')
     },
     {
+      path: '/skills/:skillName/tasks',
+      name: 'skill-tasks',
+      component: () => import('@/views/SkillTasksPage.vue')
+    },
+    {
       path: '/coach',
       name: 'coach',
       component: () => import('@/views/CoachChatPage.vue')
