@@ -35,7 +35,7 @@
           </div>
           
           <!-- 技能標籤 -->
-          <SkillTags :skill-tags="task.skillTags" class="mt-1" />
+          <SkillTags :skill-tags="skillObjects" class="mt-1" />
         </div>
       </div>
       
@@ -82,11 +82,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Task } from '@/types'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
 import SkillTags from '@/components/common/SkillTags.vue'
+import { useSkillStore } from '@/stores/skill'
 
 interface Props {
   task: Task
@@ -98,6 +99,23 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const skillStore = useSkillStore()
+
+onMounted(() => {
+  if (skillStore.skills.length === 0 && !skillStore.loading) {
+    skillStore.fetchSkills()
+  }
+})
+
+const skillObjects = computed(() => {
+  if (!props.task.skillTags || !skillStore.skills.length) {
+    return []
+  }
+  return props.task.skillTags
+    .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
+    .filter(skill => !!skill) as { id: string; name: string }[]
+})
 
 // 確認對話框狀態
 const showConfirmDialog = ref(false)

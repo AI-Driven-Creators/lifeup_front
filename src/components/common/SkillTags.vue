@@ -1,23 +1,40 @@
 <template>
+  <div v-if="skillTags.length == 0">No skills found</div>
   <div v-if="skillTags && skillTags.length > 0" class="skill-tags flex flex-wrap gap-1 mt-2">
-    <span 
-      v-for="skillTag in skillTags" 
-      :key="skillTag"
-      class="skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
-      :title="skillTag"
+    <span
+      v-for="skillTag in skillTags"
+      :key="skillTag.id"
+      class="skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors cursor-pointer"
+      :title="skillTag.name"
+      @click.stop="handleSkillClick(skillTag)"
     >
       <span class="skill-icon mr-1">🎯</span>
-      {{ skillTag }}
+      {{ skillTag.name }}
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+interface Skill {
+  id: number | string;
+  name: string;
+}
+
 interface Props {
-  skillTags?: string[]
+  skillTags?: Skill[]
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
+
+const handleSkillClick = (skill: Skill) => {
+  router.push({
+    name: 'skill-tasks',
+    params: { skillName: skill.name },
+  })
+}
 </script>
 
 <style scoped>

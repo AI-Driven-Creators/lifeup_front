@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskSection from '@/components/features/TaskSection.vue'
@@ -166,7 +166,22 @@ const fetchSkillTasks = async () => {
     const response = await apiClient.getTasksBySkill(skillName.value)
     
     if (response.success && response.data) {
-      allTasks.value = response.data
+      // 解析從後端收到的 skill_tags 字符串
+      const transformedTasks = response.data.map((task: any) => {
+        let tags = [];
+        if (typeof task.skill_tags === 'string') {
+          try {
+            tags = JSON.parse(task.skill_tags);
+          } catch (e) {
+            console.error('Failed to parse skill_tags:', task.skill_tags, e);
+          }
+        } else if (Array.isArray(task.skill_tags)) {
+          tags = task.skill_tags;
+        }
+        return { ...task, skillTags: tags }; // 將 snake_case 轉換為 camelCase
+      });
+
+      allTasks.value = transformedTasks
       console.log(`獲取技能「${skillName.value}」相關任務成功:`, allTasks.value.length, '個任務')
     } else {
       error.value = response.message || '獲取任務數據失敗'
@@ -186,6 +201,17 @@ const handleTaskUpdated = (updatedTask: Task) => {
     allTasks.value[index] = updatedTask
   }
 }
+
+// 監聽路由參數變化
+watch(
+  () => route.params.skillName,
+  (newSkillName) => {
+    if (newSkillName) {
+      skillName.value = newSkillName as string;
+      fetchSkillTasks();
+    }
+  }
+)
 
 // 組件掛載時獲取數據
 onMounted(() => {

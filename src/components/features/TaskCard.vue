@@ -59,15 +59,17 @@
         </div>
         
         <!-- 技能標籤 -->
-        <SkillTags :skill-tags="task.skillTags" />
+        <SkillTags :skill-tags="skillObjects" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import type { Task } from '@/types'
 import SkillTags from '@/components/common/SkillTags.vue'
+import { useSkillStore } from '@/stores/skill'
 
 interface Props {
   task: Task
@@ -79,6 +81,23 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const skillStore = useSkillStore()
+
+onMounted(() => {
+  if (skillStore.skills.length === 0 && !skillStore.loading) {
+    skillStore.fetchSkills()
+  }
+})
+
+const skillObjects = computed(() => {
+  if (!props.task.skillTags || !skillStore.skills.length) {
+    return []
+  }
+  return props.task.skillTags
+    .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
+    .filter(skill => !!skill) as { id: string; name: string }[]
+})
 
 const handleToggle = () => {
   emit('toggle', props.task.id)
