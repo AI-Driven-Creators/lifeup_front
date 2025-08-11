@@ -156,6 +156,10 @@ export class ApiClient {
     });
   }
 
+  async getTasksBySkill(skillName: string) {
+    return this.request<{ success: boolean, data: any[], message: string }>(`/api/skills/${encodeURIComponent(skillName)}/tasks`);
+  }
+
   // 聊天相關 API
   async getChatMessages() {
     return this.request<{ success: boolean, data: any[], message: string }>('/api/chat/messages');
