@@ -255,7 +255,7 @@ export const useTaskStore = defineStore('task', {
         deadline: backendTask.due_date ? new Date(backendTask.due_date) : undefined,
         task_date: backendTask.task_date, // 任務日期
         attributes: this.generateAttributes(backendTask.difficulty || backendTask.priority || 1),
-        skillTags: this.parseSkillTags(backendTask.skill_tags), // 解析技能標籤
+        skillTags: backendTask.skill_tags, // 解析技能標籤
         // 任務層級相關
         parent_task_id: backendTask.parent_task_id,
         parent_task_title: backendTask.parent_task_title,
