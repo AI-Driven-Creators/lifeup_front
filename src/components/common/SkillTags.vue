@@ -1,6 +1,7 @@
 <template>
-  <div v-if="skillTags.length == 0">No skills found</div>
-  <div v-if="skillTags && skillTags.length > 0" class="skill-tags flex flex-wrap gap-1 mt-2">
+  <div v-if="skillTags === undefined" class="text-xs text-gray-500">載入技能中...</div>
+  <div v-else-if="skillTags.length === 0"></div>
+  <div v-else class="skill-tags flex flex-wrap gap-1 mt-2">
     <span
       v-for="skillTag in skillTags"
       :key="skillTag.id"
@@ -23,7 +24,7 @@ interface Skill {
 }
 
 interface Props {
-  skillTags?: Skill[]
+  skillTags?: Skill[] | undefined
 }
 
 const props = defineProps<Props>()

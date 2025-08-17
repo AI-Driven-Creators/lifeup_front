@@ -131,7 +131,7 @@ export const useSkillStore = defineStore('skill', {
     // 將後端技能數據轉換為前端格式
     transformBackendSkill(backendSkill: any): Skill {
       const level = Math.min(5, Math.max(1, backendSkill.level || 1));
-      const experience = Math.floor((backendSkill.progress || 0) * 1000); // 將 0-1 的進度轉換為經驗值
+      const experience = backendSkill.experience || 0; // 直接使用後端的經驗值
       
       return {
         id: backendSkill.id || '',

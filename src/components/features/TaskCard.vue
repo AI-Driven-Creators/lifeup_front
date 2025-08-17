@@ -91,8 +91,12 @@ onMounted(() => {
 })
 
 const skillObjects = computed(() => {
-  if (!props.task.skillTags || !skillStore.skills.length) {
+  if (!props.task.skillTags || props.task.skillTags.length === 0) {
     return []
+  }
+  if (!skillStore.skills.length) {
+    // 技能列表還在載入中，返回 undefined 表示載入中狀態
+    return undefined
   }
   return props.task.skillTags
     .map(tagName => skillStore.skills.find(skill => skill.name === tagName))

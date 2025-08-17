@@ -167,9 +167,9 @@ const fetchSkillTasks = async () => {
     
     if (response.success && response.data) {
       // 解析從後端收到的 skill_tags 字符串
+      console.log( "getTasksBySkill response.data", response.data);
       const transformedTasks = response.data.map((task: any) => {
         let tags = [];
-        console.log('task.skill_tags', task.skill_tags);
         if (typeof task.skill_tags === 'string') {
           try {
             tags = JSON.parse(task.skill_tags);
