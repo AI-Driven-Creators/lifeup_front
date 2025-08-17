@@ -99,11 +99,12 @@ const getAttributeColor = (value: number) => {
 
 // 獲取上週屬性數據
 const fetchPreviousWeekAttributes = async () => {
-  if (!userStore.user?.id) return
+  const userId = userStore.user?.id
+  if (!userId) return
   
   loading.value = true
   try {
-    const response = await apiClient.getWeeklyAttributes(userStore.user.id, 1) // 1 週前
+    const response = await apiClient.getWeeklyAttributes(userId, 1) // 1 週前
     if (response.success && response.data) {
       previousWeekAttributes.value = {
         intelligence: response.data.intelligence || 0,

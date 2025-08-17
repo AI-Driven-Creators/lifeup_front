@@ -137,9 +137,8 @@ const toggleTask = async (taskId: string) => {
       userStore.updateExperience(updatedTask.experience)
       
       // 根據任務類型增加對應屬性
-      if (updatedTask.attributes) {
-        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {
-          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
+      if (task.attributes) {
+        Object.entries(task.attributes).forEach(([attr, value]) => {          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
         })
       }
     }

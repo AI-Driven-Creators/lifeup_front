@@ -354,6 +354,8 @@ const loadTaskDetail = async () => {
           const progressResponse = await apiClient.getTaskProgress(taskId)
           if (progressResponse.success) {
             task.value.progress = progressResponse.data
+          } else {
+            console.warn(`進度API失敗 (${foundTask.title}):`, progressResponse.message)
           }
         } catch (err) {
           console.warn('Failed to load task progress:', err)

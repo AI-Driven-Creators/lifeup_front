@@ -138,8 +138,7 @@ const toggleTask = async (taskId: string) => {
       
       // 根據任務類型增加對應屬性
       if (updatedTask.attributes) {
-        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {
-          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
+        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
         })
       }
     }
@@ -157,40 +156,24 @@ const loadHomepageTasks = async () => {
   
   try {
     const response = await apiClient.getHomepageTasks()
-    console.log('首頁任務API響應:', response)
     if (response.success) {
-      console.log('原始API數據:', response.data)
       const tasks = response.data.map(taskStore.transformBackendTask)
-      console.log('轉換後的任務數據:', tasks)
-      
-      // 調試：顯示每個任務的狀態
-      tasks.forEach((task, index) => {
-        console.log(`任務 ${index + 1}: ${task.title} - 狀態: ${task.status}`)
-      })
-      
-      // 為每個父任務載入進度數據
-      console.log('總共載入了', tasks.length, '個任務')
       
       const tasksWithProgress = await Promise.all(
         tasks.map(async (task) => {
-          console.log(`檢查任務 ${task.title}: is_parent_task=${task.is_parent_task}, type=${task.type}`)
-          
           // 為所有首頁任務載入進度（現在都是有父任務的子任務）
           if (task.parent_task_id) {
-            console.log(`開始載入任務 ${task.title} 的進度（父任務: ${task.parent_task_title}）`)
             try {
               const progressResponse = await apiClient.getTaskProgress(task.parent_task_id)
-              console.log(`任務 ${task.title} 的父任務進度API回應:`, progressResponse)
               if (progressResponse.success) {
                 task.progress = progressResponse.data
-                console.log(`任務 ${task.title} 的父任務進度數據:`, task.progress)
+              } else {
+                console.warn(`進度API失敗 (${task.title}):`, progressResponse.message)
               }
             } catch (err) {
               console.warn(`Failed to load progress for task ${task.parent_task_id}:`, err)
               // 進度載入失敗不影響任務顯示
             }
-          } else {
-            console.log(`跳過任務 ${task.title} 的進度載入（無父任務）`)
           }
           return task
         })

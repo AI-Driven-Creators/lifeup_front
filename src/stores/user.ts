@@ -35,10 +35,12 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     experienceProgress: (state) => {
+      if (!state.user || !state.user.maxExperience) return 0
       return (state.user.experience / state.user.maxExperience) * 100
     },
     
     averageAttributes: (state) => {
+      if (!state.user || !state.user.attributes) return 0
       const attrs = Object.values(state.user.attributes)
       return Math.round(attrs.reduce((sum, val) => sum + val, 0) / attrs.length)
     }
@@ -59,8 +61,8 @@ export const useUserStore = defineStore('user', {
           
           // 安全地更新用戶資料
           this.user = {
-            id: data.id || this.user.id,
-            name: data.name || this.user.name,
+            id: data.id || this.user?.id || '',
+            name: data.name || this.user?.name || '載入中...',
             level: data.level || 1,
             experience: data.experience || 0,
             maxExperience: data.maxExperience || 100,
@@ -93,8 +95,8 @@ export const useUserStore = defineStore('user', {
           // 如果遊戲化數據獲取失敗，嘗試獲取基本用戶數據
           const response = await apiClient.getUser(userId);
           if (response.success && response.data) {
-            this.user.id = response.data.id || this.user.id;
-            this.user.name = response.data.name || this.user.name;
+            this.user.id = response.data.id || this.user?.id || '';
+            this.user.name = response.data.name || this.user?.name || '載入中...';
           } else {
             this.error = response.message || '獲取用戶資料失敗';
           }

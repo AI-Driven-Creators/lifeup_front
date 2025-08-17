@@ -55,12 +55,13 @@ const fetchUserAchievements = async () => {
       await userStore.fetchFirstAvailableUser()
     }
     
-    if (!userStore.user?.id) {
+    const userId = userStore.user?.id
+    if (!userId) {
       console.error('無法獲取用戶信息')
       return
     }
     
-    await achievementStore.fetchUserAchievements(userStore.user.id)
+    await achievementStore.fetchUserAchievements(userId)
   } catch (err) {
     console.error('獲取成就數據失敗:', err)
   }

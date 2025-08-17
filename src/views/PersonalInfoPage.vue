@@ -4,23 +4,43 @@
     <PageHeader title="我的進度" />
     
     <div class="px-4 py-6 space-y-6">
-      <!-- 用戶等級卡片 -->
-      <UserLevelCard :user="userStore.user" />
+      <!-- 載入狀態 -->
+      <div v-if="userStore.loading" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <p class="mt-2 text-gray-600">載入用戶資料中...</p>
+      </div>
       
-      <!-- 冒險統計 -->
-      <AdventureStats :user="userStore.user" :loading="userStore.loading" />
+      <!-- 用戶數據已載入 -->
+      <template v-else-if="userStore.user && userStore.user.id">
+        <!-- 用戶等級卡片 -->
+        <UserLevelCard :user="userStore.user" />
+        
+        <!-- 冒險統計 -->
+        <AdventureStats :user="userStore.user" :loading="userStore.loading" />
+        
+        <!-- 成就 -->
+        <AchievementSection />
+        
+        <!-- 今天的成長 -->
+        <TodayGrowth :progress="userStore.todayProgress" :loading="userStore.loading" />
+        
+        <!-- 屬性雷達圖 -->
+        <AttributesRadar v-if="userStore.user.attributes" :attributes="userStore.user.attributes" />
+        
+        <!-- 平衡提醒和建議 -->
+        <GrowthAdvice v-if="userStore.user.attributes" :attributes="userStore.user.attributes" />
+      </template>
       
-      <!-- 成就 -->
-      <AchievementSection />
-      
-      <!-- 今天的成長 -->
-      <TodayGrowth :progress="userStore.todayProgress" :loading="userStore.loading" />
-      
-      <!-- 屬性雷達圖 -->
-      <AttributesRadar :attributes="userStore.user.attributes" />
-      
-      <!-- 平衡提醒和建議 -->
-      <GrowthAdvice :attributes="userStore.user.attributes" />
+      <!-- 錯誤狀態 -->
+      <div v-else-if="userStore.error" class="text-center py-8">
+        <div class="text-red-600 mb-4">{{ userStore.error }}</div>
+        <button 
+          @click="retryLoadUser"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          重試
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -38,8 +58,8 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
-// 頁面載入時獲取最新的遊戲化用戶數據
-onMounted(async () => {
+// 載入用戶數據
+const loadUserData = async () => {
   try {
     // 先獲取用戶列表來找到實際的用戶ID
     const usersResponse = await userStore.fetchFirstAvailableUser()
@@ -49,5 +69,15 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load user data:', error)
   }
+}
+
+// 重試載入
+const retryLoadUser = () => {
+  loadUserData()
+}
+
+// 頁面載入時獲取最新的遊戲化用戶數據
+onMounted(() => {
+  loadUserData()
 })
 </script>

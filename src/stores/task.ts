@@ -249,11 +249,8 @@ export const useTaskStore = defineStore('task', {
 
     // 將後端任務數據轉換為前端格式
     transformBackendTask(backendTask: any): Task {
-      console.log('轉換任務數據:', backendTask.title, 'parent_task_title:', backendTask.parent_task_title)
-      
       // 直接使用後端返回的狀態，因為後端已經統一處理了每日任務的狀態
       const status = this.mapBackendStatus(backendTask.status)
-      console.log('最終狀態:', status, '後端狀態值:', backendTask.status)
       
       return {
         id: backendTask.id || '',

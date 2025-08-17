@@ -9,13 +9,13 @@
       <div class="flex-1">
         <!-- 等級和稱號 -->
         <div class="mb-2">
-          <h2 class="text-xl font-bold text-primary-900">等級 {{ user.level }} - {{ user.title }}</h2>
+          <h2 class="text-xl font-bold text-primary-900">等級 {{ user?.level || 0 }} - {{ user?.title || '載入中...' }}</h2>
         </div>
         
         <!-- 經驗值進度條 -->
         <div class="space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-primary-700">{{ user.experience }}/{{ user.maxExperience }} 經驗</span>
+            <span class="text-primary-700">{{ user?.experience || 0 }}/{{ user?.maxExperience || 100 }} 經驗</span>
             <span class="text-primary-600 font-medium">{{ Math.round(experienceProgress) }}%</span>
           </div>
           <div class="progress-bar bg-gray-200 rounded-full h-3 overflow-hidden">
@@ -35,12 +35,13 @@ import { computed } from 'vue'
 import type { User } from '@/types'
 
 interface Props {
-  user: User
+  user: User | null
 }
 
 const props = defineProps<Props>()
 
 const experienceProgress = computed(() => {
+  if (!props.user || !props.user.maxExperience) return 0
   return (props.user.experience / props.user.maxExperience) * 100
 })
 </script>

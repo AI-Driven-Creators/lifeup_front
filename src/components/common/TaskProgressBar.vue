@@ -71,10 +71,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 計算進度百分比
 const progressPercentage = computed(() => {
-  if (!props.progress) {
-    return 0
-  }
-  
   return props.progress.completion_rate * 100
 })
 
