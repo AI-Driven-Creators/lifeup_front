@@ -137,10 +137,10 @@ export class ApiClient {
     if (options?.days) {
       params.append('days', options.days.toString());
     }
-    
+
     const queryString = params.toString();
     const url = queryString ? `/api/tasks/${parentTaskId}/subtasks?${queryString}` : `/api/tasks/${parentTaskId}/subtasks`;
-    
+
     return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
@@ -174,27 +174,27 @@ export class ApiClient {
 
   // 成就相關 API
   async getAchievements() {
-    return this.request<{success: boolean, data: any[], message: string}>('/api/achievements');
+    return this.request<{ success: boolean, data: any[], message: string }>('/api/achievements');
   }
 
   async getUserAchievements(userId: string) {
-    return this.request<{success: boolean, data: any[], message: string}>(`/api/users/${userId}/achievements`);
+    return this.request<{ success: boolean, data: any[], message: string }>(`/api/users/${userId}/achievements`);
   }
 
   async unlockUserAchievement(userId: string, achievementId: string) {
-    return this.request<{success: boolean, data: any, message: string}>(`/api/users/${userId}/achievements/${achievementId}/unlock`, {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/achievements/${achievementId}/unlock`, {
       method: 'POST',
     });
   }
 
   // 週屬性相關 API
   async getWeeklyAttributes(userId: string, weeksAgo: number = 0) {
-    return this.request<{success: boolean, data: any, message: string}>(`/api/users/${userId}/attributes/weekly/${weeksAgo}`);
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/attributes/weekly/${weeksAgo}`);
   }
 
   // 任務進度相關 API
   async getTaskProgress(taskId: string) {
-    return this.request<{success: boolean, data: any, message: string}>(`/api/tasks/${taskId}/progress`);
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${taskId}/progress`);
   }
 
   // ChatGPT - 透過後端API呼叫

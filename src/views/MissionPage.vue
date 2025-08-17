@@ -117,18 +117,28 @@ const loadTasksByType = async () => {
 // 切換任務狀態
 const toggleTask = async (taskId: string) => {
   try {
-    await taskStore.toggleTaskStatus(taskId)
-    
-    // 計算經驗值獎勵
+    // 先記錄任務完成前的狀態
     const allTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
     const task = allTasks.find(t => t.id === taskId)
-    if (task && task.status === 'completed') {
+    const wasCompleted = task?.status === 'completed'
+    
+    await taskStore.toggleTaskStatus(taskId)
+    
+    // 重新載入任務數據確保狀態同步
+    await loadTasksByType()
+    
+    // 在重新載入後檢查任務完成獎勵
+    const updatedAllTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
+    const updatedTask = updatedAllTasks.find(t => t.id === taskId)
+    const isNowCompleted = updatedTask?.status === 'completed'
+    
+    if (updatedTask && isNowCompleted && !wasCompleted) {
       // 任務完成時增加經驗值和屬性
-      userStore.updateExperience(task.experience)
+      userStore.updateExperience(updatedTask.experience)
       
       // 根據任務類型增加對應屬性
-      if (task.attributes) {
-        Object.entries(task.attributes).forEach(([attr, value]) => {
+      if (updatedTask.attributes) {
+        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {
           userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
         })
       }

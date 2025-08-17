@@ -120,30 +120,29 @@ const toggleTask = async (taskId: string) => {
   try {
     // 先從本地任務中找到任務
     const task = homepageTasks.value.find(t => t.id === taskId)
-    const wasCompleted = task?.status === 'completed'
+    const wasCompleted = task?.status === 'completed' || task?.status === 'daily_completed'
     
     await taskStore.toggleTaskStatus(taskId)
     
-    // 更新本地任務狀態
-    if (task) {
-      task.status = task.status === 'completed' ? 'in_progress' : 'completed'
-    }
+    // 重新載入任務以確保狀態同步（移除手動狀態更新，依賴後端回應）
+    await loadHomepageTasks()
+    
+    // 在重新載入後，重新找到任務並檢查是否剛完成
+    const updatedTask = homepageTasks.value.find(t => t.id === taskId)
+    const isNowCompleted = updatedTask?.status === 'completed' || updatedTask?.status === 'daily_completed'
     
     // 如果任務剛完成（從其他狀態變成completed），增加經驗值和屬性
-    if (task && task.status === 'completed' && !wasCompleted) {
+    if (updatedTask && isNowCompleted && !wasCompleted) {
       // 任務完成時增加經驗值和屬性
-      userStore.updateExperience(task.experience)
+      userStore.updateExperience(updatedTask.experience)
       
       // 根據任務類型增加對應屬性
-      if (task.attributes) {
-        Object.entries(task.attributes).forEach(([attr, value]) => {
+      if (updatedTask.attributes) {
+        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {
           userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
         })
       }
     }
-    
-    // 重新載入任務以確保狀態同步
-    await loadHomepageTasks()
     
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新任務狀態失敗'

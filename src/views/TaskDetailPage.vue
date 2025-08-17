@@ -76,9 +76,9 @@
         </div>
         
         <!-- 任務進度條 -->
-        <div v-if="task.progress" class="mt-4">
+        <div v-if="task.progress || task.is_parent_task" class="mt-4">
           <TaskProgressBar 
-            :progress="task.progress" 
+            :progress="taskProgress" 
             :showDailyStats="(task as any).is_recurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
           />
         </div>
@@ -277,6 +277,47 @@ const sortedSubtasks = computed(() => {
   })
 })
 
+// 任務進度數據
+const taskProgress = computed(() => {
+  // 如果是父任務，優先根據子任務計算進度（即時計算，不依賴舊的progress數據）
+  if (task.value?.is_parent_task && subtasks.value.length > 0) {
+    const totalSubtasks = subtasks.value.length
+    const completedSubtasks = subtasks.value.filter(subtask => 
+      subtask.status === 'completed' || subtask.status === 'daily_completed'
+    ).length
+    
+    return {
+      task_id: task.value.id,
+      total_days: totalSubtasks,
+      completed_days: completedSubtasks,
+      missed_days: 0,
+      completion_rate: totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) : 0,
+      target_rate: 1.0,
+      is_daily_completed: completedSubtasks === totalSubtasks,
+      remaining_days: totalSubtasks - completedSubtasks
+    }
+  }
+  
+  // 如果有現有的進度數據且不是父任務，使用它
+  if (task.value?.progress) {
+    return task.value.progress
+  }
+  
+  // 為單個任務創建基本進度數據
+  const isCompleted = task.value?.status === 'completed' || task.value?.status === 'daily_completed'
+  
+  return {
+    task_id: task.value?.id || '',
+    total_days: 1,
+    completed_days: isCompleted ? 1 : 0,
+    missed_days: 0,
+    completion_rate: isCompleted ? 1.0 : 0.0,
+    target_rate: 1.0,
+    is_daily_completed: isCompleted,
+    remaining_days: isCompleted ? 0 : 1
+  }
+})
+
 // 返回上一頁
 const goBack = () => {
   router.back()
@@ -382,8 +423,6 @@ const toggleSubtaskStatus = async (subtask: Task) => {
   error.value = null
   
   try {
-    console.log('嘗試切換子任務狀態:', subtask.id, '當前狀態:', subtask.status)
-    
     await taskStore.toggleTaskStatus(subtask.id, subtask.status)
     
     // 重新載入任務詳情以確保數據一致性

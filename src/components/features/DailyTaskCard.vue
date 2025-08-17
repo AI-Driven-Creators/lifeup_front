@@ -61,9 +61,9 @@
     </div>
     
     <!-- 任務進度條 -->
-    <div v-if="task.progress" class="mt-3">
+    <div v-if="shouldShowProgress" class="mt-3">
       <TaskProgressBar 
-        :progress="task.progress" 
+        :progress="taskProgress" 
         :showDailyStats="task.parent_task_id !== undefined || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
       />
     </div>
@@ -115,6 +115,52 @@ const skillObjects = computed(() => {
   return props.task.skillTags
     .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
     .filter(skill => !!skill) as { id: string; name: string }[]
+})
+
+// 是否應該顯示進度條
+const shouldShowProgress = computed(() => {
+  // 如果有進度數據，總是顯示
+  if (props.task.progress) {
+    return true
+  }
+  // 如果是子任務（有父任務ID），顯示簡單進度
+  if (props.task.parent_task_id) {
+    return true
+  }
+  // 如果是每日任務類型，顯示進度
+  if (props.task.status?.includes('daily_')) {
+    return true
+  }
+  return false
+})
+
+// 任務進度數據
+const taskProgress = computed(() => {
+  // Debug log to track changes
+  console.log('DailyTaskCard taskProgress computed, task status:', props.task.status, 'task ID:', props.task.id)
+  
+  // 如果有現有的進度數據，使用它
+  if (props.task.progress) {
+    console.log('Using existing progress data:', props.task.progress)
+    return props.task.progress
+  }
+  
+  // 為子任務或每日任務創建簡單進度
+  const isCompleted = props.task.status === 'completed' || props.task.status === 'daily_completed'
+  
+  const progress = {
+    task_id: props.task.id,
+    total_days: 1,
+    completed_days: isCompleted ? 1 : 0,
+    missed_days: 0,
+    completion_rate: isCompleted ? 1.0 : 0.0,
+    target_rate: 1.0,
+    is_daily_completed: isCompleted,
+    remaining_days: isCompleted ? 0 : 1
+  }
+  
+  console.log('Generated progress data:', progress)
+  return progress
 })
 
 // 確認對話框狀態
