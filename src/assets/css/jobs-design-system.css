@@ -1,0 +1,300 @@
+/**
+ * Jobs Design System - "Simplicity is the ultimate sophistication"
+ * 基於減法設計哲學的純淨系統
+ */
+
+:root {
+  /* 核心原則：只保留必要的 */
+  --jobs-white: #ffffff;
+  --jobs-black: #000000;
+  --jobs-gray-50: #f9fafb;
+  --jobs-gray-100: #f3f4f6;
+  --jobs-gray-200: #e5e7eb;
+  --jobs-gray-800: #1f2937;
+  --jobs-gray-900: #111827;
+  
+  /* 單一強調色 - lifeUp 金棕色 */
+  --jobs-primary: #9e8747;
+  --jobs-primary-light: #b3996b;
+  --jobs-primary-dark: #8c7c59;
+  
+  /* 語義色彩 - 極簡主義 */
+  --jobs-success: #34c759;
+  --jobs-warning: #ff9500;
+  --jobs-error: #ff3b30;
+  
+  /* 空間系統 - 基於 8pt 網格 */
+  --jobs-space-1: 4px;
+  --jobs-space-2: 8px;
+  --jobs-space-3: 12px;
+  --jobs-space-4: 16px;
+  --jobs-space-6: 24px;
+  --jobs-space-8: 32px;
+  --jobs-space-12: 48px;
+  --jobs-space-16: 64px;
+  
+  /* 字體系統 - 優雅的層次 */
+  --jobs-text-xs: 12px;
+  --jobs-text-sm: 14px;
+  --jobs-text-base: 16px;
+  --jobs-text-lg: 18px;
+  --jobs-text-xl: 20px;
+  --jobs-text-2xl: 24px;
+  --jobs-text-3xl: 30px;
+  
+  /* 圓角 - 自然的曲線 */
+  --jobs-radius-sm: 4px;
+  --jobs-radius-md: 8px;
+  --jobs-radius-lg: 12px;
+  --jobs-radius-xl: 16px;
+  --jobs-radius-full: 9999px;
+  
+  /* 陰影 - 微妙的深度 */
+  --jobs-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --jobs-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --jobs-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  
+  /* 動畫 - 自然的節奏 */
+  --jobs-transition-fast: 0.15s ease;
+  --jobs-transition-normal: 0.25s ease;
+  --jobs-transition-slow: 0.4s ease;
+}
+
+/* 重置和基礎樣式 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--jobs-gray-900);
+  background: var(--jobs-gray-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Jobs風格核心組件 */
+.jobs-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--jobs-space-6);
+}
+
+.jobs-card {
+  background: var(--jobs-white);
+  border-radius: var(--jobs-radius-xl);
+  box-shadow: none;
+  border: 1px solid var(--jobs-gray-100);
+  overflow: hidden;
+}
+
+.jobs-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--jobs-space-4) var(--jobs-space-8);
+  font-size: var(--jobs-text-base);
+  font-weight: 600;
+  border-radius: var(--jobs-radius-full);
+  border: none;
+  cursor: pointer;
+  transition: all var(--jobs-transition-normal);
+  min-height: 48px;
+  letter-spacing: -0.025em;
+}
+
+.jobs-button-primary {
+  background: var(--jobs-primary);
+  color: var(--jobs-white);
+}
+
+.jobs-button-primary:hover {
+  background: var(--jobs-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--jobs-shadow-lg);
+}
+
+.jobs-button-primary:disabled {
+  background: var(--jobs-gray-200);
+  color: var(--jobs-gray-500);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.jobs-button-secondary {
+  background: var(--jobs-white);
+  color: var(--jobs-gray-800);
+  border: 1px solid var(--jobs-gray-200);
+}
+
+.jobs-button-secondary:hover {
+  background: var(--jobs-gray-50);
+  transform: translateY(-1px);
+  box-shadow: var(--jobs-shadow-sm);
+}
+
+.jobs-button-secondary:disabled {
+  background: var(--jobs-gray-100);
+  color: var(--jobs-gray-400);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 進度系統 - 極簡設計 */
+.jobs-progress-container {
+  width: 100%;
+  height: 2px;
+  background: var(--jobs-gray-100);
+  border-radius: var(--jobs-radius-full);
+  overflow: hidden;
+}
+
+.jobs-progress-bar {
+  height: 100%;
+  background: var(--jobs-primary);
+  border-radius: var(--jobs-radius-full);
+  transition: width var(--jobs-transition-slow);
+}
+
+/* 問題卡片 - 聚焦設計 */
+.jobs-question-card {
+  padding: var(--jobs-space-8);
+  text-align: center;
+}
+
+.jobs-question-title {
+  font-size: var(--jobs-text-2xl);
+  font-weight: 600;
+  color: var(--jobs-gray-900);
+  margin-bottom: var(--jobs-space-6);
+  line-height: 1.3;
+}
+
+.jobs-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jobs-space-3);
+  margin-top: var(--jobs-space-6);
+}
+
+.jobs-option {
+  padding: var(--jobs-space-6);
+  background: var(--jobs-white);
+  border: 1px solid var(--jobs-gray-200);
+  border-radius: var(--jobs-radius-lg);
+  cursor: pointer;
+  transition: all var(--jobs-transition-normal);
+  text-align: left;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.jobs-option:hover {
+  border-color: var(--jobs-primary);
+  box-shadow: var(--jobs-shadow-md);
+  transform: translateY(-2px);
+}
+
+.jobs-option.selected {
+  border-color: var(--jobs-primary);
+  background: var(--jobs-primary);
+  color: var(--jobs-white);
+  box-shadow: var(--jobs-shadow-lg);
+}
+
+.jobs-option.selected .jobs-option-description {
+  opacity: 0.9;
+}
+
+.jobs-option-text {
+  font-size: var(--jobs-text-base);
+  font-weight: 500;
+  margin-bottom: var(--jobs-space-1);
+}
+
+.jobs-option-description {
+  font-size: var(--jobs-text-sm);
+  opacity: 0.8;
+}
+
+/* 導航 - 簡潔明確 */
+.jobs-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--jobs-space-4);
+  border-top: 1px solid var(--jobs-gray-100);
+}
+
+/* 動畫效果 */
+.jobs-fade-in {
+  animation: fadeIn var(--jobs-transition-slow) ease-out;
+}
+
+.jobs-slide-up {
+  animation: slideUp var(--jobs-transition-normal) ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 640px) {
+  .jobs-container {
+    padding: var(--jobs-space-3);
+  }
+  
+  .jobs-question-card {
+    padding: var(--jobs-space-6);
+  }
+  
+  .jobs-question-title {
+    font-size: var(--jobs-text-xl);
+  }
+}
+
+/* 可訪問性 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --jobs-white: #1c1c1e;
+    --jobs-black: #ffffff;
+    --jobs-gray-50: #000000;
+    --jobs-gray-100: #1c1c1e;
+    --jobs-gray-200: #2c2c2e;
+    --jobs-gray-800: #f2f2f7;
+    --jobs-gray-900: #ffffff;
+  }
+}
