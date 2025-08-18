@@ -160,6 +160,13 @@ export class ApiClient {
     return this.request<{ success: boolean, data: any[], message: string }>(`/api/skills/${encodeURIComponent(skillName)}/tasks`);
   }
 
+  async updateSkillExperience(skillId: string, experience: number, reason?: string) {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/skills/${skillId}/experience`, {
+      method: 'POST',
+      body: JSON.stringify({ experience_gain: experience, reason }),
+    });
+  }
+
   // 聊天相關 API
   async getChatMessages() {
     return this.request<{ success: boolean, data: any[], message: string }>('/api/chat/messages');

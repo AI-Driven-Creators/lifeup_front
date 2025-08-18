@@ -224,6 +224,18 @@ export const useTaskStore = defineStore('task', {
           
           // 如果任務完成，觸發技能經驗值更新
           if (nextStatusString === 'completed' || nextStatusString === 'daily_completed') {
+            // 如果本地沒有任務資料，從API重新獲取
+            if (!task) {
+              try {
+                const tasksResponse = await apiClient.getTasks();
+                if (tasksResponse.success) {
+                  const allTasks = tasksResponse.data.map(this.transformBackendTask);
+                  task = allTasks.find(t => t.id === taskId) || null;
+                }
+              } catch (error) {
+                console.error('Failed to fetch task for completion handling:', error);
+              }
+            }
             await this.handleTaskCompletion(task);
           }
         } else {
@@ -370,12 +382,8 @@ export const useTaskStore = defineStore('task', {
       const skillStore = useSkillStore();
       
       try {
-        console.log(`🎯 任務完成: ${task.title} (難度: ${task.difficulty})`);
-        console.log('🔍 任務技能標籤:', task.skillTags);
-        
-        // 基本經驗值計算：任務難度 * 20
-        const baseExperience = task.difficulty * 20;
-        console.log('💰 基本經驗值:', baseExperience);
+        // 基本經驗值計算：使用任務本身的經驗值
+        const baseExperience = task.experience;
         
         // 根據任務類型和屬性分配技能經驗值
         const skillExperienceUpdates: Array<{skillId: string, experience: number, reason: string}> = [];
@@ -408,15 +416,9 @@ export const useTaskStore = defineStore('task', {
           console.log('⚠️ 任務沒有技能標籤');
         }
         
-        // 如果沒有特定屬性，給所有技能少量經驗值
+        // 如果沒有技能標籤，不分配技能經驗值
         if (skillExperienceUpdates.length === 0) {
-          for (const skill of skillStore.skills) {
-            skillExperienceUpdates.push({
-              skillId: skill.id,
-              experience: baseExperience / 2,
-              reason: `完成任務: ${task.title}`
-            });
-          }
+          console.log('⚠️ 任務沒有技能標籤，跳過技能經驗值分配');
         }
         
         // 批量更新技能經驗值
