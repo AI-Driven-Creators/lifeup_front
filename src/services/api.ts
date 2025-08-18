@@ -65,6 +65,10 @@ export class ApiClient {
     return this.request<{ success: boolean, data: any[], message: string }>('/api/tasks');
   }
 
+  async getTask(id: string) {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${id}`);
+  }
+
   async createTask(taskData: {
     title: string,
     description?: string,
@@ -168,10 +172,6 @@ export class ApiClient {
   }
 
   // 聊天相關 API
-  async getChatMessages() {
-    return this.request<{ success: boolean, data: any[], message: string }>('/api/chat/messages');
-  }
-
   async sendMessage(message: string) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/chat/send', {
       method: 'POST',
@@ -210,6 +210,27 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({ message }),
     });
+  }
+
+  // 聊天記錄相關 API
+  async getChatMessages() {
+    return this.request<{success: boolean, data: any[], message: string}>('/api/chat/messages');
+  }
+
+  // 下載所有聊天記錄
+  async downloadChatHistory() {
+    const response = await fetch(`${this.baseURL}/api/chat/messages/all`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/plain',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('下載失敗');
+    }
+    
+    return response;
   }
 }
 

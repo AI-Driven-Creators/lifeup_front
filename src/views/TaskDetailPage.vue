@@ -336,10 +336,9 @@ const loadTaskDetail = async () => {
 
   try {
     // 載入任務詳情
-    const taskResponse = await apiClient.getTasks()
+    const taskResponse = await apiClient.getTask(taskId)
     if (taskResponse.success) {
-      const allTasks = taskResponse.data.map(taskStore.transformBackendTask)
-      const foundTask = allTasks.find(t => t.id === taskId)
+      const foundTask = taskStore.transformBackendTask(taskResponse.data)
       
       if (!foundTask) {
         error.value = '找不到指定的任務'

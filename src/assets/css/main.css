@@ -1,9 +1,9 @@
+/* 導入職涯測驗設計系統 */
+@import './jobs-design-system.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 導入職涯測驗設計系統 */
-@import './jobs-design-system.css';
 
 @layer base {
   body {
