@@ -10,7 +10,7 @@
     </button>
   </div>
 
-  <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-16 space-y-8 md:space-y-16">
+  <div class="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-16 pb-24 space-y-8 md:space-y-16">
       <!-- Jobs風格標題 -->
       <div class="text-center">
         <h1 class="text-3xl font-semibold text-gray-800 mb-6 mt-20">

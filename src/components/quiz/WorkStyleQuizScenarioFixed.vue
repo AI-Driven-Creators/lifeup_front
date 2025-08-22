@@ -41,8 +41,7 @@
     </div>
 
     <!-- 問題內容 -->
-    <div class="bg-white rounded-lg shadow-sm border">
-      <div class="p-8 select-none">
+    <div class="p-8 select-none">
         <div class="flex items-center justify-between mb-6">
           <div></div>
           <button
@@ -78,7 +77,6 @@
           </div>
         </div>
 
-      </div>
     </div>
   </div>
 </template>

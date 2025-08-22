@@ -34,7 +34,7 @@
         </div>
 
       <!-- Quiz Content -->
-      <div v-if="currentStep < steps.length" class="jobs-card jobs-fade-in">
+      <div v-if="currentStep < steps.length" class="jobs-fade-in">
         <!-- 價值觀測驗 -->
         <ValuesQuizTwoStage 
           v-if="currentStep === 0"
