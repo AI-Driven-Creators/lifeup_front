@@ -12,7 +12,7 @@
       <!-- 測驗說明 -->
       <div class="text-center mt-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-2">
-          CAT適性天賦測驗
+          適性天賦測驗
         </h2>
         <p class="text-gray-600 mb-4">
           透過情境化題目深度分析你的天賦特質
