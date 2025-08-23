@@ -18,11 +18,9 @@
         <button 
           v-if="showProfileIcon"
           @click="$router.push('/personal-info')"
-          class="profile-icon w-12 h-12 bg-warm-gray-100 rounded-full flex items-center justify-center hover:bg-warm-gray-200 transition-colors"
+          class="profile-icon hover:bg-gray-100 transition-colors"
         >
-          <div class="w-6 h-6 bg-warm-gray-800 rounded flex items-center justify-center">
-            <span class="text-white text-sm">👤</span>
-          </div>
+          <UserCircle class="w-10 h-10 text-gray-600" />
         </button>
       </div>
     </div>
@@ -30,6 +28,8 @@
 </template>
 
 <script setup lang="ts">
+import { UserCircle } from 'lucide-vue-next'
+
 interface Props {
   title: string
   showBack?: boolean

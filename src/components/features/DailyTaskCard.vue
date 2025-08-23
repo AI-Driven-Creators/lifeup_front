@@ -4,12 +4,12 @@
       <!-- 左側：圖標和任務信息 -->
       <div class="flex items-center space-x-3">
         <!-- 任務圖標 -->
-        <div class="task-icon w-12 h-12 bg-warm-gray-100 rounded-lg flex items-center justify-center">
-          <div class="w-6 h-6 bg-warm-gray-800 rounded" :class="getIconClass(task.type)">
-            <span class="text-white text-sm flex items-center justify-center w-full h-full">
-              {{ getTaskIcon(task.type) }}
-            </span>
-          </div>
+        <div class="task-icon w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+          <Target v-if="task.type === 'main'" class="w-6 h-6 text-gray-600" />
+          <ClipboardList v-else-if="task.type === 'side'" class="w-6 h-6 text-gray-600" />
+          <Zap v-else-if="task.type === 'challenge'" class="w-6 h-6 text-gray-600" />
+          <Calendar v-else-if="task.type === 'daily'" class="w-6 h-6 text-gray-600" />
+          <FileText v-else class="w-6 h-6 text-gray-600" />
         </div>
         
         <!-- 任務信息 -->
@@ -45,12 +45,10 @@
         :class="getStatusButtonClass(task.status)"
         @click="handleTaskClick"
       >
-        <div 
+        <Check 
           v-if="task.status === 'completed' || task.status === 'daily_completed'"
-          class="w-5 h-5 bg-current rounded flex items-center justify-center"
-        >
-          <span class="text-white text-xs">✓</span>
-        </div>
+          class="w-4 h-4"
+        />
         <div 
           v-else-if="task.status === 'paused'"
           class="w-5 h-5 bg-current rounded flex items-center justify-center"
@@ -88,6 +86,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
 import SkillTags from '@/components/common/SkillTags.vue'
 import { useSkillStore } from '@/stores/skill'
+import { Check, Target, ClipboardList, Zap, Calendar, FileText } from 'lucide-vue-next'
 
 interface Props {
   task: Task
@@ -210,13 +209,13 @@ const handleCancelToggle = () => {
 // 根據任務類型獲取圖標
 const getTaskIcon = (type: Task['type']) => {
   const icons = {
-    main: '🎯',
-    side: '📋', 
-    challenge: '⚡',
-    daily: '📅',
-    subtask: '📝'
+    main: 'Target',
+    side: 'ClipboardList', 
+    challenge: 'Zap',
+    daily: 'Calendar',
+    subtask: 'FileText'
   }
-  return icons[type] || '📝'
+  return icons[type] || 'FileText'
 }
 
 // 根據任務類型獲取圖標樣式
@@ -230,17 +229,17 @@ const getStatusButtonClass = (status: Task['status']) => {
     case 'completed':
       return 'bg-warm-gray-800 border-warm-gray-800'
     case 'daily_completed':
-      return 'bg-green-600 border-green-600' // 每日任務完成用綠色區分
+      return 'bg-gray-100 border-primary-400 text-primary-600' // 每日任務完成
     case 'in_progress':
       return 'bg-warm-gray-200 border-warm-gray-400'
     case 'daily_in_progress':
       return 'bg-blue-200 border-blue-400' // 每日任務進行中用藍色區分
     case 'daily_not_completed':
-      return 'bg-red-200 border-red-400' // 每日任務未完成用紅色區分
+      return 'bg-gray-100 border-primary-400' // 每日任務未完成
     case 'paused':
       return 'bg-warm-gray-400 border-warm-gray-400'
     default:
-      return 'bg-transparent border-warm-gray-300 hover:border-warm-gray-400'
+      return 'bg-gray-100 border-primary-400 hover:border-primary-500'
   }
 }
 

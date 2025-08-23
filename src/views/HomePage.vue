@@ -34,14 +34,11 @@
       <div class="px-4 pt-4 pb-2">
         <button 
           @click="$router.push('/personality-test')"
-          class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl py-4 px-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl py-4 px-6 shadow-sm hover:shadow-md transition-all duration-300"
         >
-          <div class="flex items-center justify-center space-x-3">
-            <span class="text-2xl">🧠</span>
-            <div class="text-left">
-              <div class="font-bold text-lg">人格特質測驗</div>
-              <div class="text-sm opacity-90">了解你的內在驅動力</div>
-            </div>
+          <div class="text-center">
+            <div class="font-semibold text-lg">找到你的理想職業</div>
+            <div class="text-sm text-slate-600">30分鐘測驗，獲得專屬職涯建議</div>
           </div>
         </button>
       </div>
@@ -60,7 +57,7 @@
         <p class="text-gray-600 mb-4">首頁只顯示進行中的任務。開始一個任務來查看它！</p>
         <button 
           @click="$router.push('/mission')"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           前往任務頁面
         </button>
@@ -71,10 +68,10 @@
     <button
       v-if="!loading && activeTasks.length > 0"
       @click="refreshTasks"
-      class="fixed bottom-20 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+      class="fixed bottom-20 right-4 w-12 h-12 bg-primary-500 text-white rounded-full shadow-lg hover:bg-primary-600 transition-colors flex items-center justify-center"
       title="刷新任務"
     >
-      🔄
+      <RefreshCw class="w-5 h-5" />
     </button>
   </div>
 </template>
@@ -86,6 +83,7 @@ import DailyTaskCard from '@/components/features/DailyTaskCard.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
+import { RefreshCw } from 'lucide-vue-next'
 import type { Task } from '@/types'
 
 const taskStore = useTaskStore()
