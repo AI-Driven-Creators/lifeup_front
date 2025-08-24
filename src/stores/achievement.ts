@@ -54,7 +54,7 @@ export const useAchievementStore = defineStore('achievement', () => {
       loading.value = true
       error.value = null
 
-      const response = await apiClient.getUserAchievements(userId)
+      const response = await apiClient.getUserAchievementsStatus(userId)
       
       if (response.success && response.data) {
         achievements.value = response.data

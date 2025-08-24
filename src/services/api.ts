@@ -188,6 +188,10 @@ export class ApiClient {
     return this.request<{ success: boolean, data: any[], message: string }>(`/api/users/${userId}/achievements`);
   }
 
+  async getUserAchievementsStatus(userId: string) {
+    return this.request<{ success: boolean, data: any[], message: string }>(`/api/users/${userId}/achievements/status`);
+  }
+
   async unlockUserAchievement(userId: string, achievementId: string) {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/achievements/${achievementId}/unlock`, {
       method: 'POST',
