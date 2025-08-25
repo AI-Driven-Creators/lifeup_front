@@ -222,9 +222,9 @@ export const useTaskStore = defineStore('task', {
           }
           console.log(`Task ${taskId} status changed to ${nextStatusString}`);
           
-          // 如果任務完成，觸發技能經驗值更新
+          // 根據狀態變化處理經驗值
           if (nextStatusString === 'completed' || nextStatusString === 'daily_completed') {
-            // 如果本地沒有任務資料，從API重新獲取
+            // 任務完成，增加經驗值
             if (!task) {
               try {
                 const tasksResponse = await apiClient.getTasks();
@@ -237,6 +237,20 @@ export const useTaskStore = defineStore('task', {
               }
             }
             await this.handleTaskCompletion(task);
+          } else if (reverse && (taskStatus === 'completed' || taskStatus === 'daily_completed')) {
+            // 從完成狀態回復，扣除經驗值
+            if (!task) {
+              try {
+                const tasksResponse = await apiClient.getTasks();
+                if (tasksResponse.success) {
+                  const allTasks = tasksResponse.data.map(this.transformBackendTask);
+                  task = allTasks.find(t => t.id === taskId) || null;
+                }
+              } catch (error) {
+                console.error('Failed to fetch task for revert handling:', error);
+              }
+            }
+            await this.handleTaskRevert(task);
           }
         } else {
           throw new Error(response.message);
@@ -431,6 +445,71 @@ export const useTaskStore = defineStore('task', {
         
       } catch (error) {
         console.error('處理任務完成獎勵時發生錯誤:', error);
+      }
+    },
+
+    // 處理任務回復，扣除技能經驗值
+    async handleTaskRevert(task: Task | null) {
+      if (!task) {
+        console.log('❌ handleTaskRevert: task 為空');
+        return;
+      }
+
+      const skillStore = useSkillStore();
+      
+      try {
+        // 基本經驗值計算：使用任務本身的經驗值（負值表示扣除）
+        const baseExperience = -task.experience;
+        
+        // 根據任務類型和屬性分配技能經驗值扣除
+        const skillExperienceUpdates: Array<{skillId: string, experience: number, reason: string}> = [];
+        
+        // 獲取所有技能用於查找對應技能
+        if (skillStore.skills.length === 0) {
+          console.log('📚 技能列表為空，正在獲取...');
+          await skillStore.fetchSkills();
+        }
+        console.log('📚 當前技能列表:', skillStore.skills.map(s => s.name));
+        
+        // 根據任務技能標籤給相應技能扣除經驗值
+        if (task.skillTags && task.skillTags.length > 0) {
+          console.log(`🏷️ 處理 ${task.skillTags.length} 個技能標籤回復:`, task.skillTags);
+          for (const skillTag of task.skillTags) {
+            // 根據技能名稱找到對應的技能
+            const targetSkill = skillStore.skills.find(skill => skill.name === skillTag);
+            if (targetSkill) {
+              console.log(`✅ 找到對應技能: ${skillTag} -> ${targetSkill.id}`);
+              skillExperienceUpdates.push({
+                skillId: targetSkill.id,
+                experience: baseExperience, // 負值，表示扣除
+                reason: `回復任務: ${task.title}`
+              });
+            } else {
+              console.warn(`❌ 找不到技能: ${skillTag}`);
+            }
+          }
+        } else {
+          console.log('⚠️ 任務沒有技能標籤');
+        }
+        
+        // 如果沒有技能標籤，不扣除技能經驗值
+        if (skillExperienceUpdates.length === 0) {
+          console.log('⚠️ 任務沒有技能標籤，跳過技能經驗值扣除');
+        }
+        
+        // 批量更新技能經驗值（扣除）
+        for (const update of skillExperienceUpdates) {
+          try {
+            await skillStore.addSkillExperience(update.skillId, update.experience, update.reason);
+          } catch (error) {
+            console.error(`扣除技能 ${update.skillId} 經驗值失敗:`, error);
+          }
+        }
+        
+        console.log(`✅ 任務回復處理完畢！扣除了 ${skillExperienceUpdates.length} 個技能的經驗值`);
+        
+      } catch (error) {
+        console.error('處理任務回復扣除經驗值時發生錯誤:', error);
       }
     },
   },
