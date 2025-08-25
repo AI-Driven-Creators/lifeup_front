@@ -236,6 +236,65 @@ export class ApiClient {
     
     return response;
   }
+
+  // 教練個性相關 API
+  async getAvailablePersonalities() {
+    return this.request<{
+      success: boolean,
+      data: {
+        personalities: Array<{
+          personality_type: string,
+          display_name: string,
+          description: string,
+          emoji: string
+        }>,
+        current_personality: string | null
+      },
+      message: string
+    }>('/api/coach/personalities');
+  }
+
+  async setCoachPersonality(userId: string, personalityType: string) {
+    return this.request<{
+      success: boolean,
+      data: {
+        personality_type: string,
+        display_name: string,
+        description: string,
+        is_active: boolean
+      },
+      message: string
+    }>('/api/coach/personality', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId,
+        personality_type: personalityType
+      }),
+    });
+  }
+
+  async getCurrentPersonality(userId: string) {
+    return this.request<{
+      success: boolean,
+      data: {
+        personality_type: string,
+        display_name: string,
+        description: string,
+        is_active: boolean
+      } | null,
+      message: string
+    }>(`/api/coach/personality/current?user_id=${userId}`);
+  }
+
+  async sendMessageWithPersonality(message: string, userId?: string) {
+    return this.request<{ text: string }>('/api/chat/personality', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        user_id: userId
+      }),
+    });
+  }
 }
 
 // 創建全局 API 實例

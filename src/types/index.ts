@@ -78,7 +78,7 @@ export interface TaskProgress {
 // AI教練相關類型
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'coach';
+  role: 'user' | 'coach' | 'system';
   content: string;
   timestamp: Date;
 }
