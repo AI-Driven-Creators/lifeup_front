@@ -3,6 +3,17 @@
     <!-- 頁面標題 -->
     <PageHeader title="小教練" />
     
+    <!-- 下載按鈕區域 -->
+    <div class="px-4 py-2 flex justify-end">
+      <button
+        @click="downloadHistory"
+        class="btn-secondary text-sm flex items-center gap-2"
+      >
+        <span>📥</span>
+        <span>下載對話記錄</span>
+      </button>
+    </div>
+    
     <!-- 個性選擇器 -->
     <div class="px-4 py-2 bg-white border-b border-gray-200">
       <div class="flex items-center gap-3">
@@ -27,7 +38,7 @@
     </div>
     
     <!-- 聊天訊息區域 -->
-    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+    <div ref="chatContainer" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
       <ChatMessage
         v-for="message in messages"
         :key="message.id"
@@ -51,16 +62,31 @@
     </div>
     
     <!-- 輸入區域 -->
-    <ChatInput @send="sendMessage" :disabled="loading" />
+    <ChatInput 
+      @send="handleSendMessage" 
+      @taskModeChange="handleTaskModeChange"
+      :disabled="loading" 
+    />
+    
+    <!-- 任務預覽對話框 -->
+    <TaskPreviewDialog
+      v-if="showTaskPreview"
+      :taskJson="previewTaskJson"
+      :taskPreview="taskPreviewText"
+      :validationErrors="validationErrors"
+      @confirm="confirmCreateTask"
+      @cancel="cancelTaskCreation"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { apiClient } from '@/services/api'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import ChatMessage from '@/components/features/ChatMessage.vue'
 import ChatInput from '@/components/features/ChatInput.vue'
+import TaskPreviewDialog from '@/components/features/TaskPreviewDialog.vue'
 import type { ChatMessage as ChatMessageType } from '@/types'
 
 // 基本狀態
@@ -85,6 +111,7 @@ const currentPersonality = computed(() => {
   }
   return availablePersonalities.value.find(p => p.personality_type === selectedPersonality.value) || null
 })
+const chatContainer = ref<HTMLDivElement>()
 
 // 載入可用個性
 const loadAvailablePersonalities = async () => {
@@ -168,6 +195,93 @@ const handlePersonalityChange = async () => {
     console.error('設定個性失敗:', error)
   }
 }
+// 任務生成相關狀態
+const showTaskPreview = ref(false)
+const previewTaskJson = ref<any>(null)
+const taskPreviewText = ref('')
+const validationErrors = ref<string[]>([])
+const isTaskModeActive = ref(false)
+
+// 載入歷史對話記錄
+const loadChatHistory = async () => {
+  try {
+    const response = await apiClient.getChatMessages()
+    if (response.success && response.data) {
+      messages.value = response.data.map(msg => ({
+        id: msg.id || Date.now().toString(),
+        role: msg.role === 'assistant' ? 'coach' : msg.role,
+        content: msg.content || '',
+        timestamp: msg.created_at ? new Date(msg.created_at) : new Date()
+      }))
+      
+      // 如果沒有歷史記錄，顯示歡迎訊息
+      if (messages.value.length === 0) {
+        messages.value.push({
+          id: '1',
+          role: 'coach',
+          content: '嗨！我是你的 AI 小教練。很高興見到你！今天有什麼我可以幫助你的嗎？無論是設定目標、時間管理，還是需要一些鼓勵，我都在這裡支持你。',
+          timestamp: new Date()
+        })
+      }
+      
+      // 滾動到底部
+      await nextTick()
+      scrollToBottom()
+    }
+  } catch (error) {
+    console.error('載入對話記錄失敗:', error)
+    // 載入失敗時顯示預設歡迎訊息
+    messages.value = [{
+      id: '1',
+      role: 'coach',
+      content: '嗨！我是你的 AI 小教練。很高興見到你！今天有什麼我可以幫助你的嗎？',
+      timestamp: new Date()
+    }]
+  }
+}
+
+// 滾動到底部
+const scrollToBottom = () => {
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+  }
+}
+
+// 下載對話記錄
+const downloadHistory = async () => {
+  try {
+    const response = await apiClient.downloadChatHistory()
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.style.display = 'none'
+    a.href = url
+    a.download = `chat_history_${new Date().toISOString().split('T')[0]}.txt`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  } catch (error) {
+    console.error('下載失敗:', error)
+    alert('下載對話記錄失敗，請稍後再試。')
+  }
+}
+
+// 頁面載入時獲取歷史記錄
+onMounted(() => {
+  loadChatHistory()
+})
+
+// const sendMessage = async (content: string) => {
+//   const userMessage: ChatMessageType = {
+//     id: Date.now().toString(),
+//     role: 'user',
+//     content,
+//     timestamp: new Date()
+//   }
+//   messages.value.push(userMessage)
+//   quickReplies.value = []
+//   loading.value = true
 
 // 獲取個性介紹訊息
 const getPersonalityIntroMessage = (personalityType: string): string => {
@@ -215,10 +329,16 @@ const sendMessage = async (content: string) => {
   messages.value.push(userMessage)
   quickReplies.value = []
   loading.value = true
+  
+  // 滾動到底部
+  await nextTick()
+  scrollToBottom()
 
   try {
-    // 使用個性化聊天 API
-    const res = await apiClient.sendMessageWithPersonality(content, currentUserId.value);
+    // 使用個性化聊天 API（如果有個性系統）或普通聊天 API
+    const res = selectedPersonality.value 
+      ? await apiClient.sendMessageWithPersonality(content, currentUserId.value)
+      : await apiClient.sendMessageToChatGPT(content);
 
     const coachMessage: ChatMessageType = {
       id: (Date.now() + 1).toString(),
@@ -227,6 +347,10 @@ const sendMessage = async (content: string) => {
       timestamp: new Date()
     }
     messages.value.push(coachMessage)
+    
+    // 再次滾動到底部
+    await nextTick()
+    scrollToBottom()
   } catch (e) {
     console.error('發送訊息失敗:', e)
     messages.value.push({
@@ -235,8 +359,196 @@ const sendMessage = async (content: string) => {
       content: '發生錯誤，請稍後再試。',
       timestamp: new Date()
     })
+    
+    await nextTick()
+    scrollToBottom()
   } finally {
     loading.value = false
   }
+}
+
+// 處理發送訊息（同時處理任務模式）
+const handleSendMessage = async (content: string, isTaskMode: boolean) => {
+  if (isTaskMode) {
+    // 任務模式：直接生成任務
+    await generateTaskFromText(content)
+  } else {
+    // 普通模式：發送聊天訊息
+    await sendMessage(content)
+  }
+}
+
+// 處理任務模式狀態變更
+const handleTaskModeChange = (isActive: boolean) => {
+  isTaskModeActive.value = isActive
+}
+
+// 從文本直接生成任務
+const generateTaskFromText = async (taskDescription: string) => {
+  // 先將用戶的任務描述添加到對話記錄
+  const userMessage: ChatMessageType = {
+    id: Date.now().toString(),
+    role: 'user',
+    content: taskDescription,
+    timestamp: new Date()
+  }
+  messages.value.push(userMessage)
+  
+  // 滾動到底部
+  await nextTick()
+  scrollToBottom()
+  
+  loading.value = true
+  
+  try {
+    // 使用 generateTaskFromChat API，但只傳送用戶的任務描述
+    const generateRes = await apiClient.generateTaskFromChat([`用戶: ${taskDescription}`])
+    
+    if (generateRes.success && generateRes.data) {
+      // 驗證並生成預覽
+      const validateRes = await apiClient.validateAndPreviewTask(generateRes.data)
+      
+      if (validateRes.success && validateRes.data) {
+        if (validateRes.data.is_valid) {
+          previewTaskJson.value = validateRes.data.task_json
+          taskPreviewText.value = validateRes.data.task_preview || ''
+          validationErrors.value = []
+          showTaskPreview.value = true
+          
+          const coachResponse = `我理解了你的需求！我已經為你生成了一個任務：「${validateRes.data.task_json?.title}」。請查看預覽並確認是否要創建這個任務。`
+          
+          // 通過 ChatGPT API 保存對話到數據庫（使用任務模式的特殊格式）
+          try {
+            await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+          } catch (saveError) {
+            console.warn('保存任務模式對話失敗:', saveError)
+          }
+          
+          // 添加 AI 教練的回應到對話記錄
+          const coachMessage: ChatMessageType = {
+            id: (Date.now() + 1).toString(),
+            role: 'coach',
+            content: coachResponse,
+            timestamp: new Date()
+          }
+          messages.value.push(coachMessage)
+          
+          // 再次滾動到底部
+          await nextTick()
+          scrollToBottom()
+        } else {
+          validationErrors.value = validateRes.data.validation_errors
+          const errorResponse = `抱歉，生成的任務格式有問題：${validationErrors.value.join(', ')}。請重新描述你的任務需求。`
+          
+          // 保存對話到數據庫
+          try {
+            await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+          } catch (saveError) {
+            console.warn('保存任務模式對話失敗:', saveError)
+          }
+          
+          // 添加錯誤回應到對話記錄
+          const errorMessage: ChatMessageType = {
+            id: (Date.now() + 1).toString(),
+            role: 'coach',
+            content: errorResponse,
+            timestamp: new Date()
+          }
+          messages.value.push(errorMessage)
+          await nextTick()
+          scrollToBottom()
+        }
+      }
+    } else {
+      const failResponse = '無法生成任務，請確保描述清楚且包含足夠的任務資訊。可以試著更詳細地描述你想要的任務。'
+      
+      // 保存對話到數據庫
+      try {
+        await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+      } catch (saveError) {
+        console.warn('保存任務模式對話失敗:', saveError)
+      }
+      
+      // 添加失敗回應到對話記錄
+      const failMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'coach',
+        content: failResponse,
+        timestamp: new Date()
+      }
+      messages.value.push(failMessage)
+      await nextTick()
+      scrollToBottom()
+    }
+  } catch (error) {
+    console.error('生成任務失敗:', error)
+    const errorResponse = '抱歉，生成任務時發生了錯誤。請稍後再試，或者換一種方式描述你的任務。'
+    
+    // 保存對話到數據庫
+    try {
+      await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+    } catch (saveError) {
+      console.warn('保存任務模式對話失敗:', saveError)
+    }
+    
+    // 添加錯誤回應到對話記錄
+    const errorMessage: ChatMessageType = {
+      id: (Date.now() + 1).toString(),
+      role: 'coach',
+      content: errorResponse,
+      timestamp: new Date()
+    }
+    messages.value.push(errorMessage)
+    await nextTick()
+    scrollToBottom()
+  } finally {
+    loading.value = false
+  }
+}
+
+// 確認創建任務
+const confirmCreateTask = async () => {
+  loading.value = true
+  try {
+    // 先保存任務標題，因為稍後會清空 previewTaskJson
+    const taskTitle = previewTaskJson.value?.title || '新任務'
+    
+    const res = await apiClient.createTaskFromJson(previewTaskJson.value)
+    
+    if (res.success) {
+      alert('任務創建成功！')
+      
+      // 在對話中添加確認訊息（在清空 previewTaskJson 之前）
+      messages.value.push({
+        id: Date.now().toString(),
+        role: 'coach',
+        content: `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`,
+        timestamp: new Date()
+      })
+      
+      // 清空預覽狀態
+      showTaskPreview.value = false
+      previewTaskJson.value = null
+      
+      // 滾動到底部以顯示新訊息
+      await nextTick()
+      scrollToBottom()
+    } else {
+      alert('任務創建失敗：' + res.message)
+    }
+  } catch (error) {
+    console.error('創建任務失敗:', error)
+    alert('創建任務失敗，請稍後再試。')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 取消任務創建
+const cancelTaskCreation = () => {
+  showTaskPreview.value = false
+  previewTaskJson.value = null
+  taskPreviewText.value = ''
+  validationErrors.value = []
 }
 </script>

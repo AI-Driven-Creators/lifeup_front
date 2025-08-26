@@ -216,6 +216,37 @@ export class ApiClient {
     });
   }
 
+  // AI 任務生成相關 API
+  async generateTaskFromChat(chatHistory: string[]) {
+    return this.request<{ success: boolean, data: any, message: string }>('/api/tasks/generate-from-chat', {
+      method: 'POST',
+      body: JSON.stringify({ chat_history: chatHistory }),
+    });
+  }
+
+  async validateAndPreviewTask(taskJson: any) {
+    return this.request<{ 
+      success: boolean, 
+      data: {
+        is_valid: boolean,
+        validation_errors: string[],
+        task_preview?: string,
+        task_json?: any
+      }, 
+      message: string 
+    }>('/api/tasks/validate-preview', {
+      method: 'POST',
+      body: JSON.stringify({ task_json: taskJson }),
+    });
+  }
+
+  async createTaskFromJson(taskJson: any) {
+    return this.request<{ success: boolean, data: any, message: string }>('/api/tasks/create-from-json', {
+      method: 'POST',
+      body: JSON.stringify(taskJson),
+    });
+  }
+
   // 聊天記錄相關 API
   async getChatMessages() {
     return this.request<{success: boolean, data: any[], message: string}>('/api/chat/messages');
