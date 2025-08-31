@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('@/views/MissionPage.vue')
     },
     {
+      path: '/mission/:type',
+      name: 'mission-type',
+      component: () => import('@/views/TaskTypeDetailPage.vue')
+    },
+    {
       path: '/skills',
       name: 'skills',
       component: () => import('@/views/SkillListPage.vue')
