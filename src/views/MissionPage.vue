@@ -30,10 +30,16 @@
     
     <!-- 任務列表 -->
     <div v-else class="px-4 py-6 space-y-6">
+      <!-- 狀態篩選器 -->
+      <TaskStatusFilter 
+        :tasks="allTasks"
+        @filter-change="handleFilterChange"
+      />
+
       <!-- 每日任務 -->
       <TaskSection
         title="每日任務"
-        :tasks="dailyTasks"
+        :tasks="filterTasksByStatus(dailyTasks)"
         @toggle="toggleTask"
         @taskUpdated="handleTaskUpdate"
       />
@@ -41,7 +47,7 @@
       <!-- 主線任務 -->
       <TaskSection
         title="主線任務"
-        :tasks="mainTasks"
+        :tasks="filterTasksByStatus(mainTasks)"
         @toggle="toggleTask"
         @taskUpdated="handleTaskUpdate"
       />
@@ -49,7 +55,7 @@
       <!-- 支線任務 -->
       <TaskSection
         title="支線任務"
-        :tasks="sideTasks"
+        :tasks="filterTasksByStatus(sideTasks)"
         @toggle="toggleTask"
         @taskUpdated="handleTaskUpdate"
       />
@@ -57,7 +63,7 @@
       <!-- 挑戰任務 -->
       <TaskSection
         title="挑戰任務"
-        :tasks="challengeTasks"
+        :tasks="filterTasksByStatus(challengeTasks)"
         @toggle="toggleTask"
         @taskUpdated="handleTaskUpdate"
       />
@@ -66,9 +72,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskSection from '@/components/features/TaskSection.vue'
+import TaskStatusFilter from '@/components/features/TaskStatusFilter.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
@@ -82,6 +89,15 @@ const challengeTasks = ref<Task[]>([])
 const dailyTasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const activeStatusFilters = ref<string[]>([])
+
+// 所有任務的計算屬性
+const allTasks = computed(() => [
+  ...mainTasks.value,
+  ...sideTasks.value,
+  ...challengeTasks.value,
+  ...dailyTasks.value
+])
 
 // 載入不同類型的任務
 const loadTasksByType = async () => {
@@ -172,6 +188,19 @@ const handleTaskUpdate = (updatedTask: Task) => {
       updateTaskInList(dailyTasks.value)
       break
   }
+}
+
+// 處理狀態篩選變化
+const handleFilterChange = (filters: string[]) => {
+  activeStatusFilters.value = filters
+}
+
+// 根據狀態篩選任務
+const filterTasksByStatus = (tasks: Task[]) => {
+  if (activeStatusFilters.value.length === 0) {
+    return tasks
+  }
+  return tasks.filter(task => activeStatusFilters.value.includes(task.status))
 }
 
 // 頁面載入時獲取任務
