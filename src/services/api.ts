@@ -198,6 +198,21 @@ export class ApiClient {
     });
   }
 
+  // 從用戶任務數據自動生成成就
+  async generateAchievementFromTasks(userId: string) {
+    return this.request<{ 
+      success: boolean, 
+      data: {
+        achievement: any,
+        is_unlocked: boolean,
+        task_summary: any
+      }, 
+      message: string 
+    }>(`/api/achievements/generate-from-tasks/${userId}`, {
+      method: 'POST',
+    });
+  }
+
   // 週屬性相關 API
   async getWeeklyAttributes(userId: string, weeksAgo: number = 0) {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/attributes/weekly/${weeksAgo}`);
