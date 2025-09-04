@@ -21,6 +21,8 @@ export const useAchievementStore = defineStore('achievement', () => {
   const achievements = ref<Achievement[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const generatingAchievement = ref(false)
+  const generationResult = ref<{ achievement: Achievement, isUnlocked: boolean, message: string } | null>(null)
 
   // 計算屬性
   const unlockedAchievements = computed(() => 
@@ -175,10 +177,87 @@ export const useAchievementStore = defineStore('achievement', () => {
     return unlockedAchievements
   }
 
+  // 從用戶任務數據生成成就
+  async function generateAchievementFromTasks(userId: string) {
+    try {
+      generatingAchievement.value = true
+      error.value = null
+      generationResult.value = null
+
+      const response = await apiClient.generateAchievementFromTasks(userId)
+      
+      if (response.success && response.data) {
+        const { achievement, is_unlocked, task_summary } = response.data
+        
+        // 將新生成的成就添加到列表中
+        const newAchievement: Achievement = {
+          id: achievement.id,
+          name: achievement.name,
+          description: achievement.description || '',
+          icon: achievement.icon || '🎯',
+          category: achievement.category || 'generated',
+          requirement_type: achievement.requirement_type,
+          requirement_value: achievement.requirement_value,
+          experience_reward: achievement.experience_reward || 0,
+          unlocked: is_unlocked,
+          progress: is_unlocked ? 100 : 0,
+          achieved_at: is_unlocked ? new Date().toISOString() : undefined
+        }
+        
+        // 檢查是否已存在相同成就，如果沒有則添加
+        const existingIndex = achievements.value.findIndex(a => a.id === newAchievement.id)
+        if (existingIndex === -1) {
+          achievements.value.push(newAchievement)
+        } else {
+          // 更新現有成就
+          achievements.value[existingIndex] = newAchievement
+        }
+        
+        // 設置生成結果
+        generationResult.value = {
+          achievement: newAchievement,
+          isUnlocked: is_unlocked,
+          message: response.message
+        }
+        
+        return {
+          success: true,
+          achievement: newAchievement,
+          isUnlocked: is_unlocked,
+          message: response.message,
+          taskSummary: task_summary
+        }
+      } else {
+        error.value = response.message || '生成成就失敗'
+        return {
+          success: false,
+          message: response.message || '生成成就失敗'
+        }
+      }
+    } catch (err: any) {
+      console.error('生成成就失敗:', err)
+      const errorMessage = err.message || '網絡錯誤，無法生成成就'
+      error.value = errorMessage
+      return {
+        success: false,
+        message: errorMessage
+      }
+    } finally {
+      generatingAchievement.value = false
+    }
+  }
+
+  // 清除生成結果
+  function clearGenerationResult() {
+    generationResult.value = null
+  }
+
   function resetStore() {
     achievements.value = []
     loading.value = false
     error.value = null
+    generatingAchievement.value = false
+    generationResult.value = null
   }
 
   return {
@@ -186,6 +265,8 @@ export const useAchievementStore = defineStore('achievement', () => {
     achievements,
     loading,
     error,
+    generatingAchievement,
+    generationResult,
     
     // 計算屬性
     unlockedAchievements,
@@ -202,6 +283,8 @@ export const useAchievementStore = defineStore('achievement', () => {
     getAchievementsByCategory,
     checkAchievementEligibility,
     autoUnlockAchievements,
+    generateAchievementFromTasks,
+    clearGenerationResult,
     resetStore
   }
 })
