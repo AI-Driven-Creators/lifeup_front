@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
     <!-- 頂部導航區域 -->
-    <div class="bg-white px-4 py-4 flex items-center shadow-sm">
+    <div class="bg-white px-4 py-4 flex items-center shadow-sm shrink-0">
       <!-- 返回按鈕 -->
       <button 
         @click="goBack"
@@ -30,14 +30,16 @@
       </div>
     </div>
     
-    <!-- 載入狀態 -->
-    <div v-if="loading" class="px-4 py-8 text-center">
+    <!-- 可滾動內容區域 -->
+    <div class="flex-1 min-h-0 overflow-y-auto">
+      <!-- 載入狀態 -->
+      <div v-if="loading" class="px-4 py-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       <p class="mt-2 text-gray-600">載入任務中...</p>
-    </div>
-    
-    <!-- 錯誤狀態 -->
-    <div v-else-if="error" class="px-4 py-4">
+      </div>
+      
+      <!-- 錯誤狀態 -->
+      <div v-else-if="error" class="px-4 py-4">
       <div class="bg-red-50 border border-red-200 rounded-lg p-4">
         <div class="flex items-center">
           <div class="text-red-600 mr-3">⚠️</div>
@@ -53,10 +55,10 @@
           重試
         </button>
       </div>
-    </div>
-    
-    <!-- 任務內容 -->
-    <div v-else class="px-4 py-6 space-y-6">
+      </div>
+      
+      <!-- 任務內容 -->
+      <div v-else class="px-4 py-6 space-y-6 pb-4">
       <!-- 狀態篩選器 -->
       <TaskStatusFilter 
         :tasks="tasks"
@@ -127,6 +129,7 @@
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script setup lang="ts">

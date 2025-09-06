@@ -1,88 +1,94 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <!-- 調整高度避免被底部導航影響，並確保內容區域可滾動 -->
+  <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
     <!-- 頁面標題 -->
-    <PageHeader title="任務總覽" />
-    
-    <!-- 載入狀態 -->
-    <div v-if="loading" class="px-4 py-8 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <p class="mt-2 text-gray-600">載入任務中...</p>
+    <div class="shrink-0">
+      <PageHeader title="任務總覽" />
     </div>
-    
-    <!-- 錯誤狀態 -->
-    <div v-else-if="error" class="px-4 py-4">
-      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div class="flex items-center">
-          <div class="text-red-600 mr-3">⚠️</div>
-          <div>
-            <h3 class="text-red-800 font-medium">載入失敗</h3>
-            <p class="text-red-600 text-sm mt-1">{{ error }}</p>
-          </div>
-        </div>
-        <button 
-          @click="loadTasksByType"
-          class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
-        >
-          重試
-        </button>
+
+    <!-- 可滾動內容區域 -->
+    <div class="flex-1 min-h-0 overflow-y-auto">
+      <!-- 載入狀態 -->
+      <div v-if="loading" class="px-4 py-8 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="mt-2 text-gray-600">載入任務中...</p>
       </div>
-    </div>
-    
-    <!-- 任務總覽內容 -->
-    <div v-else class="px-4 py-6">
-      <div class="bg-white rounded-lg p-4 mb-6 shadow-sm">
-        <div class="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div class="text-xl font-bold text-blue-600">{{ totalActiveTasks }}</div>
-            <div class="text-xs text-gray-500">活躍任務</div>
+      
+      <!-- 錯誤狀態 -->
+      <div v-else-if="error" class="px-4 py-4">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="text-red-600 mr-3">⚠️</div>
+            <div>
+              <h3 class="text-red-800 font-medium">載入失敗</h3>
+              <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+            </div>
           </div>
-          <div>
-            <div class="text-xl font-bold text-green-600">{{ todayCompletedTasks }}</div>
-            <div class="text-xs text-gray-500">已完成</div>
-          </div>
-          <div>
-            <div class="text-xl font-bold text-orange-600">{{ overallCompletionRate }}%</div>
-            <div class="text-xs text-gray-500">完成率</div>
-          </div>
+          <button 
+            @click="loadTasksByType"
+            class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+          >
+            重試
+          </button>
         </div>
       </div>
+      
+      <!-- 任務總覽內容 -->
+      <div v-else class="px-4 py-6">
+        <div class="bg-white rounded-lg p-4 mb-6 shadow-sm">
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div class="text-xl font-bold text-blue-600">{{ totalActiveTasks }}</div>
+              <div class="text-xs text-gray-500">活躍任務</div>
+            </div>
+            <div>
+              <div class="text-xl font-bold text-green-600">{{ todayCompletedTasks }}</div>
+              <div class="text-xs text-gray-500">已完成</div>
+            </div>
+            <div>
+              <div class="text-xl font-bold text-orange-600">{{ overallCompletionRate }}%</div>
+              <div class="text-xs text-gray-500">完成率</div>
+            </div>
+          </div>
+        </div>
 
-      <!-- 任務類型卡片 -->
-      <div class="space-y-3">
-        <TaskTypeCard
-          type="daily"
-          title="每日任務"
-          subtitle="培養習慣，日日精進"
-          icon="📅"
-          :tasks="dailyTasks"
-          @click="navigateToTaskType"
-        />
-        <TaskTypeCard
-          type="main"
-          title="主線任務"
-          subtitle="核心目標，重點突破"
-          icon="🎯"
-          :tasks="mainTasks"
-          @click="navigateToTaskType"
-        />
-        <TaskTypeCard
-          type="side"
-          title="支線任務"
-          subtitle="輔助成長，拓展視野"
-          icon="🌟"
-          :tasks="sideTasks"
-          @click="navigateToTaskType"
-        />
-        <TaskTypeCard
-          type="challenge"
-          title="挑戰任務"
-          subtitle="挑戰自我，突破極限"
-          icon="🔥"
-          :tasks="challengeTasks"
-          @click="navigateToTaskType"
-        />
+        <!-- 任務類型卡片 -->
+        <div class="space-y-3 pb-4">
+          <TaskTypeCard
+            type="daily"
+            title="每日任務"
+            subtitle="培養習慣，日日精進"
+            icon="📅"
+            :tasks="dailyTasks"
+            @click="navigateToTaskType"
+          />
+          <TaskTypeCard
+            type="main"
+            title="主線任務"
+            subtitle="核心目標，重點突破"
+            icon="🎯"
+            :tasks="mainTasks"
+            @click="navigateToTaskType"
+          />
+          <TaskTypeCard
+            type="side"
+            title="支線任務"
+            subtitle="輔助成長，拓展視野"
+            icon="🌟"
+            :tasks="sideTasks"
+            @click="navigateToTaskType"
+          />
+          <TaskTypeCard
+            type="challenge"
+            title="挑戰任務"
+            subtitle="挑戰自我，突破極限"
+            icon="🔥"
+            :tasks="challengeTasks"
+            @click="navigateToTaskType"
+          />
+        </div>
+
       </div>
-
     </div>
   </div>
 </template>
