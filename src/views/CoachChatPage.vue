@@ -1,5 +1,6 @@
 <template>
-  <div class="flex flex-col h-screen bg-primary-50">
+  <!-- 減去 App.vue main 的 pb-20(5rem) 以避免垂直溢出，需要時可調整 -->
+  <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
     <!-- 頁面標題 -->
     <PageHeader title="小教練" />
     
@@ -15,7 +16,7 @@
     </div>
     
     <!-- 個性選擇器 -->
-    <div class="px-4 py-2 bg-white border-b border-gray-200">
+  <div class="px-4 py-2 bg-white border-y border-gray-200 shrink-0">
       <div class="flex items-center gap-3">
         <span class="text-sm font-medium text-gray-700">教練個性：</span>
         <select 
@@ -38,7 +39,7 @@
     </div>
     
     <!-- 聊天訊息區域 -->
-    <div ref="chatContainer" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+  <div ref="chatContainer" class="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
       <ChatMessage
         v-for="message in messages"
         :key="message.id"
@@ -62,10 +63,11 @@
     </div>
     
     <!-- 輸入區域 -->
-    <ChatInput 
+  <ChatInput 
       @send="handleSendMessage" 
       @taskModeChange="handleTaskModeChange"
       :disabled="loading" 
+      class="shrink-0"
     />
     
     <!-- 任務預覽對話框 -->
