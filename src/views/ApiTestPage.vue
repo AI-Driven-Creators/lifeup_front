@@ -205,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { apiClient } from '@/services/api'
 import { useUserStore } from '@/stores/user'
 import { useTaskStore } from '@/stores/task'
@@ -220,6 +220,7 @@ const skillStore = useSkillStore()
 const chatStore = useChatStore()
 
 const loading = ref(false)
+const showToast = inject<(text: string, duration?: number) => void>('showToast')
 const connectionStatus = ref({
   success: false,
   message: '尚未測試連接'
@@ -333,14 +334,14 @@ async function updateExistingTasksWithSkills() {
     }
 
     console.log('✅ 所有任務技能標籤更新完成')
-    alert('技能標籤更新完成！')
+  showToast && showToast('技能標籤更新完成！')
     
     // 重新獲取任務以確保數據同步
     await taskStore.fetchTasks()
     
   } catch (error) {
     console.error('❌ 更新任務技能標籤時發生錯誤:', error)
-    alert('更新失敗：' + (error instanceof Error ? error.message : '未知錯誤'))
+  showToast && showToast('更新失敗：' + (error instanceof Error ? error.message : '未知錯誤'))
   }
 }
 

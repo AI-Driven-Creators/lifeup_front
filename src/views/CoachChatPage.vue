@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, inject } from 'vue'
 import { apiClient } from '@/services/api'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import ChatMessage from '@/components/features/ChatMessage.vue'
@@ -93,6 +93,7 @@ import type { ChatMessage as ChatMessageType } from '@/types'
 const messages = ref<ChatMessageType[]>([])
 const quickReplies = ref<string[]>(['開始聊天', '需要幫助'])
 const loading = ref(false)
+const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
 // 個性相關狀態
 const availablePersonalities = ref<Array<{
@@ -263,7 +264,7 @@ const downloadHistory = async () => {
     document.body.removeChild(a)
   } catch (error) {
     console.error('下載失敗:', error)
-    alert('下載對話記錄失敗，請稍後再試。')
+    showToast && showToast('下載對話記錄失敗，請稍後再試。')
   }
 }
 
@@ -516,7 +517,7 @@ const confirmCreateTask = async () => {
     const res = await apiClient.createTaskFromJson(previewTaskJson.value)
     
     if (res.success) {
-      alert('任務創建成功！')
+      showToast && showToast('任務創建成功！')
       
       // 在對話中添加確認訊息（在清空 previewTaskJson 之前）
       messages.value.push({
@@ -534,11 +535,11 @@ const confirmCreateTask = async () => {
       await nextTick()
       scrollToBottom()
     } else {
-      alert('任務創建失敗：' + res.message)
+      showToast && showToast('任務創建失敗：' + res.message)
     }
   } catch (error) {
     console.error('創建任務失敗:', error)
-    alert('創建任務失敗，請稍後再試。')
+    showToast && showToast('創建任務失敗，請稍後再試。')
   } finally {
     loading.value = false
   }

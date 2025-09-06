@@ -64,7 +64,7 @@
         <button 
           v-if="['pending', 'in_progress', 'paused'].includes(task.status)"
           class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-          @click.stop="handleCancelTask"
+          @click.stop="showCancelDialog = true"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '取消' }}
@@ -77,7 +77,7 @@
         <button 
           v-if="task.status === 'cancelled'"
           class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-          @click.stop="handleRestartTask"
+          @click.stop="showRestartDialog = true"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '重新開始' }}
@@ -117,15 +117,36 @@
       </div>
     </div>
   </div>
+  
+  <!-- 取消任務確認對話框（網頁介面） -->
+  <ConfirmDialog
+    v-model:visible="showCancelDialog"
+    title="取消任務"
+    message="確定要取消此任務嗎？相關的子任務將會被刪除。"
+    confirmText="確認取消"
+    cancelText="返回"
+    @confirm="handleCancelTask"
+  />
+
+  <!-- 重新開始任務確認對話框（網頁介面） -->
+  <ConfirmDialog
+    v-model:visible="showRestartDialog"
+    title="重新開始任務"
+    :message="`確定要重新開始此任務嗎？這是第${(task.cancel_count || 0) + 1}次嘗試。`"
+    confirmText="確認重新開始"
+    cancelText="返回"
+    @confirm="handleRestartTask"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Task } from '@/types'
 import { apiClient } from '@/services/api'
 import SkillTags from '@/components/common/SkillTags.vue'
 import { useSkillStore } from '@/stores/skill'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 interface Props {
   task: Task
@@ -157,6 +178,9 @@ const skillObjects = computed(() => {
 })
 
 const isLoading = ref(false)
+const showCancelDialog = ref(false)
+const showRestartDialog = ref(false)
+const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
 const handleToggle = () => {
   emit('toggle', props.task.id)
@@ -184,11 +208,11 @@ const handleStartTask = async () => {
       emit('taskUpdated', updatedTask)
       console.log(response.message)
     } else {
-      alert(`開始任務失敗: ${response.message}`)
+      showToast && showToast(`開始任務失敗：${response.message}`)
     }
   } catch (error) {
     console.error('Failed to start task:', error)
-    alert('開始任務失敗')
+    showToast && showToast('開始任務失敗')
   } finally {
     isLoading.value = false
   }
@@ -204,21 +228,17 @@ const handlePauseTask = async () => {
       emit('taskUpdated', updatedTask)
       console.log(response.message)
     } else {
-      alert(`暫停任務失敗: ${response.message}`)
+      showToast && showToast(`暫停任務失敗：${response.message}`)
     }
   } catch (error) {
     console.error('Failed to pause task:', error)
-    alert('暫停任務失敗')
+  showToast && showToast('暫停任務失敗')
   } finally {
     isLoading.value = false
   }
 }
 
 const handleCancelTask = async () => {
-  if (!confirm('確定要取消此任務嗎？相關的子任務將會被刪除。')) {
-    return
-  }
-  
   isLoading.value = true
   try {
     const response = await apiClient.cancelTask(props.task.id)
@@ -233,21 +253,17 @@ const handleCancelTask = async () => {
       emit('taskUpdated', updatedTask)
       console.log(response.message)
     } else {
-      alert(`取消任務失敗: ${response.message}`)
+      showToast && showToast(`取消任務失敗：${response.message}`)
     }
   } catch (error) {
     console.error('Failed to cancel task:', error)
-    alert('取消任務失敗')
+  showToast && showToast('取消任務失敗')
   } finally {
     isLoading.value = false
   }
 }
 
 const handleRestartTask = async () => {
-  if (!confirm(`確定要重新開始此任務嗎？這是第${(props.task.cancel_count || 0) + 1}次嘗試。`)) {
-    return
-  }
-  
   isLoading.value = true
   try {
     const response = await apiClient.restartTask(props.task.id)
@@ -257,11 +273,11 @@ const handleRestartTask = async () => {
       emit('taskUpdated', updatedTask)
       console.log(response.message)
     } else {
-      alert(`重新開始任務失敗: ${response.message}`)
+      showToast && showToast(`重新開始任務失敗：${response.message}`)
     }
   } catch (error) {
     console.error('Failed to restart task:', error)
-    alert('重新開始任務失敗')
+  showToast && showToast('重新開始任務失敗')
   } finally {
     isLoading.value = false
   }

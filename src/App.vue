@@ -14,6 +14,9 @@
       
       <!-- 飛出的經驗值動畫 -->
       <ExperienceFloating ref="experienceFloating" />
+
+      <!-- 全域 Toast 提示 -->
+      <Toast ref="globalToast" />
     </div>
   </div>
 </template>
@@ -24,6 +27,7 @@ import { RouterView } from 'vue-router'
 import BottomNavigation from '@/components/layout/BottomNavigation.vue'
 import RewardNotifications from '@/components/rewards/RewardNotifications.vue'
 import ExperienceFloating from '@/components/rewards/ExperienceFloating.vue'
+import Toast from '@/components/common/Toast.vue'
 
 // 提供全域的飛出動畫方法
 const experienceFloating = ref()
@@ -40,4 +44,13 @@ const triggerFloatingExperience = (
 
 // 提供給所有子組件使用
 provide('triggerFloatingExperience', triggerFloatingExperience)
+
+// 全域 Toast 方法
+const globalToast = ref()
+const showToast = (text: string, duration?: number) => {
+  if (globalToast.value) {
+    globalToast.value.showToast(text, duration)
+  }
+}
+provide('showToast', showToast)
 </script>
