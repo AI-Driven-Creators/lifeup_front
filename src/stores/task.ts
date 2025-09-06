@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
 import { useSkillStore } from './skill'
+import { useRewardsStore } from './rewards'
 import type { Task } from '@/types'
 
 export const useTaskStore = defineStore('task', {
@@ -391,13 +392,17 @@ export const useTaskStore = defineStore('task', {
       }
 
       const skillStore = useSkillStore();
+      const rewardsStore = useRewardsStore();
       
       try {
+        // 首先顯示任務完成的經驗值獲得通知
+        rewardsStore.addExperienceNotification(task.experience, task.title);
+        
         // 基本經驗值計算：使用任務本身的經驗值
         const baseExperience = task.experience;
         
         // 根據任務類型和屬性分配技能經驗值
-        const skillExperienceUpdates: Array<{skillId: string, experience: number, reason: string}> = [];
+        const skillExperienceUpdates: Array<{skillId: string, skillName: string, experience: number, reason: string}> = [];
         
         // 獲取所有技能用於查找對應技能
         if (skillStore.skills.length === 0) {
@@ -416,6 +421,7 @@ export const useTaskStore = defineStore('task', {
               console.log(`✅ 找到對應技能: ${skillTag} -> ${targetSkill.id}`);
               skillExperienceUpdates.push({
                 skillId: targetSkill.id,
+                skillName: targetSkill.name,
                 experience: baseExperience,
                 reason: `完成任務: ${task.title}`
               });
@@ -427,15 +433,31 @@ export const useTaskStore = defineStore('task', {
           console.log('⚠️ 任務沒有技能標籤');
         }
         
-        // 如果沒有技能標籤，不分配技能經驗值
-        if (skillExperienceUpdates.length === 0) {
-          console.log('⚠️ 任務沒有技能標籤，跳過技能經驗值分配');
-        }
-        
-        // 批量更新技能經驗值
+        // 批量更新技能經驗值並顯示通知
         for (const update of skillExperienceUpdates) {
           try {
-            await skillStore.addSkillExperience(update.skillId, update.experience, update.reason);
+            // 先記錄舊的等級
+            const skill = skillStore.skills.find(s => s.id === update.skillId);
+            const oldLevel = skill?.level || 1;
+            
+            // 更新技能經驗值
+            const result = await skillStore.addSkillExperience(update.skillId, update.experience, update.reason);
+            
+            // 顯示技能經驗值獲得通知
+            rewardsStore.addSkillExperienceNotification(
+              update.skillName, 
+              update.experience, 
+              task.title
+            );
+            
+            // 如果技能升級了，顯示升級通知
+            if (result?.level_up && result.new_level) {
+              rewardsStore.addSkillLevelUpNotification(
+                update.skillName,
+                oldLevel,
+                result.new_level
+              );
+            }
           } catch (error) {
             console.error(`更新技能 ${update.skillId} 經驗值失敗:`, error);
           }

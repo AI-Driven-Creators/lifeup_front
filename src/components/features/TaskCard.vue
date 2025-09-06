@@ -1,5 +1,9 @@
 <template>
-  <div class="card hover:shadow-md transition-shadow cursor-pointer" @click="handleToggle">
+  <div 
+    ref="taskCardRef"
+    class="card hover:shadow-md transition-shadow cursor-pointer" 
+    @click="handleToggle"
+  >
     <div class="flex items-center space-x-3">
       <!-- 任務狀態圓圈 -->
       <div class="flex-shrink-0">
@@ -66,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, inject, watch } from 'vue'
 import type { Task } from '@/types'
 import SkillTags from '@/components/common/SkillTags.vue'
 import { useSkillStore } from '@/stores/skill'
@@ -83,6 +87,21 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const skillStore = useSkillStore()
+const taskCardRef = ref<HTMLElement>()
+const triggerFloatingExperience = inject<(experience: number, targetElement: HTMLElement, type?: 'experience' | 'skill' | 'levelup') => void>('triggerFloatingExperience')
+
+// 監聽任務狀態變化，觸發動畫
+watch(
+  () => props.task.status,
+  (newStatus, oldStatus) => {
+    if (oldStatus && newStatus === 'completed' && oldStatus !== 'completed' && taskCardRef.value && triggerFloatingExperience) {
+      // 任務完成時觸發飛出動畫
+      setTimeout(() => {
+        triggerFloatingExperience(props.task.experience, taskCardRef.value!, 'experience')
+      }, 100) // 短暫延遲讓UI更新完成
+    }
+  }
+)
 
 onMounted(() => {
   if (skillStore.skills.length === 0 && !skillStore.loading) {
