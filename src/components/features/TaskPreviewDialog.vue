@@ -98,8 +98,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
-
 interface Props {
   taskJson: any
   taskPreview: string

@@ -177,10 +177,10 @@
 
       <!-- 如果沒有子任務 -->
       <div v-else-if="task.is_parent_task" class="bg-white px-4 py-5">
-        <h3 class="text-xl font-bold text-primary-900 mb-4">完成任務</h3>
-        <p class="text-gray-600 text-center py-8">
-          此任務還沒有子任務
-        </p>
+        <div class="text-center py-8">
+          <div class="text-gray-400 text-4xl mb-3">📝</div>
+          <p class="text-gray-600 text-sm">還沒有子任務</p>
+        </div>
       </div>
 
       <!-- 如果不是大任務 -->

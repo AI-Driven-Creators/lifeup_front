@@ -90,14 +90,33 @@
 
       </div>
     </div>
+
+    <!-- 創建任務浮動按鈕 -->
+    <button
+      @click="navigateToCreateTask"
+      class="fixed bottom-24 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center z-10"
+      title="創建新任務"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+
+    <!-- 創建任務對話框 -->
+    <CreateTaskDialog
+      :show="showCreateDialog"
+      @close="showCreateDialog = false"
+      @created="handleTaskCreated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskTypeCard from '@/components/features/TaskTypeCard.vue'
+import CreateTaskDialog from '@/components/features/CreateTaskDialog.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
@@ -105,6 +124,7 @@ import type { Task } from '@/types'
 const router = useRouter()
 const taskStore = useTaskStore()
 const userStore = useUserStore()
+const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
 const mainTasks = ref<Task[]>([])
 const sideTasks = ref<Task[]>([])
@@ -239,6 +259,52 @@ const overallCompletionRate = computed(() => {
 // 導航到特定任務類型頁面
 const navigateToTaskType = (type: string) => {
   router.push(`/mission/${type}`)
+}
+
+// 顯示創建任務對話框
+const showCreateDialog = ref(false)
+
+const navigateToCreateTask = () => {
+  showCreateDialog.value = true
+}
+
+// 處理任務創建成功
+const handleTaskCreated = async (newTask: Task) => {
+  try {
+    // 根據任務類型將新任務加入對應列表
+    switch (newTask.task_type || newTask.type) {
+      case 'main':
+        mainTasks.value.push(newTask)
+        break
+      case 'side':
+        sideTasks.value.push(newTask)
+        break
+      case 'challenge':
+        challengeTasks.value.push(newTask)
+        break
+      case 'daily':
+        dailyTasks.value.push(newTask)
+        break
+    }
+    
+    // 檢查任務狀態來決定提示訊息
+    const isStarted = newTask.status === 'in_progress' || newTask.status === 1
+    const taskTitle = newTask.title || '新任務'
+    
+    if (isStarted) {
+      showToast && showToast(`任務「${taskTitle}」已創建並開始，子任務已生成！`, 4000)
+    } else {
+      showToast && showToast(`任務「${taskTitle}」創建成功！`, 3000)
+    }
+    
+    // 可選：重新載入任務列表以確保數據同步
+    // await loadTasksByType()
+    
+  } catch (error) {
+    console.error('處理新任務失敗:', error)
+    // 如果出錯，重新載入任務列表
+    await loadTasksByType()
+  }
 }
 
 // 快速操作方法
