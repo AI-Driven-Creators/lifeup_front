@@ -105,7 +105,7 @@ const availablePersonalities = ref<Array<{
   emoji: string
 }>>([])
 const selectedPersonality = ref<string>('')
-const currentUserId = ref<string>('fccc3935-74ae-4cde-814c-3679116aaad3') // 預設用戶ID
+const currentUserId = ref<string>('') // 空字串，讓後端使用預設邏輯
 
 // 計算當前個性資訊
 const currentPersonality = computed(() => {
@@ -137,19 +137,19 @@ const loadAvailablePersonalities = async () => {
     availablePersonalities.value = [
       {
         personality_type: 'emotional_support',
-        display_name: '暖心陪伴',
+        display_name: '小太陽',
         description: '溫暖體貼，提供情感支持和正向鼓勵',
         emoji: '🤗'
       },
       {
         personality_type: 'harsh_critic',
-        display_name: '嚴厲導師',
+        display_name: '森氣氣',
         description: '直言不諱，用嚴厲的話語督促你成長',
         emoji: '😤'
       },
       {
         personality_type: 'analytical',
-        display_name: '數據分析師',
+        display_name: '小書蟲',
         description: '理性客觀，用數據和邏輯幫你分析問題',
         emoji: '📊'
       }
