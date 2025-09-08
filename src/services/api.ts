@@ -1,9 +1,16 @@
+import { loadApiConfig, type ApiConfig } from '../config/api';
+
 // API 客戶端配置
 export class ApiClient {
   private baseURL: string;
 
-  constructor(baseURL: string = 'http://localhost:8080') {
-    this.baseURL = baseURL;
+  constructor(baseURL?: string) {
+    if (baseURL) {
+      this.baseURL = baseURL;
+    } else {
+      const config = loadApiConfig();
+      this.baseURL = config.baseURL;
+    }
   }
 
   private async request<T>(
@@ -353,5 +360,20 @@ export class ApiClient {
   }
 }
 
-// 創建全局 API 實例
-export const apiClient = new ApiClient();
+// 創建全局 API 實例，使用懶加載方式確保配置正確載入
+let _apiClient: ApiClient | null = null;
+
+export function getApiClient(): ApiClient {
+  if (!_apiClient) {
+    _apiClient = new ApiClient();
+  }
+  return _apiClient;
+}
+
+// 重置 API 客戶端（用於配置變更後）
+export function resetApiClient(): void {
+  _apiClient = null;
+}
+
+// 為了向後兼容，保留原來的 apiClient 導出
+export const apiClient = getApiClient();
