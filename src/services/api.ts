@@ -301,6 +301,15 @@ export class ApiClient {
   }
 
   async setCoachPersonality(userId: string, personalityType: string) {
+    const requestBody: any = {
+      personality_type: personalityType
+    };
+    
+    // 只有當 userId 不為空時才加入 user_id 欄位
+    if (userId && userId.trim() !== '') {
+      requestBody.user_id = userId;
+    }
+    
     return this.request<{
       success: boolean,
       data: {
@@ -312,14 +321,15 @@ export class ApiClient {
       message: string
     }>('/api/coach/personality', {
       method: 'POST',
-      body: JSON.stringify({
-        user_id: userId,
-        personality_type: personalityType
-      }),
+      body: JSON.stringify(requestBody),
     });
   }
 
   async getCurrentPersonality(userId: string) {
+    const url = userId && userId.trim() !== '' 
+      ? `/api/coach/personality/current?user_id=${userId}`
+      : '/api/coach/personality/current';
+      
     return this.request<{
       success: boolean,
       data: {
@@ -329,7 +339,7 @@ export class ApiClient {
         is_active: boolean
       } | null,
       message: string
-    }>(`/api/coach/personality/current?user_id=${userId}`);
+    }>(url);
   }
 
   async sendMessageWithPersonality(message: string, userId?: string) {
