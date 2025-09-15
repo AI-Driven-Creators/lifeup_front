@@ -83,7 +83,10 @@ export class ApiClient {
     task_type?: string,
     difficulty?: number,
     experience?: number,
-    user_id?: string
+    user_id?: string,
+    parent_task_id?: string,
+    task_order?: number,
+    due_date?: string
   }) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/tasks', {
       method: 'POST',
@@ -99,11 +102,18 @@ export class ApiClient {
     task_type?: string,
     difficulty?: number,
     experience?: number,
-    due_date?: string
+    due_date?: string,
+    task_order?: number
   }) {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
+    });
+  }
+
+  async deleteTask(id: string) {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${id}`, {
+      method: 'DELETE',
     });
   }
 

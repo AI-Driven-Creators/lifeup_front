@@ -88,9 +88,22 @@
       <div v-if="task.is_parent_task && subtasks.length > 0" class="bg-white px-4 py-5">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-primary-900">完成任務</h3>
-          <!-- 每日任務提示 -->
-          <div v-if="isDailyTask" class="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-full">
-            📅 顯示最近3天（包含今天）
+          <div class="flex items-center space-x-3">
+            <!-- 每日任務提示 -->
+            <div v-if="isDailyTask" class="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-full">
+              📅 顯示最近3天（包含今天）
+            </div>
+            <!-- 添加子任務按鈕 -->
+            <button
+              v-if="!isDailyTask"
+              @click="showCreateSubtaskDialog = true"
+              class="inline-flex items-center gap-2 px-2 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              title="添加子任務"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </button>
           </div>
         </div>
         
@@ -103,7 +116,18 @@
           >
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                <h4 class="font-medium text-gray-900">{{ subtask.title }}</h4>
+                <div class="flex items-center gap-2">
+                  <h4 class="font-medium text-gray-900">{{ subtask.title }}</h4>
+                  <!-- 編輯按鈕 -->
+                  <button
+                    @click="editSubtask(subtask)"
+                    :disabled="isLoading"
+                    class="p-1 rounded text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                    title="編輯子任務"
+                  >
+                    ✏️
+                  </button>
+                </div>
                 <p v-if="subtask.description" class="text-gray-600 text-sm mt-1">{{ subtask.description }}</p>
                 
                 <!-- 任務日期顯示 -->
@@ -153,7 +177,7 @@
                   >
                     {{ isLoading ? '處理中...' : getStatusText(subtask) }}
                   </button>
-                  
+
                   <!-- 回復按鈕 (僅在已完成時顯示，每日任務不顯示回復按鈕) -->
                   <button
                     v-if="!isDailyTask && ['in_progress', 'completed', 'daily_in_progress', 'daily_completed'].includes(subtask.status)"
@@ -179,7 +203,13 @@
       <div v-else-if="task.is_parent_task" class="bg-white px-4 py-5">
         <div class="text-center py-8">
           <div class="text-gray-400 text-4xl mb-3">📝</div>
-          <p class="text-gray-600 text-sm">還沒有子任務</p>
+          <p class="text-gray-600 text-sm mb-4">還沒有子任務</p>
+          <button
+            @click="showCreateSubtaskDialog = true"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            創建子任務
+          </button>
         </div>
       </div>
 
@@ -206,6 +236,24 @@
         </div>
       </div>
     </div>
+
+    <!-- 創建子任務對話框 -->
+    <CreateSubtaskDialog
+      v-if="task?.id"
+      :show="showCreateSubtaskDialog"
+      :parentTaskId="task.id"
+      @close="showCreateSubtaskDialog = false"
+      @created="handleSubtaskCreated"
+    />
+
+    <!-- 編輯子任務對話框 -->
+    <EditSubtaskDialog
+      :show="showEditSubtaskDialog"
+      :subtask="editingSubtask"
+      @close="showEditSubtaskDialog = false"
+      @updated="handleSubtaskUpdated"
+      @deleted="handleSubtaskDeleted"
+    />
   </div>
 </template>
 
@@ -216,6 +264,8 @@ import { useTaskStore } from '@/stores/task'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
+import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
+import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -228,6 +278,11 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isDailyTask = ref(false)
+
+// 對話框狀態
+const showCreateSubtaskDialog = ref(false)
+const showEditSubtaskDialog = ref(false)
+const editingSubtask = ref<Task | null>(null)
 
 // 排序後的子任務
 const sortedSubtasks = computed(() => {
@@ -628,6 +683,27 @@ const formatTaskDate = (dateString: string) => {
   } catch {
     return dateString
   }
+}
+
+// 編輯子任務
+const editSubtask = (subtask: Task) => {
+  editingSubtask.value = subtask
+  showEditSubtaskDialog.value = true
+}
+
+// 處理子任務創建
+const handleSubtaskCreated = async (newSubtask: Task) => {
+  await loadTaskDetail() // 重新載入任務詳情
+}
+
+// 處理子任務更新
+const handleSubtaskUpdated = async (updatedSubtask: Task) => {
+  await loadTaskDetail() // 重新載入任務詳情
+}
+
+// 處理子任務刪除
+const handleSubtaskDeleted = async (deletedSubtaskId: string) => {
+  await loadTaskDetail() // 重新載入任務詳情
 }
 
 // 頁面載入時獲取任務詳情

@@ -40,11 +40,6 @@ const router = createRouter({
       component: () => import('@/views/CoachChatPage.vue')
     },
     {
-      path: '/subtasks',
-      name: 'subtasks',
-      component: () => import('@/views/SubtasksPage.vue')
-    },
-    {
       path: '/task/:id',
       name: 'task-detail',
       component: () => import('@/views/TaskDetailPage.vue')
