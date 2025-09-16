@@ -1,4 +1,5 @@
 <template>
+  <div>
   <!-- 重新測驗按鈕 - 固定在頁面右上角 -->
   <div class="absolute top-6 right-6 z-10">
     <button
@@ -501,6 +502,17 @@
                         <li v-for="step in career.nextSteps" :key="step">{{ step }}</li>
                       </ul>
                     </div>
+
+                    <!-- 職業選擇按鈕 - 只在結果階段顯示 -->
+                    <div v-if="currentStage === 'results'" class="bg-white rounded-xl lg:rounded-2xl p-5 lg:p-6 border border-green-100 shadow-lg shadow-gray-200/50 text-center">
+                      <button 
+                        @click="selectCareer(career)"
+                        class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                      >
+                        <Target class="h-5 w-5" />
+                        <span>選擇此職業並開始規劃</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -601,6 +613,17 @@
                       <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
                         <li v-for="step in career.nextSteps" :key="step">{{ step }}</li>
                       </ul>
+                    </div>
+
+                    <!-- 職業選擇按鈕 - 只在結果階段顯示 -->
+                    <div v-if="currentStage === 'results'" class="bg-white rounded-xl p-5 border border-purple-100 shadow-lg shadow-gray-200/50 text-center">
+                      <button 
+                        @click="selectCareer(career)"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                      >
+                        <Target class="h-5 w-5" />
+                        <span>選擇此職業並開始規劃</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -703,6 +726,17 @@
                         <li v-for="step in career.nextSteps" :key="step">{{ step }}</li>
                       </ul>
                     </div>
+
+                    <!-- 職業選擇按鈕 - 只在結果階段顯示 -->
+                    <div v-if="currentStage === 'results'" class="bg-white rounded-xl p-5 border border-blue-100 shadow-lg shadow-gray-200/50 text-center">
+                      <button 
+                        @click="selectCareer(career)"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                      >
+                        <Target class="h-5 w-5" />
+                        <span>選擇此職業並開始規劃</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -745,6 +779,215 @@
           </ul>
         </div>
       </div>
+
+      <!-- 職業主線問卷調查界面 -->
+      <div v-if="currentStage === 'survey'" class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8">
+        <div class="mb-8">
+          <div class="flex items-center space-x-3 mb-4">
+            <Briefcase class="h-6 w-6 text-blue-600" />
+            <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
+          </div>
+          <p class="text-gray-600">
+            你已選擇：<strong class="text-blue-600">{{ selectedCareer }}</strong>
+          </p>
+          <p class="text-gray-500 text-sm mt-2">
+            請填寫以下問卷，AI 將根據你的測驗結果和個人需求為你生成專屬的學習任務。
+          </p>
+        </div>
+
+        <div class="space-y-6">
+          <!-- 當前水平 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              你在此領域的當前水平？
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <label v-for="level in ['完全新手', '有基礎了解', '有一定經驗', '已具專業水準']" :key="level" 
+                     class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                     :class="surveyAnswers.current_level === level ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                <input type="radio" 
+                       v-model="surveyAnswers.current_level" 
+                       :value="level" 
+                       class="sr-only">
+                <span class="text-sm text-gray-700">{{ level }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 可用時間 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              每週可投入多少時間學習？
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <label v-for="time in ['1-3小時', '4-7小時', '8-15小時', '16小時以上']" :key="time" 
+                     class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                     :class="surveyAnswers.available_time === time ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                <input type="radio" 
+                       v-model="surveyAnswers.available_time" 
+                       :value="time" 
+                       class="sr-only">
+                <span class="text-sm text-gray-700">{{ time }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 目標時程 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              你希望在多長時間內達到職業目標？
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <label v-for="timeline in ['3-6個月', '6-12個月', '1-2年', '2年以上']" :key="timeline" 
+                     class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                     :class="surveyAnswers.timeline === timeline ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                <input type="radio" 
+                       v-model="surveyAnswers.timeline" 
+                       :value="timeline" 
+                       class="sr-only">
+                <span class="text-sm text-gray-700">{{ timeline }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 學習方式偏好 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              你偏好的學習方式？（可多選）
+            </label>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <label v-for="style in ['理論學習', '實作練習', '專案導向', '案例研究', '同儕討論', '導師指導']" :key="style" 
+                     class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                     :class="surveyAnswers.learning_styles.includes(style) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                <input type="checkbox" 
+                       :value="style"
+                       @change="toggleLearningStyle(style)"
+                       class="sr-only">
+                <span class="text-sm text-gray-700">{{ style }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 學習動機 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              你的主要學習動機是？
+            </label>
+            <textarea 
+              v-model="surveyAnswers.motivation"
+              placeholder="例如：轉換職業跑道、提升工作技能、追求個人興趣..."
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- 特殊需求 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              你有任何特殊需求或限制嗎？（選填）
+            </label>
+            <textarea 
+              v-model="surveyAnswers.special_requirements"
+              placeholder="例如：預算限制、時間彈性需求、特定技能偏好..."
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              rows="2"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+          <button 
+            @click="backToResults"
+            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            返回職業選擇
+          </button>
+          <button 
+            @click="generateTasks"
+            :disabled="!isFormValid || loading"
+            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+          >
+            <Brain class="h-5 w-5" />
+            <span v-if="loading">生成中...</span>
+            <span v-else>生成專屬主線任務</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 任務生成中界面 -->
+      <div v-if="currentStage === 'generating'" class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8 text-center">
+        <div class="py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">AI 正在為你量身打造學習路徑</h3>
+          <p class="text-gray-600">
+            基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...
+          </p>
+        </div>
+      </div>
+
+      <!-- 任務生成完成界面 -->
+      <div v-if="currentStage === 'completed'" class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8">
+        <div class="mb-8">
+          <div class="flex items-center space-x-3 mb-4">
+            <Target class="h-6 w-6 text-green-600" />
+            <h2 class="text-xl font-semibold text-gray-900">職業主線任務已生成</h2>
+          </div>
+          <p class="text-gray-600">
+            恭喜！AI 已根據你的<strong class="text-blue-600">{{ selectedCareer }}</strong>職業選擇和個人特質，為你生成了專屬的學習路徑。
+          </p>
+        </div>
+
+        <!-- 生成的任務列表 -->
+        <div v-if="generatedTasks.length > 0" class="space-y-4 mb-8">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">你的專屬任務清單：</h3>
+          <div 
+            v-for="(task, index) in generatedTasks" 
+            :key="index"
+            class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+          >
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                {{ index + 1 }}
+              </div>
+              <div class="flex-1">
+                <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
+                <p class="text-gray-600 text-sm mt-1">{{ task.description }}</p>
+                <div class="flex items-center space-x-4 mt-2">
+                  <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    難度: {{ task.difficulty }}/5
+                  </span>
+                  <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    經驗值: {{ task.experience }}
+                  </span>
+                  <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    {{ task.task_type }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+          <button 
+            @click="backToResults"
+            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            重新選擇職業
+          </button>
+          <div class="space-x-3">
+            <button 
+              class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              @click="$emit('reset')"
+            >
+              開始執行任務
+            </button>
+          </div>
+        </div>
+      </div>
+  </div>
   </div>
 </template>
 
@@ -811,6 +1054,21 @@ const values = ref(props.results.values || [])
 const interests = ref(props.results.interests || [])
 const talents = ref(props.results.talents || null)
 const workstyle = ref(props.results.workstyle || null)
+
+// 職業規劃相關狀態
+const currentStage = ref<'results' | 'survey' | 'generating' | 'completed'>('results')
+const selectedCareer = ref('')
+const quizResultId = ref('')
+const surveyAnswers = ref({
+  current_level: '',
+  available_time: '',
+  timeline: '',
+  learning_styles: [] as string[],
+  motivation: '',
+  special_requirements: ''
+})
+const generatedTasks = ref([])
+const loading = ref(false)
 
 // 職業匹配結果
 const perfectMatches = ref<any[]>([])
@@ -1307,8 +1565,120 @@ const updateCareerSuggestions = () => {
   goodMatches.value = suggestions.filter(c => c.matchType === 'good')
 }
 
+// 職業規劃相關方法
+const saveQuizResults = async () => {
+  try {
+    const payload = {
+      values_results: values.value,
+      interests_results: interests.value,
+      talents_results: talents.value,
+      workstyle_results: workstyle.value
+    }
+    
+    const response = await fetch('http://localhost:8080/api/quiz/save-results', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    
+    const data = await response.json()
+    
+    if (data.success) {
+      quizResultId.value = data.data.quiz_result_id
+      console.log('✅ 測驗結果已保存:', quizResultId.value)
+    } else {
+      throw new Error(data.message)
+    }
+  } catch (error) {
+    console.error('❌ 保存測驗結果失敗:', error)
+  }
+}
+
+const selectCareer = (career: any) => {
+  selectedCareer.value = career.name
+  currentStage.value = 'survey'
+  console.log('選擇職業:', selectedCareer.value)
+}
+
+const generateTasks = async () => {
+  if (!quizResultId.value) {
+    console.error('❌ 缺少測驗結果ID')
+    return
+  }
+  
+  loading.value = true
+  currentStage.value = 'generating'
+  
+  try {
+    const payload = {
+      quiz_result_id: quizResultId.value,
+      selected_career: selectedCareer.value,
+      survey_answers: surveyAnswers.value
+    }
+    
+    const response = await fetch('http://localhost:8080/api/career/generate-tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    
+    const data = await response.json()
+    
+    if (data.success) {
+      generatedTasks.value = data.data.tasks || []
+      currentStage.value = 'completed'
+      console.log('✅ 任務生成成功:', data.data)
+    } else {
+      throw new Error(data.message)
+    }
+  } catch (error) {
+    console.error('❌ 任務生成失敗:', error)
+    currentStage.value = 'survey' // 回到問卷階段
+  }
+  
+  loading.value = false
+}
+
+const backToResults = () => {
+  currentStage.value = 'results'
+  selectedCareer.value = ''
+  surveyAnswers.value = {
+    current_level: '',
+    available_time: '',
+    timeline: '',
+    learning_styles: [],
+    motivation: '',
+    special_requirements: ''
+  }
+}
+
+// 問卷表單驗證
+const isFormValid = computed(() => {
+  return surveyAnswers.value.current_level && 
+         surveyAnswers.value.available_time && 
+         surveyAnswers.value.timeline &&
+         surveyAnswers.value.learning_styles.length > 0 &&
+         surveyAnswers.value.motivation.trim().length > 0
+})
+
+// 切換學習方式選擇
+const toggleLearningStyle = (style: string) => {
+  const index = surveyAnswers.value.learning_styles.indexOf(style)
+  if (index > -1) {
+    surveyAnswers.value.learning_styles.splice(index, 1)
+  } else {
+    surveyAnswers.value.learning_styles.push(style)
+  }
+}
+
 onMounted(() => {
   updateCareerSuggestions()
+  // 自動保存測驗結果
+  saveQuizResults()
 })
 </script>
 

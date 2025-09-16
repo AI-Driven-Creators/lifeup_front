@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <!-- 新的職涯測驗系統 -->
+    <!-- 15分鐘快速職涯測驗系統 -->
     <div class="w-full" style="height: calc(100vh - 80px);">
       <QuizApp />
     </div>
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import QuizApp from '@/components/quiz/QuizApp.vue'
+import QuizApp from '@/components/quiz/QuizAppCompact.vue'
 
 const router = useRouter()
 
