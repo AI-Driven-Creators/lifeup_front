@@ -13,9 +13,30 @@
       </button>
       
       <!-- 任務標題 -->
-      <h1 class="flex-1 text-lg font-bold text-primary-900 text-center pr-10">
+      <h1 class="flex-1 text-lg font-bold text-primary-900 text-center">
         {{ task?.title || '任務詳情' }}
       </h1>
+
+      <!-- 操作菜單 -->
+      <div v-if="task?.is_parent_task" class="flex items-center space-x-2">
+        <!-- 編輯按鈕 -->
+        <button
+          @click="showEditDialog = true"
+          class="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+          title="編輯任務"
+        >
+          ✏️
+        </button>
+
+        <!-- 刪除按鈕 -->
+        <button
+          @click="showDeleteDialog = true"
+          class="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded-full transition-colors"
+          title="刪除任務"
+        >
+          🗑️
+        </button>
+      </div>
     </div>
 
     <!-- 載入狀態 -->
@@ -254,6 +275,25 @@
       @updated="handleSubtaskUpdated"
       @deleted="handleSubtaskDeleted"
     />
+
+    <!-- 編輯任務對話框 -->
+    <EditTaskDialog
+      :show="showEditDialog"
+      :task="task"
+      @close="showEditDialog = false"
+      @updated="handleTaskUpdated"
+    />
+
+    <!-- 刪除任務確認對話框 -->
+    <ConfirmDialog
+      v-model:visible="showDeleteDialog"
+      title="⚠️ 刪除任務"
+      :message="`確定要永久刪除「${task?.title}」嗎？\n\n此操作將會：\n• 刪除此任務的所有子任務\n• 無法復原\n• 不會影響已獲得的經驗值`"
+      confirmText="確認刪除"
+      cancelText="取消"
+      @confirm="handleDeleteTask"
+      danger
+    />
   </div>
 </template>
 
@@ -266,6 +306,8 @@ import type { Task } from '@/types'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
 import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
 import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
+import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -282,6 +324,8 @@ const isDailyTask = ref(false)
 // 對話框狀態
 const showCreateSubtaskDialog = ref(false)
 const showEditSubtaskDialog = ref(false)
+const showEditDialog = ref(false)
+const showDeleteDialog = ref(false)
 const editingSubtask = ref<Task | null>(null)
 
 // 排序後的子任務
@@ -704,6 +748,34 @@ const handleSubtaskUpdated = async (updatedSubtask: Task) => {
 // 處理子任務刪除
 const handleSubtaskDeleted = async (deletedSubtaskId: string) => {
   await loadTaskDetail() // 重新載入任務詳情
+}
+
+// 處理任務更新
+const handleTaskUpdated = async (updatedTask: Task) => {
+  // 更新本地任務資料
+  task.value = { ...task.value, ...updatedTask }
+
+  // 重新載入任務詳情以確保數據同步
+  await loadTaskDetail()
+}
+
+// 處理任務刪除
+const handleDeleteTask = async () => {
+  if (!task.value) return
+
+  showDeleteDialog.value = false
+  loading.value = true
+
+  try {
+    await taskStore.deleteTask(task.value.id)
+    // 刪除成功後返回上一頁
+    router.go(-1)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '刪除任務失敗'
+    console.error('Failed to delete task:', err)
+  } finally {
+    loading.value = false
+  }
 }
 
 // 頁面載入時獲取任務詳情

@@ -18,7 +18,7 @@
       
       <!-- 內容 -->
       <div class="px-6 py-4">
-        <p class="text-gray-600">
+        <p class="text-gray-600 whitespace-pre-line">
           {{ message }}
         </p>
       </div>
@@ -33,7 +33,12 @@
         </button>
         <button
           @click="handleConfirm"
-          class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          :class="[
+            'px-4 py-2 text-white rounded-lg transition-colors',
+            danger
+              ? 'bg-red-600 hover:bg-red-700'
+              : 'bg-blue-600 hover:bg-blue-700'
+          ]"
         >
           {{ confirmText }}
         </button>
@@ -51,6 +56,7 @@ interface Props {
   message?: string
   confirmText?: string
   cancelText?: string
+  danger?: boolean
 }
 
 interface Emits {
@@ -63,7 +69,8 @@ const props = withDefaults(defineProps<Props>(), {
   title: '確認',
   message: '您確定要執行此操作嗎？',
   confirmText: '確定',
-  cancelText: '取消'
+  cancelText: '取消',
+  danger: false
 })
 
 const emit = defineEmits<Emits>()

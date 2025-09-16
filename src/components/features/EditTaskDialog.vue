@@ -3,7 +3,7 @@
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
       <!-- 標題列 -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white">
-        <h2 class="text-lg font-bold text-gray-900">編輯子任務</h2>
+        <h2 class="text-lg font-bold text-gray-900">編輯任務</h2>
         <button @click="closeDialog" class="text-gray-400 hover:text-gray-600 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -12,21 +12,50 @@
       </div>
 
       <!-- 表單內容 -->
-      <div class="p-4" v-if="subtask">
+      <div class="p-4">
         <form @submit.prevent="submitForm">
           <!-- 任務名稱 -->
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              子任務名稱 <span class="text-red-500">*</span>
+              任務名稱 <span class="text-red-500">*</span>
             </label>
             <input
               v-model="form.title"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="輸入子任務名稱..."
+              placeholder="輸入任務名稱..."
               required
             />
             <p v-if="errors.title" class="mt-1 text-sm text-red-600">{{ errors.title }}</p>
+          </div>
+
+          <!-- 任務類型 -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              任務類型 <span class="text-red-500">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="type in taskTypes"
+                :key="type.value"
+                type="button"
+                @click="form.task_type = type.value"
+                :class="[
+                  'p-3 rounded-lg border-2 transition-all text-left',
+                  form.task_type === type.value
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                ]"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">{{ type.icon }}</span>
+                  <div>
+                    <div class="font-medium text-sm">{{ type.label }}</div>
+                    <div class="text-xs text-gray-500">{{ type.desc }}</div>
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <!-- 任務描述 -->
@@ -36,7 +65,7 @@
               v-model="form.description"
               rows="3"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-              placeholder="詳細描述子任務內容..."
+              placeholder="詳細描述任務內容..."
             ></textarea>
           </div>
 
@@ -90,32 +119,20 @@
               </div>
             </div>
 
-            <!-- 經驗值和任務順序 -->
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  經驗值
-                  <span class="text-xs text-gray-500">(建議: {{ calculatedExperience }})</span>
-                </label>
-                <input
-                  v-model.number="form.experience"
-                  type="number"
-                  min="5"
-                  max="200"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  :placeholder="calculatedExperience.toString()"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">任務順序</label>
-                <input
-                  v-model.number="form.task_order"
-                  type="number"
-                  min="1"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="1"
-                />
-              </div>
+            <!-- 經驗值 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                經驗值
+                <span class="text-xs text-gray-500">(建議: {{ calculatedExperience }})</span>
+              </label>
+              <input
+                v-model.number="form.experience"
+                type="number"
+                min="10"
+                max="500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                :placeholder="calculatedExperience.toString()"
+              />
             </div>
 
             <!-- 截止日期 -->
@@ -138,14 +155,6 @@
           <div class="flex gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              @click="showDeleteDialog = true"
-              class="px-4 py-2 text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-              :disabled="loading"
-            >
-              刪除
-            </button>
-            <button
-              type="button"
               @click="closeDialog"
               class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               :disabled="loading"
@@ -157,71 +166,102 @@
               class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               :disabled="loading || !isFormValid"
             >
-              {{ loading ? '更新中...' : '更新子任務' }}
+              {{ loading ? '更新中...' : '更新任務' }}
             </button>
           </div>
         </form>
       </div>
     </div>
   </div>
-
-  <!-- 刪除子任務確認對話框 -->
-  <ConfirmDialog
-    v-model:visible="showDeleteDialog"
-    title="⚠️ 刪除子任務"
-    :message="`確定要永久刪除子任務「${subtask?.title}」嗎？\n\n此操作將會：\n• 無法復原\n• 不會影響已獲得的經驗值`"
-    confirmText="確認刪除"
-    cancelText="取消"
-    @confirm="handleDeleteSubtask"
-    danger
-  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { apiClient } from '@/services/api'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useTaskStore } from '@/stores/task'
 import type { Task } from '@/types'
 
 interface Props {
   show: boolean
-  subtask: Task | null
+  task: Task | null
 }
 
 interface Emits {
   (e: 'close'): void
-  (e: 'updated', subtask: any): void
-  (e: 'deleted', subtaskId: string): void
+  (e: 'updated', task: Task): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const taskStore = useTaskStore()
 
 // 表單數據
 const form = ref({
   title: '',
+  task_type: 'main',
   description: '',
   priority: 2,
   difficulty: 3,
   experience: 0,
-  task_order: 1,
   due_date: ''
 })
 
 // UI 狀態
 const showAdvanced = ref(false)
 const loading = ref(false)
-const showDeleteDialog = ref(false)
 const errors = ref<Record<string, string>>({})
+
+// 任務類型選項
+const taskTypes = [
+  {
+    value: 'daily',
+    label: '每日任務',
+    desc: '日常習慣',
+    icon: '📅'
+  },
+  {
+    value: 'main',
+    label: '主線任務',
+    desc: '重要目標',
+    icon: '🎯'
+  },
+  {
+    value: 'side',
+    label: '支線任務',
+    desc: '輔助成長',
+    icon: '🌟'
+  },
+  {
+    value: 'challenge',
+    label: '挑戰任務',
+    desc: '突破極限',
+    icon: '🔥'
+  }
+]
 
 // 計算經驗值
 const calculatedExperience = computed(() => {
-  return Math.floor(form.value.difficulty * 10 + form.value.priority * 5)
+  return form.value.difficulty * 20 + form.value.priority * 10
 })
 
 // 表單驗證
 const isFormValid = computed(() => {
-  return form.value.title.trim().length >= 2 && !errors.value.title
+  return form.value.title.trim().length >= 2 &&
+         form.value.task_type &&
+         !errors.value.title
+})
+
+// 監聽任務變化，初始化表單
+watch(() => props.task, (newTask) => {
+  if (newTask && props.show) {
+    initializeForm(newTask)
+  }
+}, { immediate: true })
+
+// 監聽顯示狀態，初始化表單
+watch(() => props.show, (show) => {
+  if (show && props.task) {
+    initializeForm(props.task)
+  }
 })
 
 // 監聽經驗值自動計算
@@ -231,27 +271,17 @@ watch([() => form.value.difficulty, () => form.value.priority], () => {
   }
 })
 
-// 監聽子任務變化，初始化表單
-watch(() => props.subtask, (newSubtask) => {
-  if (newSubtask) {
-    form.value = {
-      title: newSubtask.title || '',
-      description: newSubtask.description || '',
-      priority: newSubtask.difficulty || 2,
-      difficulty: newSubtask.difficulty || 3,
-      experience: newSubtask.experience || 0,
-      task_order: newSubtask.task_order || 1,
-      due_date: newSubtask.deadline ? formatDateForInput(newSubtask.deadline) : ''
-    }
+// 初始化表單數據
+const initializeForm = (task: Task) => {
+  form.value = {
+    title: task.title || '',
+    task_type: task.type || 'main',
+    description: task.description || '',
+    priority: task.difficulty || 2,
+    difficulty: task.difficulty || 3,
+    experience: task.experience || calculatedExperience.value,
+    due_date: task.deadline ? task.deadline.toISOString().split('T')[0] : ''
   }
-}, { immediate: true })
-
-// 格式化日期為input[type="date"]格式
-const formatDateForInput = (date: Date | string): string => {
-  if (!date) return ''
-  const d = new Date(date)
-  if (isNaN(d.getTime())) return ''
-  return d.toISOString().split('T')[0]
 }
 
 // 驗證表單
@@ -259,33 +289,47 @@ const validateForm = () => {
   errors.value = {}
 
   if (!form.value.title.trim()) {
-    errors.value.title = '子任務名稱為必填項'
+    errors.value.title = '任務名稱為必填項'
     return false
   }
 
   if (form.value.title.trim().length < 2) {
-    errors.value.title = '子任務名稱至少需要2個字符'
+    errors.value.title = '任務名稱至少需要2個字符'
     return false
   }
 
   if (form.value.title.trim().length > 100) {
-    errors.value.title = '子任務名稱不能超過100個字符'
+    errors.value.title = '任務名稱不能超過100個字符'
     return false
   }
 
   return true
 }
 
-// 關閉對話框
-const closeDialog = () => {
+// 重置表單
+const resetForm = () => {
+  form.value = {
+    title: '',
+    task_type: 'main',
+    description: '',
+    priority: 2,
+    difficulty: 3,
+    experience: 0,
+    due_date: ''
+  }
   showAdvanced.value = false
   errors.value = {}
+}
+
+// 關閉對話框
+const closeDialog = () => {
+  resetForm()
   emit('close')
 }
 
 // 提交表單
 const submitForm = async () => {
-  if (!validateForm() || !props.subtask) {
+  if (!validateForm() || !props.task) {
     return
   }
 
@@ -296,63 +340,40 @@ const submitForm = async () => {
     // 準備更新數據
     const updateData: any = {
       title: form.value.title.trim(),
+      task_type: form.value.task_type,
       priority: form.value.priority,
       difficulty: form.value.difficulty,
-      experience: form.value.experience || calculatedExperience.value,
-      task_order: form.value.task_order,
+      experience: form.value.experience || calculatedExperience.value
     }
 
     // 只在有值時添加可選字段
     if (form.value.description?.trim()) {
       updateData.description = form.value.description.trim()
-    } else {
-      updateData.description = null
     }
 
     if (form.value.due_date) {
       updateData.due_date = `${form.value.due_date}T23:59:59Z`
-    } else {
-      updateData.due_date = null
     }
 
-    // 調用 API 更新子任務
-    const response = await apiClient.updateTask(props.subtask.id, updateData)
+    // 使用 TaskStore 更新任務
+    await taskStore.updateTask(props.task.id, updateData)
 
-    if (response.success) {
-      emit('updated', response.data)
-      closeDialog()
-    } else {
-      errors.value.general = response.message || '更新子任務失敗'
+    // 轉換回前端格式
+    const updatedTask: Task = {
+      ...props.task,
+      title: updateData.title,
+      description: updateData.description,
+      type: updateData.task_type as Task['type'],
+      difficulty: updateData.difficulty as Task['difficulty'],
+      experience: updateData.experience,
+      deadline: updateData.due_date ? new Date(updateData.due_date) : undefined
     }
+
+    emit('updated', updatedTask)
+    closeDialog()
   } catch (error) {
-    console.error('更新子任務失敗:', error)
-    errors.value.general = '更新子任務失敗，請稍後再試'
-  } finally {
-    loading.value = false
-  }
-}
-
-// 處理子任務刪除
-const handleDeleteSubtask = async () => {
-  if (!props.subtask) return
-
-  showDeleteDialog.value = false
-  loading.value = true
-  errors.value = {}
-
-  try {
-    // 調用 API 刪除子任務
-    const response = await apiClient.deleteTask(props.subtask.id)
-
-    if (response.success) {
-      emit('deleted', props.subtask.id)
-      closeDialog()
-    } else {
-      errors.value.general = response.message || '刪除子任務失敗'
-    }
-  } catch (error) {
-    console.error('刪除子任務失敗:', error)
-    errors.value.general = '刪除子任務失敗，請稍後再試'
+    console.error('更新任務失敗:', error)
+    errors.value.general = '更新任務失敗，請稍後再試'
   } finally {
     loading.value = false
   }

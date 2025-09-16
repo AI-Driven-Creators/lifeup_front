@@ -276,7 +276,13 @@ const handleToggleTask = async (taskId: string) => {
 const handleTaskUpdate = (updatedTask: Task) => {
   const index = tasks.value.findIndex(t => t.id === updatedTask.id)
   if (index !== -1) {
-    tasks.value[index] = updatedTask
+    // 如果任務被刪除，從列表中移除
+    if (!updatedTask.id || (updatedTask as any).status === 'deleted') {
+      tasks.value.splice(index, 1)
+    } else {
+      // 否則更新任務
+      tasks.value[index] = updatedTask
+    }
   }
 }
 

@@ -113,7 +113,7 @@ export const useTaskStore = defineStore('task', {
       console.log(`toggleTaskStatus called: taskId=${taskId}, currentStatus=${currentStatus}, reverse=${reverse}`);
       
       // 首先嘗試從 store 中找到任務
-      let task = this.tasks.find(t => t.id === taskId);
+      let task: Task | null = this.tasks.find(t => t.id === taskId) || null;
       let taskStatus = task?.status || currentStatus;
 
       // 如果沒有找到任務且沒有提供當前狀態，先獲取任務信息
@@ -231,7 +231,8 @@ export const useTaskStore = defineStore('task', {
                 const tasksResponse = await apiClient.getTasks();
                 if (tasksResponse.success) {
                   const allTasks = tasksResponse.data.map(this.transformBackendTask);
-                  task = allTasks.find(t => t.id === taskId) || null;
+                  const foundTask = allTasks.find(t => t.id === taskId);
+                  task = foundTask || null;
                 }
               } catch (error) {
                 console.error('Failed to fetch task for completion handling:', error);
@@ -245,7 +246,8 @@ export const useTaskStore = defineStore('task', {
                 const tasksResponse = await apiClient.getTasks();
                 if (tasksResponse.success) {
                   const allTasks = tasksResponse.data.map(this.transformBackendTask);
-                  task = allTasks.find(t => t.id === taskId) || null;
+                  const foundTask = allTasks.find(t => t.id === taskId);
+                  task = foundTask || null;
                 }
               } catch (error) {
                 console.error('Failed to fetch task for revert handling:', error);
@@ -532,6 +534,77 @@ export const useTaskStore = defineStore('task', {
         
       } catch (error) {
         console.error('處理任務回復扣除經驗值時發生錯誤:', error);
+      }
+    },
+
+    // 更新任務
+    async updateTask(taskId: string, updateData: {
+      title?: string;
+      description?: string;
+      task_type?: string;
+      priority?: number;
+      difficulty?: number;
+      experience?: number;
+      due_date?: string;
+    }) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await apiClient.updateTask(taskId, updateData);
+        if (response.success) {
+          // 找到並更新 store 中的任務
+          const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+          if (taskIndex !== -1) {
+            // 更新任務數據
+            const updatedTask = {
+              ...this.tasks[taskIndex],
+              title: updateData.title || this.tasks[taskIndex].title,
+              description: updateData.description !== undefined ? updateData.description : this.tasks[taskIndex].description,
+              type: (updateData.task_type as any) || this.tasks[taskIndex].type,
+              difficulty: (updateData.difficulty as any) || this.tasks[taskIndex].difficulty,
+              experience: updateData.experience || this.tasks[taskIndex].experience,
+              deadline: updateData.due_date ? new Date(updateData.due_date) : this.tasks[taskIndex].deadline
+            };
+
+            this.tasks[taskIndex] = updatedTask;
+          }
+
+          return response.data;
+        } else {
+          this.error = response.message;
+          throw new Error(response.message);
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '更新任務失敗';
+        console.error('Failed to update task:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 刪除任務
+    async deleteTask(taskId: string) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await apiClient.deleteTask(taskId);
+        if (response.success) {
+          // 從 store 中移除任務
+          this.tasks = this.tasks.filter(task => task.id !== taskId);
+          return true;
+        } else {
+          this.error = response.message;
+          throw new Error(response.message);
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '刪除任務失敗';
+        console.error('Failed to delete task:', error);
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
   },
