@@ -1,45 +1,49 @@
-<template>
+﻿<template>
   <!-- 減去 App.vue main 的 pb-20(5rem) 以避免垂直溢出，需要時可調整 -->
   <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
     <!-- 頁面標題 -->
-    <PageHeader title="小教練" />
-    
-    <!-- 下載按鈕區域 -->
-    <div class="px-4 py-2 flex justify-end">
-      <button
-        @click="downloadHistory"
-        class="btn-secondary text-sm flex items-center gap-2"
-      >
-        <span>📥</span>
-        <span>下載對話記錄</span>
-      </button>
-    </div>
-    
-    <!-- 個性選擇器 -->
-  <div class="px-4 py-2 bg-white border-y border-gray-200 shrink-0">
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-medium text-gray-700">教練個性：</span>
-        <select 
-          v-model="selectedPersonality" 
-          @change="handlePersonalityChange"
-          class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          :disabled="availablePersonalities.length === 0"
-        >
-          <option v-if="availablePersonalities.length === 0" value="">載入中...</option>
-          <option v-for="personality in availablePersonalities" 
-                  :key="personality.personality_type" 
-                  :value="personality.personality_type">
-            {{ personality.emoji }} {{ personality.display_name }}
-          </option>
-        </select>
-        <div v-if="currentPersonality" class="text-xs text-gray-500">
-          {{ currentPersonality.description }}
+    <PageHeader
+      class="border-b border-gray-200"
+      :showProfileIcon="false"
+    >
+      <template #title>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold text-gray-900">小教練</span>
+            <select
+              v-model="selectedPersonality"
+              @change="handlePersonalityChange"
+              class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              :disabled="availablePersonalities.length === 0"
+            >
+              <option v-if="availablePersonalities.length === 0" value="">載入中...</option>
+              <option
+                v-for="personality in availablePersonalities"
+                :key="personality.personality_type"
+                :value="personality.personality_type"
+              >
+                {{ personality.emoji }} {{ personality.display_name }}
+              </option>
+            </select>
+          </div>
+          <p v-if="currentPersonality" class="text-xs text-gray-500">
+            {{ currentPersonality.description }}
+          </p>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #action>
+        <button
+          @click="downloadHistory"
+          class="btn-secondary text-sm flex items-center gap-2"
+        >
+          <span>📥</span>
+          <span>下載對話記錄</span>
+        </button>
+      </template>
+    </PageHeader>
     
     <!-- 聊天訊息區域 -->
-  <div ref="chatContainer" class="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
+    <div ref="chatContainer" class="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
       <ChatMessage
         v-for="message in messages"
         :key="message.id"
@@ -63,7 +67,7 @@
     </div>
     
     <!-- 輸入區域 -->
-  <ChatInput 
+    <ChatInput 
       @send="handleSendMessage" 
       @taskModeChange="handleTaskModeChange"
       :disabled="loading" 
@@ -555,3 +559,4 @@ const cancelTaskCreation = () => {
   validationErrors.value = []
 }
 </script>
+

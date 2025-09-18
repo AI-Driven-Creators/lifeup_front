@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <header class="header-container bg-white px-4 py-4">
     <div class="flex items-center justify-between h-10">
-      <div class="flex items-center">
+      <div class="flex items-center gap-3">
         <button
           v-if="showBack"
           @click="$router.go(-1)"
@@ -9,7 +9,9 @@
         >
           ←
         </button>
-        <h1 class="header-title text-lg font-bold text-warm-gray-900">{{ title }}</h1>
+        <slot name="title">
+          <h1 class="header-title text-lg font-bold text-warm-gray-900">{{ title }}</h1>
+        </slot>
       </div>
       
       <div class="flex items-center">
