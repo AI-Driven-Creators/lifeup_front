@@ -337,22 +337,38 @@
       </div>
     </div>
 
-    <!-- 職業主線問卷調查界面 -->
-    <div v-if="currentStage === 'survey'" class="max-w-4xl mx-auto px-4 py-8 pb-20">
-      <div class="mb-6">
-        <div class="flex items-center space-x-3 mb-4">
-          <span class="text-blue-600 text-xl">💼</span>
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
-            <p class="text-gray-600 text-sm">
+    <!-- Modal 職業主線問卷調查界面 -->
+    <div
+      v-if="showSurveyModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="closeSurveyModal"
+    >
+      <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 lg:p-8">
+
+        <!-- 問卷階段 -->
+        <div v-if="currentStage === 'survey'">
+          <!-- Modal Header with Close Button -->
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+              <span class="text-blue-600 text-xl">💼</span>
+              <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
+            </div>
+            <button
+              @click="closeSurveyModal"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="mb-8">
+            <p class="text-gray-600">
               你已選擇：<strong class="text-blue-600">{{ selectedCareer }}</strong>
             </p>
+            <p class="text-gray-500 text-sm mt-2">
+              請填寫以下問卷，AI 將根據你的測驗結果和個人需求為你生成專屬的學習任務。
+            </p>
           </div>
-        </div>
-        <p class="text-gray-500 text-sm">
-          請填寫以下問卷，AI 將根據你的測驗結果和個人需求為你生成專屬的學習任務。
-        </p>
-      </div>
 
       <div class="space-y-8">
         <!-- 當前水平 -->
@@ -441,72 +457,97 @@
           ></textarea>
         </div>
 
-        <!-- 按鈕區域 -->
-        <div class="flex flex-col space-y-3 pt-4">
-          <button
-            @click="generateTasks"
-            :disabled="!surveyAnswers.current_level || !surveyAnswers.available_time || !surveyAnswers.timeline"
-            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            <span class="mr-2">🚀</span>
-            開始生成學習計畫
-          </button>
-          <button
-            @click="backToResults"
-            class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            返回職業選擇
-          </button>
+          <!-- 操作按鈕 -->
+          <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+            <button
+              @click="closeSurveyModal"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              取消
+            </button>
+            <button
+              @click="generateTasks"
+              :disabled="!isFormValid || loading"
+              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+            >
+              <span class="mr-2">🚀</span>
+              <span v-if="loading">生成中...</span>
+              <span v-else>生成專屬主線任務</span>
+            </button>
+          </div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 生成中界面 -->
-    <div v-if="currentStage === 'generating'" class="max-w-4xl mx-auto px-4 py-16 pb-20 text-center">
-      <div class="text-6xl mb-6">⏳</div>
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">
-        正在生成專屬學習計畫...
-      </h2>
-      <p class="text-gray-600 mb-8">
-        基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...
-      </p>
-      <div class="animate-pulse bg-gray-200 h-4 rounded w-64 mx-auto"></div>
-    </div>
-
-    <!-- 完成界面 -->
-    <div v-if="currentStage === 'completed'" class="max-w-4xl mx-auto px-4 py-8 pb-20">
-      <div class="text-center mb-8">
-        <div class="text-6xl mb-4">🎉</div>
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">職業主線任務已生成</h2>
-        <p class="text-gray-600">
-          恭喜！AI 已根據你的<strong class="text-blue-600">{{ selectedCareer }}</strong>職業選擇和個人特質，為你生成了專屬的學習路徑。
-        </p>
-      </div>
-
-      <!-- 生成的任務列表 -->
-      <div v-if="generatedTasks.length > 0" class="space-y-4 mb-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 你的學習任務</h3>
-        <div v-for="(task, index) in generatedTasks" :key="index" class="border-l-4 border-blue-500 pl-4 py-3">
-          <h4 class="font-medium text-gray-800">{{ task.title || `任務 ${index + 1}` }}</h4>
-          <p class="text-sm text-gray-600 mt-1">{{ task.description || task.content }}</p>
+        <!-- 任務生成中階段 -->
+        <div v-if="currentStage === 'generating'" class="text-center py-12">
+          <div class="text-6xl mb-6">⏳</div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">AI 正在為你量身打造學習路徑</h3>
+          <p class="text-gray-600">
+            基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...
+          </p>
         </div>
-      </div>
 
-      <!-- 按鈕區域 -->
-      <div class="flex flex-col space-y-3">
-        <button
-          @click="$emit('reset')"
-          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          <span class="mr-2">🎯</span>
-          開始執行計畫
-        </button>
-        <button
-          @click="backToResults"
-          class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          重新選擇職業
-        </button>
+        <!-- 任務生成完成階段 -->
+        <div v-if="currentStage === 'completed'">
+          <div class="mb-8">
+            <div class="flex items-center space-x-3 mb-4">
+              <span class="text-green-600 text-xl">🎯</span>
+              <h2 class="text-xl font-semibold text-gray-900">職業主線任務已生成</h2>
+            </div>
+            <p class="text-gray-600">
+              恭喜！AI 已根據你的<strong class="text-blue-600">{{ selectedCareer }}</strong>職業選擇和個人特質，為你生成了專屬的學習路徑。
+            </p>
+          </div>
+
+          <!-- 生成的任務列表 -->
+          <div v-if="generatedTasks.length > 0" class="space-y-4 mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">你的專屬任務清單：</h3>
+            <div
+              v-for="(task, index) in generatedTasks"
+              :key="index"
+              class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                  {{ index + 1 }}
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
+                  <p class="text-gray-600 text-sm mt-1">{{ task.description }}</p>
+                  <div class="flex items-center space-x-4 mt-2">
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      難度: {{ task.difficulty }}/5
+                    </span>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      經驗值: {{ task.experience }}
+                    </span>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      {{ task.task_type }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作按鈕 -->
+          <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+            <button
+              @click="backToResults"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              重新選擇職業
+            </button>
+            <div class="space-x-3">
+              <button
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                @click="goToTasks"
+              >
+                開始執行任務
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -519,6 +560,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { CAREER_DATABASE } from '../../data/careerDatabase.js'
 
 // 簡化版職業資料庫
@@ -631,6 +673,8 @@ const emit = defineEmits<{
   reset: []
 }>()
 
+const router = useRouter()
+
 // 響應式數據
 const recommendedCareers = ref<any[]>([])
 const perfectMatches = ref<any[]>([])
@@ -641,6 +685,7 @@ const goodMatches = ref<any[]>([])
 const currentStage = ref<'results' | 'survey' | 'generating' | 'completed'>('results')
 const selectedCareer = ref('')
 const quizResultId = ref('')
+const showSurveyModal = ref(false)
 const surveyAnswers = ref({
   current_level: '',
   available_time: '',
@@ -929,7 +974,8 @@ const formatValueName = (value: string) => {
 // 職業選擇和問卷相關函數
 const selectCareer = (career: any) => {
   selectedCareer.value = career.name
-  currentStage.value = 'survey'
+  showSurveyModal.value = true
+  currentStage.value = 'survey' // 設定為問卷階段
   console.log('選擇職業:', selectedCareer.value)
 }
 
@@ -1048,6 +1094,7 @@ const saveQuizResults = async () => {
 }
 
 const backToResults = () => {
+  showSurveyModal.value = false
   currentStage.value = 'results'
   selectedCareer.value = ''
   surveyAnswers.value = {
@@ -1059,6 +1106,27 @@ const backToResults = () => {
     special_requirements: ''
   }
 }
+
+// 關閉問卷 Modal
+const closeSurveyModal = () => {
+  showSurveyModal.value = false
+  currentStage.value = 'results'
+}
+
+// 跳轉到主線任務頁面
+const goToTasks = () => {
+  showSurveyModal.value = false
+  router.push('/mission/main')
+}
+
+// 問卷表單驗證
+const isFormValid = computed(() => {
+  return surveyAnswers.value.current_level &&
+         surveyAnswers.value.available_time &&
+         surveyAnswers.value.timeline &&
+         surveyAnswers.value.learning_styles.length > 0 &&
+         surveyAnswers.value.motivation.trim().length > 0
+})
 
 // 生成職業計畫 (舊版保持向後兼容)
 const generateCareerPlan = (career?: any) => {
