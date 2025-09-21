@@ -5,12 +5,24 @@
   >
     <div class="flex items-center justify-between">
       <div class="flex-1 min-w-0">
-        <h3 
-          class="font-medium text-primary-900 mb-1"
-          :class="{ 'line-through text-primary-700': task.status === 'completed' }"
-        >
-          {{ task.title }}
-        </h3>
+        <div class="flex items-center gap-2 mb-1">
+          <h3
+            class="font-medium text-primary-900"
+            :class="{ 'line-through text-primary-700': task.status === 'completed' }"
+          >
+            {{ task.title }}
+          </h3>
+
+          <!-- 每日任務子類型標籤 -->
+          <span
+            v-if="task.dailyTaskSubtype === 'recurring'"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700"
+          >常駐目標</span>
+          <span
+            v-else-if="task.dailyTaskSubtype === 'simple'"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+          >今日行動</span>
+        </div>
         
         <div class="flex items-center space-x-4 text-sm text-primary-700 mb-2">
           <span class="flex items-center">
@@ -28,14 +40,28 @@
           {{ task.description }}
         </p>
         
-        <!-- 技能標籤 -->
-        <SkillTags :skill-tags="skillObjects" />
+        <!-- 技能標籤和星級 -->
+        <div class="flex items-center justify-between">
+          <SkillTags :skill-tags="skillObjects" />
+
+          <!-- 難度星級 -->
+          <div class="flex items-center space-x-1 ml-auto">
+            <span
+              v-for="n in 5"
+              :key="n"
+              class="text-xs"
+              :class="n <= task.difficulty ? 'text-yellow-400' : 'text-gray-300'"
+            >
+              ★
+            </span>
+          </div>
+        </div>
       </div>
       
       <!-- 大任務控制按鈕 -->
-      <div v-if="task.is_parent_task" class="ml-4 flex space-x-2">
-        <button 
-          v-if="task.status === 'pending'"
+      <div v-if="task.is_parent_task || task.type === 'daily'" class="ml-4 flex space-x-2">
+        <button
+          v-if="task.status === 'pending' || task.status === 'daily_not_completed'"
           class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
           @click.stop="handleStartTask"
           :disabled="isLoading"
@@ -43,8 +69,8 @@
           {{ isLoading ? '處理中...' : '開始' }}
         </button>
         
-        <button 
-          v-if="task.status === 'in_progress'"
+        <button
+          v-if="task.status === 'in_progress' || task.status === 'daily_in_progress'"
           class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 transition-colors"
           @click.stop="handlePauseTask"
           :disabled="isLoading"
@@ -61,16 +87,16 @@
           {{ isLoading ? '處理中...' : '繼續' }}
         </button>
         
-        <button 
-          v-if="['pending', 'in_progress', 'paused'].includes(task.status)"
+        <button
+          v-if="['pending', 'in_progress', 'paused', 'daily_in_progress', 'daily_not_completed'].includes(task.status)"
           class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
           @click.stop="showCancelDialog = true"
           :disabled="isLoading"
         >
           {{ isLoading ? '處理中...' : '取消' }}
         </button>
-        
-        <span v-if="task.status === 'completed'" class="px-3 py-1 bg-gray-400 text-white rounded text-sm">
+
+        <span v-if="task.status === 'completed' || task.status === 'daily_completed'" class="px-3 py-1 bg-gray-400 text-white rounded text-sm">
           已完成
         </span>
         
@@ -85,37 +111,34 @@
       </div>
       
       <!-- 一般任務切換按鈕 -->
-      <button 
-        v-else
+      <button
+        v-else-if="!task.is_parent_task && task.type !== 'daily'"
         class="btn-primary ml-4"
-        :class="{ 'bg-gray-400': task.status === 'completed' }"
+        :class="{
+          'bg-gray-400': task.status === 'completed' || task.status === 'daily_completed',
+          'bg-blue-500': task.status === 'daily_in_progress'
+        }"
         @click.stop="handleToggle"
       >
-        {{ task.status === 'completed' ? '已完成' : '開始' }}
+        {{
+          task.status === 'completed' || task.status === 'daily_completed'
+            ? '已完成'
+            : task.status === 'daily_in_progress'
+            ? '進行中'
+            : '開始'
+        }}
       </button>
     </div>
     
     <!-- 任務類型標籤 -->
-    <div class="flex items-center justify-between mt-3">
-      <span 
+    <!-- <div class="flex items-center justify-between mt-3">
+      <span
         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
         :class="getTypeStyle(task.type)"
       >
         {{ getTypeLabel(task.type) }}
-      </span>
-      
-      <!-- 難度星級 -->
-      <div class="flex items-center space-x-1">
-        <span
-          v-for="n in 5"
-          :key="n"
-          class="text-xs"
-          :class="n <= task.difficulty ? 'text-yellow-400' : 'text-gray-300'"
-        >
-          ★
-        </span>
-      </div>
-    </div>
+      </span> 
+    </div>-->
   </div>
   
   <!-- 取消任務確認對話框（網頁介面） -->

@@ -58,6 +58,43 @@
             </div>
           </div>
 
+          <!-- 每日任務子類型選擇 -->
+          <div v-if="form.task_type === 'daily'" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-3">每日任務類型</label>
+            <div class="grid grid-cols-1 gap-3">
+              <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <input
+                  v-model="dailyTaskSubtype"
+                  type="radio"
+                  value="simple"
+                  class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 focus:ring-2 mr-3"
+                />
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">📅</span>
+                  <div>
+                    <div class="font-medium text-sm">今日行動</div>
+                    <div class="text-xs text-gray-500">今天要完成的特定目標，完成後不會重複</div>
+                  </div>
+                </div>
+              </label>
+              <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <input
+                  v-model="dailyTaskSubtype"
+                  type="radio"
+                  value="recurring"
+                  class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 focus:ring-2 mr-3"
+                />
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">🔄</span>
+                  <div>
+                    <div class="font-medium text-sm">常駐目標</div>
+                    <div class="text-xs text-gray-500">習慣養成類任務，每天都會重置並可重複完成</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <!-- 任務描述 -->
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">任務描述</label>
@@ -229,6 +266,9 @@ const showAdvanced = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
 
+// 每日任務子類型
+const dailyTaskSubtype = ref<'simple' | 'recurring'>('simple')
+
 // 任務類型選項
 const taskTypes = [
   {
@@ -310,9 +350,17 @@ const resetForm = () => {
     due_date: '',
     generate_subtasks: false
   }
+  dailyTaskSubtype.value = 'simple'
   showAdvanced.value = false
   errors.value = {}
 }
+
+// 監聽任務類型變化，重置每日任務子類型
+watch(() => form.value.task_type, (newType) => {
+  if (newType !== 'daily') {
+    dailyTaskSubtype.value = 'simple'
+  }
+})
 
 // 關閉對話框
 const closeDialog = () => {
@@ -337,6 +385,15 @@ const submitForm = async () => {
       priority: form.value.priority,
       difficulty: form.value.difficulty,
       experience: form.value.experience || calculatedExperience.value
+    }
+
+    // 處理每日任務的重複性屬性
+    if (form.value.task_type === 'daily') {
+      taskData.is_recurring = dailyTaskSubtype.value === 'recurring' ? 1 : 0
+      if (dailyTaskSubtype.value === 'recurring') {
+        taskData.recurrence_pattern = 'daily'
+        taskData.completion_target = 0.8 // 預設完成率目標
+      }
     }
     
     // 只在有值時添加可選字段

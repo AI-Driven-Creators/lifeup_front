@@ -15,11 +15,11 @@ export const useTaskStore = defineStore('task', {
     pendingTasks: (state) => state.tasks.filter(task => task.status === 'pending'),
     completedTasks: (state) => state.tasks.filter(task => task.status === 'completed'),
     inProgressTasks: (state) => state.tasks.filter(task => task.status === 'in_progress'),
-    
-    tasksByType: (state) => (type: Task['type']) => 
+
+    tasksByType: (state) => (type: Task['type']) =>
       state.tasks.filter(task => task.type === type),
-    
-    totalExperience: (state) => 
+
+    totalExperience: (state) =>
       state.tasks
         .filter(task => task.status === 'completed')
         .reduce((total, task) => total + task.experience, 0),
@@ -29,7 +29,7 @@ export const useTaskStore = defineStore('task', {
     async fetchTasks() {
       this.loading = true;
       this.error = null;
-      
+
       try {
         const response = await apiClient.getTasks();
         if (response.success) {
@@ -90,7 +90,7 @@ export const useTaskStore = defineStore('task', {
     async fetchTasksByType(taskType: Task['type']) {
       this.loading = true;
       this.error = null;
-      
+
       try {
         const response = await apiClient.getTasksByType(taskType);
         if (response.success) {
@@ -111,7 +111,7 @@ export const useTaskStore = defineStore('task', {
 
     async toggleTaskStatus(taskId: string, currentStatus?: Task['status'], reverse: boolean = false) {
       console.log(`toggleTaskStatus called: taskId=${taskId}, currentStatus=${currentStatus}, reverse=${reverse}`);
-      
+
       // 首先嘗試從 store 中找到任務
       let task: Task | null = this.tasks.find(t => t.id === taskId) || null;
       let taskStatus = task?.status || currentStatus;
@@ -140,9 +140,9 @@ export const useTaskStore = defineStore('task', {
       // 計算下一個狀態
       let nextStatus: number;
       let nextStatusString: Task['status'];
-      
+
       console.log(`Status transition logic: taskStatus=${taskStatus}, reverse=${reverse}`);
-      
+
       if (reverse) {
         console.log('執行反向切換邏輯');
         // 反向切換：回復到前一個狀態
@@ -175,8 +175,12 @@ export const useTaskStore = defineStore('task', {
         console.log('執行正向切換邏輯');
         // 正向切換：進入下一個狀態
         if (taskStatus === 'pending') {
-          // 檢查是否為重複性任務（如果有is_recurring屬性或parent_task_id）
-          if (task?.parent_task_id) {
+          // 檢查是否為重複性每日任務
+          if (task?.type === 'daily' && task?.isRecurring) {
+            nextStatus = 5; // 每日進行中
+            nextStatusString = 'daily_in_progress';
+          } else if (task?.parent_task_id) {
+            // 保持舊邏輯作為備選（子任務情況）
             nextStatus = 5; // 每日進行中
             nextStatusString = 'daily_in_progress';
           } else {
@@ -210,7 +214,7 @@ export const useTaskStore = defineStore('task', {
 
       try {
         console.log(`更新任務狀態: ${taskId} 從 ${taskStatus} 到 ${nextStatusString} (reverse: ${reverse})`);
-        
+
         // 呼叫後端 API 更新任務狀態
         const response = await apiClient.updateTask(taskId, {
           status: nextStatus
@@ -222,7 +226,7 @@ export const useTaskStore = defineStore('task', {
             task.status = nextStatusString;
           }
           console.log(`Task ${taskId} status changed to ${nextStatusString}`);
-          
+
           // 根據狀態變化處理經驗值
           if (nextStatusString === 'completed' || nextStatusString === 'daily_completed') {
             // 任務完成，增加經驗值
@@ -268,7 +272,16 @@ export const useTaskStore = defineStore('task', {
     transformBackendTask(backendTask: any): Task {
       // 直接使用後端返回的狀態，因為後端已經統一處理了每日任務的狀態
       const status = this.mapBackendStatus(backendTask.status)
-      
+
+      // 判斷是否為重複性任務
+      const isRecurring = backendTask.is_recurring === 1;
+
+      // 判斷每日任務子類型
+      let dailyTaskSubtype: 'simple' | 'recurring' | undefined;
+      if (backendTask.task_type === 'daily') {
+        dailyTaskSubtype = isRecurring ? 'recurring' : 'simple';
+      }
+
       return {
         id: backendTask.id || '',
         title: backendTask.title || '',
@@ -290,6 +303,9 @@ export const useTaskStore = defineStore('task', {
         // 取消計數相關
         cancel_count: backendTask.cancel_count,
         last_cancelled_at: backendTask.last_cancelled_at,
+        // 每日任務相關
+        isRecurring,
+        dailyTaskSubtype,
       };
     },
 
@@ -395,24 +411,24 @@ export const useTaskStore = defineStore('task', {
 
       const skillStore = useSkillStore();
       const rewardsStore = useRewardsStore();
-      
+
       try {
         // 首先顯示任務完成的經驗值獲得通知
         rewardsStore.addExperienceNotification(task.experience, task.title);
-        
+
         // 基本經驗值計算：使用任務本身的經驗值
         const baseExperience = task.experience;
-        
+
         // 根據任務類型和屬性分配技能經驗值
-        const skillExperienceUpdates: Array<{skillId: string, skillName: string, experience: number, reason: string}> = [];
-        
+        const skillExperienceUpdates: Array<{ skillId: string, skillName: string, experience: number, reason: string }> = [];
+
         // 獲取所有技能用於查找對應技能
         if (skillStore.skills.length === 0) {
           console.log('📚 技能列表為空，正在獲取...');
           await skillStore.fetchSkills();
         }
         console.log('📚 當前技能列表:', skillStore.skills.map(s => s.name));
-        
+
         // 根據任務技能標籤給相應技能增加經驗值
         if (task.skillTags && task.skillTags.length > 0) {
           console.log(`🏷️ 處理 ${task.skillTags.length} 個技能標籤:`, task.skillTags);
@@ -434,24 +450,24 @@ export const useTaskStore = defineStore('task', {
         } else {
           console.log('⚠️ 任務沒有技能標籤');
         }
-        
+
         // 批量更新技能經驗值並顯示通知
         for (const update of skillExperienceUpdates) {
           try {
             // 先記錄舊的等級
             const skill = skillStore.skills.find(s => s.id === update.skillId);
             const oldLevel = skill?.level || 1;
-            
+
             // 更新技能經驗值
             const result = await skillStore.addSkillExperience(update.skillId, update.experience, update.reason);
-            
+
             // 顯示技能經驗值獲得通知
             rewardsStore.addSkillExperienceNotification(
-              update.skillName, 
-              update.experience, 
+              update.skillName,
+              update.experience,
               task.title
             );
-            
+
             // 如果技能升級了，顯示升級通知
             if (result?.level_up && result.new_level) {
               rewardsStore.addSkillLevelUpNotification(
@@ -464,9 +480,9 @@ export const useTaskStore = defineStore('task', {
             console.error(`更新技能 ${update.skillId} 經驗值失敗:`, error);
           }
         }
-        
+
         console.log(`✅ 任務完成獎勵發放完畢！更新了 ${skillExperienceUpdates.length} 個技能`);
-        
+
       } catch (error) {
         console.error('處理任務完成獎勵時發生錯誤:', error);
       }
@@ -480,21 +496,21 @@ export const useTaskStore = defineStore('task', {
       }
 
       const skillStore = useSkillStore();
-      
+
       try {
         // 基本經驗值計算：使用任務本身的經驗值（負值表示扣除）
         const baseExperience = -task.experience;
-        
+
         // 根據任務類型和屬性分配技能經驗值扣除
-        const skillExperienceUpdates: Array<{skillId: string, experience: number, reason: string}> = [];
-        
+        const skillExperienceUpdates: Array<{ skillId: string, experience: number, reason: string }> = [];
+
         // 獲取所有技能用於查找對應技能
         if (skillStore.skills.length === 0) {
           console.log('📚 技能列表為空，正在獲取...');
           await skillStore.fetchSkills();
         }
         console.log('📚 當前技能列表:', skillStore.skills.map(s => s.name));
-        
+
         // 根據任務技能標籤給相應技能扣除經驗值
         if (task.skillTags && task.skillTags.length > 0) {
           console.log(`🏷️ 處理 ${task.skillTags.length} 個技能標籤回復:`, task.skillTags);
@@ -515,12 +531,12 @@ export const useTaskStore = defineStore('task', {
         } else {
           console.log('⚠️ 任務沒有技能標籤');
         }
-        
+
         // 如果沒有技能標籤，不扣除技能經驗值
         if (skillExperienceUpdates.length === 0) {
           console.log('⚠️ 任務沒有技能標籤，跳過技能經驗值扣除');
         }
-        
+
         // 批量更新技能經驗值（扣除）
         for (const update of skillExperienceUpdates) {
           try {
@@ -529,9 +545,9 @@ export const useTaskStore = defineStore('task', {
             console.error(`扣除技能 ${update.skillId} 經驗值失敗:`, error);
           }
         }
-        
+
         console.log(`✅ 任務回復處理完畢！扣除了 ${skillExperienceUpdates.length} 個技能的經驗值`);
-        
+
       } catch (error) {
         console.error('處理任務回復扣除經驗值時發生錯誤:', error);
       }

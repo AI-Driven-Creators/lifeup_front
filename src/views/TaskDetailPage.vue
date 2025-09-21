@@ -90,17 +90,16 @@
           <span class="status-badge text-xs px-2 py-1 rounded-full" :class="getStatusBadgeClass(task.status)">
             {{ getStatusDisplayText(task.status) }}
           </span>
-          <!-- 重複性任務標記 -->
-          <span v-if="(task as any).is_recurring" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
-            重複性任務
-          </span>
+          <!-- 每日任務子類型標記 -->
+          <span v-if="task.dailyTaskSubtype === 'recurring'" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">常駐目標</span>
+          <span v-else-if="task.dailyTaskSubtype === 'simple'" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">今日行動</span>
         </div>
         
         <!-- 任務進度條 -->
         <div v-if="task.progress || task.is_parent_task" class="mt-4">
           <TaskProgressBar 
             :progress="taskProgress" 
-            :showDailyStats="(task as any).is_recurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
+            :showDailyStats="task.isRecurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
           />
         </div>
       </div>
@@ -464,7 +463,7 @@ const loadTaskDetail = async () => {
       // 如果是大任務，載入子任務
       if (foundTask.is_parent_task) {
         // 判斷是否為每日任務（重複性任務或任務類型為 daily）
-        isDailyTask.value = (foundTask as any).is_recurring || foundTask.type === 'daily'
+        isDailyTask.value = foundTask.isRecurring || foundTask.type === 'daily'
         
         const subtaskResponse = await apiClient.getSubtasks(taskId, {
           daily: isDailyTask.value,

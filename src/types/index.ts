@@ -61,6 +61,9 @@ export interface Task {
   parentTaskStatus?: 'pending' | 'in_progress' | 'completed' | 'paused' | 'cancelled' | 'daily_in_progress' | 'daily_completed';
   // 任務進度相關
   progress?: TaskProgress;
+  // 每日任務相關
+  isRecurring?: boolean; // 是否為重複性任務
+  dailyTaskSubtype?: 'simple' | 'recurring'; // 每日任務子類型
 }
 
 // 任務進度類型
