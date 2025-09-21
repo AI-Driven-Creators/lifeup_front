@@ -1,18 +1,15 @@
 <template>
   <div class="bg-primary-100 border-t border-primary-200 p-4">
-    <!-- 任務模式開關 -->
+    <!-- 對話模式選擇 -->
     <div class="mb-3 flex items-center justify-center">
-      <label class="flex items-center space-x-2 text-sm">
-        <input
-          type="checkbox"
-          v-model="isTaskMode"
-          @change="$emit('taskModeChange', isTaskMode)"
-          class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        >
-        <span :class="{ 'text-blue-600 font-medium': isTaskMode, 'text-gray-600': !isTaskMode }">
-          {{ isTaskMode ? '🎯 任務創建模式' : '💬 普通對話模式' }}
-        </span>
-      </label>
+      <select
+        v-model="chatMode"
+        @change="handleModeChange"
+        class="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        <option value="normal">💬 普通對話模式</option>
+        <option value="task">🎯 任務創建模式</option>
+      </select>
     </div>
     
     <div class="flex items-center space-x-2">
@@ -20,7 +17,7 @@
         v-model="inputMessage"
         @keypress.enter="handleSend"
         type="text"
-        :placeholder="isTaskMode ? '描述你想創建的任務...' : '輸入訊息'"
+        :placeholder="chatMode === 'task' ? '描述你想創建的任務...' : '輸入訊息'"
         class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
       >
       <button
@@ -30,12 +27,12 @@
           'px-4 py-2 rounded-lg font-medium transition-colors',
           !inputMessage.trim() 
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-            : isTaskMode 
+            : chatMode === 'task'
               ? 'bg-blue-500 text-white hover:bg-blue-600' 
               : 'bg-primary-600 text-white hover:bg-primary-700'
         ]"
       >
-        {{ isTaskMode ? '創建任務' : '發送' }}
+        {{ chatMode === 'task' ? '創建任務' : '發送' }}
       </button>
     </div>
   </div>
@@ -57,15 +54,21 @@ defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const inputMessage = ref('')
-const isTaskMode = ref(false)
+const chatMode = ref<'normal' | 'task'>('normal')
+
+const handleModeChange = () => {
+  const isTaskMode = chatMode.value === 'task'
+  emit('taskModeChange', isTaskMode)
+}
 
 const handleSend = () => {
   if (inputMessage.value.trim()) {
-    emit('send', inputMessage.value.trim(), isTaskMode.value)
+    const isTaskMode = chatMode.value === 'task'
+    emit('send', inputMessage.value.trim(), isTaskMode)
     inputMessage.value = ''
-    // 任務模式下發送後自動關閉任務模式
-    if (isTaskMode.value) {
-      isTaskMode.value = false
+    // 任務模式下發送後自動切回普通模式
+    if (chatMode.value === 'task') {
+      chatMode.value = 'normal'
       emit('taskModeChange', false)
     }
   }
