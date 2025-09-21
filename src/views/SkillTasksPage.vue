@@ -1,12 +1,17 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <!-- 調整高度避免被底部導航影響，並確保內容區域可滾動 -->
+  <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
     <!-- 頁面標題 -->
-    <PageHeader 
-      :title="`${skillName} - 相關任務`" 
-      :show-back="true"
-    />
-    
-    <div class="px-4 py-6">
+    <div class="shrink-0">
+      <PageHeader
+        :title="`${skillName} - 相關任務`"
+        :show-back="true"
+      />
+    </div>
+
+    <!-- 可滾動內容區域 -->
+    <div class="flex-1 min-h-0 overflow-y-auto">
+      <div class="px-4 py-6">
       <!-- 加載狀態 -->
       <div v-if="loading" class="text-center py-8">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -108,6 +113,7 @@
           </div>
         </div>
       </template>
+      </div>
     </div>
   </div>
 </template>
