@@ -38,11 +38,6 @@
         {{ isTaskMode ? '創建任務' : '發送' }}
       </button>
     </div>
-    
-    <!-- 任務模式提示 -->
-    <div v-if="isTaskMode" class="mt-2 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
-      💡 任務模式：發送後會自動生成任務並顯示預覽，讓你確認是否創建
-    </div>
   </div>
 </template>
 

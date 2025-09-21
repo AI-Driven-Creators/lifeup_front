@@ -97,7 +97,7 @@ import type { ChatMessage as ChatMessageType } from '@/types'
 
 // 基本狀態
 const messages = ref<ChatMessageType[]>([])
-const quickReplies = ref<string[]>(['開始聊天', '需要幫助'])
+const quickReplies = ref<string[]>([])
 const loading = ref(false)
 const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
