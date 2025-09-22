@@ -353,11 +353,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue'
+import { ref, computed, watch, inject, onMounted } from 'vue'
 import { apiClient } from '@/services/api'
 
 interface Props {
   show: boolean
+  editTaskData?: any
 }
 
 interface Emits {
@@ -365,7 +366,7 @@ interface Emits {
   (e: 'created', task: any): void
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // 表單數據
@@ -725,7 +726,60 @@ watch(() => form.value.title, () => {
     validateForm()
   }
 })
-</script>
+
+// 監聽對話框顯示狀態和編輯資料，檢查是否有預填資料
+watch([() => props.show, () => props.editTaskData], ([isShow, editData]) => {
+  if (isShow && editData) {
+    try {
+      console.log('載入編輯資料:', editData)
+
+      // 預填表單資料
+      form.value.title = editData.title || ''
+      form.value.task_type = editData.task_type || 'main'
+      form.value.description = editData.description || ''
+      form.value.priority = editData.priority || 2
+      form.value.difficulty = editData.difficulty || 3
+      form.value.experience = editData.experience || calculatedExperience.value
+
+      // 處理截止日期格式（檢查多種可能的字段名）
+      const possibleDateFields = [editData.due_date, editData.deadline, editData.end_date, editData.target_date]
+      const dateValue = possibleDateFields.find(date => date != null)
+
+      if (dateValue) {
+        console.log('找到截止日期:', dateValue)
+        try {
+          const dueDate = new Date(dateValue)
+          if (!isNaN(dueDate.getTime())) {
+            form.value.due_date = dueDate.toISOString().split('T')[0]
+            console.log('格式化後的截止日期:', form.value.due_date)
+          } else {
+            console.warn('無效的截止日期格式:', dateValue)
+          }
+        } catch (error) {
+          console.error('截止日期格式轉換失敗:', error)
+        }
+      } else {
+        console.log('沒有找到截止日期資料，檢查的字段:', {
+          due_date: editData.due_date,
+          deadline: editData.deadline,
+          end_date: editData.end_date,
+          target_date: editData.target_date
+        })
+      }
+
+      // 處理每日任務類型
+      if (editData.task_type === 'daily') {
+        dailyTaskSubtype.value = editData.is_recurring ? 'recurring' : 'simple'
+      }
+
+      // 預設展開進階選項
+      showAdvanced.value = true
+
+    } catch (error) {
+      console.error('載入預填資料失敗:', error)
+    }
+  }
+}, { immediate: true })
 
 <style scoped>
 /* 滑動條樣式 */

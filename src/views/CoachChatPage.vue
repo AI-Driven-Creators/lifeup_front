@@ -86,12 +86,14 @@
       :validationErrors="validationErrors"
       @confirm="confirmCreateTask"
       @cancel="cancelTaskCreation"
+      @edit="editTask"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiClient } from '@/services/api'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import ChatMessage from '@/components/features/ChatMessage.vue'
@@ -100,6 +102,7 @@ import TaskPreviewDialog from '@/components/features/TaskPreviewDialog.vue'
 import type { ChatMessage as ChatMessageType } from '@/types'
 
 // 基本狀態
+const router = useRouter()
 const messages = ref<ChatMessageType[]>([])
 const quickReplies = ref<string[]>([])
 const loading = ref(false)
@@ -607,6 +610,20 @@ const cancelTaskCreation = () => {
   previewTaskJson.value = null
   taskPreviewText.value = ''
   validationErrors.value = []
+}
+
+// 編輯任務
+const editTask = () => {
+  // 將當前的任務資料存儲到 sessionStorage 以便在編輯頁面使用
+  if (previewTaskJson.value) {
+    sessionStorage.setItem('editTaskData', JSON.stringify(previewTaskJson.value))
+  }
+
+  // 關閉預覽對話框
+  showTaskPreview.value = false
+
+  // 跳轉到 mission 頁面並直接打開創建任務對話框
+  router.push('/mission?editMode=true')
 }
 </script>
 

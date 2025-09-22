@@ -66,11 +66,7 @@ const handleSend = () => {
     const isTaskMode = chatMode.value === 'task'
     emit('send', inputMessage.value.trim(), isTaskMode)
     inputMessage.value = ''
-    // 任務模式下發送後自動切回普通模式
-    if (chatMode.value === 'task') {
-      chatMode.value = 'normal'
-      emit('taskModeChange', false)
-    }
+    // 移除自動切換回普通模式的邏輯，讓用戶可以連續創建任務
   }
 }
 </script>

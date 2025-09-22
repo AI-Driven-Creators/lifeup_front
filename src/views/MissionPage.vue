@@ -105,15 +105,16 @@
     <!-- 創建任務對話框 -->
     <CreateTaskDialog
       :show="showCreateDialog"
-      @close="showCreateDialog = false"
+      :editTaskData="editTaskData"
+      @close="handleCloseCreateDialog"
       @created="handleTaskCreated"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskTypeCard from '@/components/features/TaskTypeCard.vue'
 import CreateTaskDialog from '@/components/features/CreateTaskDialog.vue'
@@ -122,6 +123,7 @@ import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 const taskStore = useTaskStore()
 const userStore = useUserStore()
 const showToast = inject<(text: string, duration?: number) => void>('showToast')
@@ -132,6 +134,7 @@ const challengeTasks = ref<Task[]>([])
 const dailyTasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const editTaskData = ref<any>(null)
 
 // 所有任務的計算屬性
 const allTasks = computed(() => [
@@ -268,6 +271,12 @@ const navigateToCreateTask = () => {
   showCreateDialog.value = true
 }
 
+// 處理創建任務對話框關閉
+const handleCloseCreateDialog = () => {
+  showCreateDialog.value = false
+  editTaskData.value = null // 清理編輯資料
+}
+
 // 處理任務創建成功
 const handleTaskCreated = async (newTask: Task) => {
   try {
@@ -286,20 +295,23 @@ const handleTaskCreated = async (newTask: Task) => {
         dailyTasks.value.push(newTask)
         break
     }
-    
+
     // 檢查任務狀態來決定提示訊息
     const isStarted = newTask.status === 'in_progress' || newTask.status === 1
     const taskTitle = newTask.title || '新任務'
-    
+
     if (isStarted) {
       showToast && showToast(`任務「${taskTitle}」已創建並開始，子任務已生成！`, 4000)
     } else {
       showToast && showToast(`任務「${taskTitle}」創建成功！`, 3000)
     }
-    
+
+    // 清理編輯資料
+    editTaskData.value = null
+
     // 可選：重新載入任務列表以確保數據同步
     // await loadTasksByType()
-    
+
   } catch (error) {
     console.error('處理新任務失敗:', error)
     // 如果出錯，重新載入任務列表
@@ -321,5 +333,34 @@ const showTodayTasks = () => {
 // 頁面載入時獲取任務
 onMounted(() => {
   loadTasksByType()
+
+  // 檢查是否從 coach 頁面的編輯模式跳轉過來
+  if (route.query.editMode === 'true') {
+    const editTaskDataString = sessionStorage.getItem('editTaskData')
+    if (editTaskDataString) {
+      try {
+        // 解析並存儲編輯資料
+        editTaskData.value = JSON.parse(editTaskDataString)
+
+        // 清除 sessionStorage 中的資料
+        sessionStorage.removeItem('editTaskData')
+
+        // 開啟創建任務對話框並預填資料
+        showCreateDialog.value = true
+
+        showToast && showToast('已從小教練模式載入任務資料，請繼續編輯', 3000)
+      } catch (error) {
+        console.error('載入編輯資料失敗:', error)
+      }
+    }
+  }
+})
+
+// 清理 sessionStorage
+onUnmounted(() => {
+  // 如果用戶離開頁面但沒有使用編輯資料，清理 sessionStorage
+  if (sessionStorage.getItem('editTaskData')) {
+    sessionStorage.removeItem('editTaskData')
+  }
 })
 </script>

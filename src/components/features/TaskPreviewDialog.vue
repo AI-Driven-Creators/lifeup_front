@@ -86,6 +86,12 @@
           取消
         </button>
         <button
+          @click="$emit('edit')"
+          class="px-6 py-2 text-orange-600 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+        >
+          編輯任務
+        </button>
+        <button
           @click="$emit('confirm')"
           class="px-6 py-2 text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors"
           :disabled="validationErrors.length > 0"
@@ -105,7 +111,7 @@ interface Props {
 }
 
 defineProps<Props>()
-defineEmits(['confirm', 'cancel'])
+defineEmits(['confirm', 'cancel', 'edit'])
 
 // 格式化日期
 const formatDate = (dateStr: string) => {
