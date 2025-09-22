@@ -88,6 +88,62 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-3">相關任務</label>
+              <div class="space-y-3">
+                <button
+                  type="button"
+                  @click="handleTaskOption('bucket')"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-md text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+                >
+                  <div class="flex items-center">
+                    <span class="mr-3 text-lg">📋</span>
+                    <div>
+                      <div class="font-medium text-gray-900">從任務bucket中選擇</div>
+                      <div class="text-sm text-gray-500">從現有任務中選擇相關的任務</div>
+                    </div>
+                  </div>
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  @click="handleTaskOption('create')"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-md text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+                >
+                  <div class="flex items-center">
+                    <span class="mr-3 text-lg">✏️</span>
+                    <div>
+                      <div class="font-medium text-gray-900">自己創建任務</div>
+                      <div class="text-sm text-gray-500">手動創建專屬的學習任務</div>
+                    </div>
+                  </div>
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  @click="handleTaskOption('ai')"
+                  class="w-full px-4 py-3 border border-primary-300 bg-primary-50 rounded-md text-left hover:bg-primary-100 transition-colors flex items-center justify-between"
+                >
+                  <div class="flex items-center">
+                    <span class="mr-3 text-lg">🤖</span>
+                    <div>
+                      <div class="font-medium text-primary-900">AI生成任務</div>
+                      <div class="text-sm text-primary-600">讓AI為你規劃個人化學習路徑</div>
+                    </div>
+                  </div>
+                  <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="flex space-x-3 mt-6">
@@ -103,7 +159,7 @@
               :disabled="!skillForm.skillName || !skillForm.goalDescription || !skillForm.deadline || generating"
               class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {{ generating ? '生成中...' : '生成任務' }}
+              {{ generating ? '保存中...' : '保存' }}
             </button>
           </div>
         </form>
@@ -129,7 +185,8 @@ const generating = ref(false)
 const skillForm = ref({
   skillName: '',
   goalDescription: '',
-  deadline: ''
+  deadline: '',
+  selectedTaskOption: null // 'bucket', 'create', 'ai'
 })
 
 // 從後端獲取的技能數據按類別分組
@@ -172,7 +229,22 @@ const fetchSkills = async () => {
   }
 }
 
-// 處理生成任務（目前只做UI反饋）
+// 處理任務選項選擇
+const handleTaskOption = (option: string) => {
+  skillForm.value.selectedTaskOption = option
+  console.log('選擇任務選項:', option)
+
+  // 暫時顯示選擇的選項
+  const optionNames = {
+    bucket: '從任務bucket中選擇',
+    create: '自己創建任務',
+    ai: 'AI生成任務'
+  }
+
+  alert(`已選擇: ${optionNames[option as keyof typeof optionNames]}\n功能開發中...`)
+}
+
+// 處理保存技能（目前只做UI反饋）
 const handleGenerateTasks = async () => {
   generating.value = true
 
@@ -180,20 +252,24 @@ const handleGenerateTasks = async () => {
   await new Promise(resolve => setTimeout(resolve, 2000))
 
   // 暫時只在控制台顯示表單數據
-  console.log('準備生成任務:', skillForm.value)
+  console.log('準備保存技能學習計畫:', {
+    ...skillForm.value,
+    taskOption: skillForm.value.selectedTaskOption
+  })
 
   // 關閉對話框並重置表單
   showCreateDialog.value = false
   skillForm.value = {
     skillName: '',
     goalDescription: '',
-    deadline: ''
+    deadline: '',
+    selectedTaskOption: null
   }
 
   generating.value = false
 
   // 顯示成功提示（暫時）
-  alert('任務生成功能開發中...')
+  alert('技能學習計畫保存功能開發中...')
 }
 
 // 監聽來自底部導航的新增技能事件
