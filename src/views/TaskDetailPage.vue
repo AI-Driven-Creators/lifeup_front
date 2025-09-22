@@ -351,26 +351,36 @@ const sortedSubtasks = computed(() => {
       }
       return priorityA - priorityB
     } else {
-      // 普通任務：保持原有排序邏輯
-      const getStatusPriority = (status: string) => {
-        switch (status) {
-          case 'pending': return 0
-          case 'in_progress': 
-          case 'daily_in_progress': return 1
-          case 'completed':
-          case 'daily_completed': return 2
-          case 'daily_not_completed': return 3
-          default: return 4 // paused, cancelled 等其他狀態
-        }
-      }
-      
-      const priorityA = getStatusPriority(a.status)
-      const priorityB = getStatusPriority(b.status)
-      
-      if (priorityA === priorityB) {
+      // 檢查是否為職業主線任務
+      const isCareerTask = task.value?.task_category === 'career_mainline' ||
+                          a.task_category === 'career_subtask' ||
+                          b.task_category === 'career_subtask'
+
+      if (isCareerTask) {
+        // 職業主線任務：始終按照 task_order 順序排列，不受狀態影響
         return (a.task_order || 0) - (b.task_order || 0)
+      } else {
+        // 普通任務：保持原有排序邏輯
+        const getStatusPriority = (status: string) => {
+          switch (status) {
+            case 'pending': return 0
+            case 'in_progress':
+            case 'daily_in_progress': return 1
+            case 'completed':
+            case 'daily_completed': return 2
+            case 'daily_not_completed': return 3
+            default: return 4 // paused, cancelled 等其他狀態
+          }
+        }
+
+        const priorityA = getStatusPriority(a.status)
+        const priorityB = getStatusPriority(b.status)
+
+        if (priorityA === priorityB) {
+          return (a.task_order || 0) - (b.task_order || 0)
+        }
+        return priorityA - priorityB
       }
-      return priorityA - priorityB
     }
   })
 })
