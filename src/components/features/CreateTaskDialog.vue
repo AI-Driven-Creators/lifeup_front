@@ -3,7 +3,9 @@
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
       <!-- 標題列 -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white">
-        <h2 class="text-lg font-bold text-gray-900">創建新任務</h2>
+        <h2 class="text-lg font-bold text-gray-900">
+          {{ getDialogTitle() }}
+        </h2>
         <button @click="closeDialog" class="text-gray-400 hover:text-gray-600 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -13,7 +15,8 @@
 
       <!-- 表單內容 -->
       <div class="p-4">
-        <form @submit.prevent="submitForm">
+        <!-- 一般任務創建 -->
+        <form v-if="!isRecurringTaskFlow" @submit.prevent="submitForm">
           <!-- 任務名稱 -->
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -77,7 +80,8 @@
                   </div>
                 </div>
               </label>
-              <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                     :class="{ 'border-primary-500 bg-primary-50': dailyTaskSubtype === 'recurring' }">
                 <input
                   v-model="dailyTaskSubtype"
                   type="radio"
@@ -87,7 +91,9 @@
                 <div class="flex items-center gap-2">
                   <span class="text-lg">🔄</span>
                   <div>
-                    <div class="font-medium text-sm">常駐目標</div>
+                    <div class="font-medium text-sm">常駐目標
+                      <span class="text-xs text-primary-600 font-normal">（分步驟設定）</span>
+                    </div>
                     <div class="text-xs text-gray-500">習慣養成類任務，每天都會重置並可重複完成</div>
                   </div>
                 </div>
@@ -156,31 +162,15 @@
               </div>
             </div>
 
-            <!-- 經驗值 -->
+            <!-- 經驗值預覽 -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                經驗值 
-                <span class="text-xs text-gray-500">(建議: {{ calculatedExperience }})</span>
-              </label>
-              <input
-                v-model.number="form.experience"
-                type="number"
-                min="10"
-                max="500"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                :placeholder="calculatedExperience.toString()"
-              />
+              <label class="block text-sm font-medium text-gray-700 mb-2">經驗值</label>
+              <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                {{ calculatedExperience }} EXP
+                <span class="text-xs text-gray-500 ml-2">(根據優先級和難度自動計算)</span>
+              </div>
             </div>
 
-            <!-- 截止日期 -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">截止日期</label>
-              <input
-                v-model="form.due_date"
-                type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
 
             <!-- 生成子任務選項 -->
             <div class="border-t border-gray-200 pt-4">
@@ -220,21 +210,150 @@
               class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               :disabled="loading || !isFormValid"
             >
-              {{ 
-                loading 
-                  ? (form.generate_subtasks ? '創建並生成子任務中...' : '創建中...') 
-                  : (form.generate_subtasks ? '創建並生成子任務' : '創建任務')
-              }}
+              {{ getSubmitButtonText() }}
             </button>
           </div>
         </form>
+
+        <!-- 常駐目標重複設定 -->
+        <div v-else>
+          <!-- 重複設定界面 -->
+          <div class="space-y-6">
+            <!-- 已設定的基本資訊預覽 -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-green-600">✓</span>
+                <h4 class="font-medium text-green-800">已設定基本資訊</h4>
+              </div>
+              <div class="text-sm text-green-700">
+                <div><strong>目標名稱：</strong>{{ formData.title }}</div>
+                <div v-if="formData.description" class="mt-1"><strong>描述：</strong>{{ formData.description }}</div>
+                <div class="mt-1"><strong>難度：</strong>{{ '⭐'.repeat(formData.difficulty) }} ({{ formData.difficulty }})</div>
+                <div class="mt-1"><strong>優先級：</strong>{{ formData.priority === 1 ? '低' : formData.priority === 2 ? '中' : '高' }} ({{ formData.priority }})</div>
+                <div><strong>每日經驗值：</strong>{{ suggestedExp }}</div>
+              </div>
+            </div>
+
+            <!-- 重複模式 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-3">重複頻率</label>
+              <div class="grid grid-cols-2 gap-3">
+                <label v-for="pattern in recurrencePatterns" :key="pattern.value"
+                       class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                       :class="{ 'border-primary-500 bg-primary-50': recurringData.pattern === pattern.value }">
+                  <input v-model="recurringData.pattern" :value="pattern.value" type="radio" class="sr-only">
+                  <div class="flex items-center w-full">
+                    <span class="text-2xl mr-3">{{ pattern.icon }}</span>
+                    <div>
+                      <div class="font-medium text-sm">{{ pattern.label }}</div>
+                      <div class="text-xs text-gray-500">{{ pattern.description }}</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 執行期間設定 -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h4 class="font-medium text-gray-800 mb-4">📅 執行期間</h4>
+
+              <!-- 快速選擇 -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">快速選擇</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button @click="setQuickDuration(21)" type="button"
+                          class="px-3 py-2 text-sm border rounded-lg hover:bg-white transition-colors"
+                          :class="{ 'border-primary-500 bg-white': isQuickDuration(21) }">
+                    21天習慣
+                  </button>
+                  <button @click="setQuickDuration(30)" type="button"
+                          class="px-3 py-2 text-sm border rounded-lg hover:bg-white transition-colors"
+                          :class="{ 'border-primary-500 bg-white': isQuickDuration(30) }">
+                    30天挑戰
+                  </button>
+                  <button @click="setQuickDuration(90)" type="button"
+                          class="px-3 py-2 text-sm border rounded-lg hover:bg-white transition-colors"
+                          :class="{ 'border-primary-500 bg-white': isQuickDuration(90) }">
+                    90天養成
+                  </button>
+                </div>
+              </div>
+
+              <!-- 自訂日期 -->
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">開始日期</label>
+                  <input v-model="recurringData.startDate" type="date"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">結束日期</label>
+                  <input v-model="recurringData.endDate" type="date"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                </div>
+              </div>
+
+              <!-- 期間顯示 -->
+              <div class="mt-3 text-sm text-gray-600">
+                總計：<span class="font-medium text-primary-600">{{ totalDays }}</span> 天
+              </div>
+            </div>
+
+            <!-- 完成率目標 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-3">
+                完成率目標：<span class="text-lg font-bold text-primary-600">{{ Math.round(recurringData.target * 100) }}%</span>
+              </label>
+              <div class="px-4 py-3 bg-white border border-gray-200 rounded-lg">
+                <input v-model.number="recurringData.target" type="range"
+                       min="0.1" max="1" step="0.05"
+                       class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-gradient">
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                  <span>10% 入門</span>
+                  <span>50% 一般</span>
+                  <span>80% 良好</span>
+                  <span>100% 完美</span>
+                </div>
+              </div>
+              <p class="text-sm text-gray-600 mt-2">
+                在 {{ totalDays }} 天內，預期完成 <strong>{{ Math.round(totalDays * recurringData.target) }}</strong> 天
+              </p>
+            </div>
+
+            <!-- 錯誤提示 -->
+            <div v-if="errors.general" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p class="text-sm text-red-600">{{ errors.general }}</p>
+            </div>
+
+            <!-- 期間驗證錯誤 -->
+            <div v-if="!isValidRecurringSetting && recurringData.startDate && recurringData.endDate"
+                 class="text-sm text-red-600 text-center">
+              結束日期必須晚於開始日期
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="flex justify-between pt-4">
+              <button @click="backToBasicForm"
+                      :disabled="loading"
+                      class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium disabled:opacity-50 transition-all">
+                ← 返回修改基本資訊
+              </button>
+              <button @click="createRecurringTask"
+                      :disabled="!isValidRecurringSetting || loading"
+                      class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all flex items-center gap-2">
+                <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                {{ loading ? '創建中...' : '🎯 創建常駐目標' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { apiClient } from '@/services/api'
 
 interface Props {
@@ -256,9 +375,22 @@ const form = ref({
   description: '',
   priority: 2,
   difficulty: 3,
-  experience: 0,
-  due_date: '',
   generate_subtasks: false
+})
+
+// 常駐目標數據
+const formData = ref({
+  title: '',
+  description: '',
+  difficulty: 3,
+  priority: 2
+})
+
+const recurringData = ref({
+  pattern: 'daily',
+  startDate: new Date().toISOString().split('T')[0],
+  endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  target: 0.8
 })
 
 // UI 狀態
@@ -268,6 +400,9 @@ const errors = ref<Record<string, string>>({})
 
 // 每日任務子類型
 const dailyTaskSubtype = ref<'simple' | 'recurring'>('simple')
+
+// 是否進入常駐目標流程
+const isRecurringTaskFlow = ref(false)
 
 // 任務類型選項
 const taskTypes = [
@@ -297,9 +432,37 @@ const taskTypes = [
   }
 ]
 
+// 重複模式選項
+const recurrencePatterns = [
+  { value: 'daily', label: '每日', icon: '📅', description: '每天都要完成' },
+  { value: 'weekdays', label: '工作日', icon: '💼', description: '週一到週五' },
+  { value: 'weekends', label: '週末', icon: '🏖️', description: '週六和週日' },
+  { value: 'weekly', label: '每週', icon: '📊', description: '每週完成一次' }
+]
+
 // 計算經驗值
 const calculatedExperience = computed(() => {
   return form.value.difficulty * 20 + form.value.priority * 10
+})
+
+// 常駐目標建議經驗值（根據難度和優先級計算）
+const suggestedExp = computed(() => {
+  return formData.value.difficulty * 20 + formData.value.priority * 10
+})
+
+// 總天數計算
+const totalDays = computed(() => {
+  if (!recurringData.value.startDate || !recurringData.value.endDate) return 0
+  const start = new Date(recurringData.value.startDate)
+  const end = new Date(recurringData.value.endDate)
+  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+})
+
+// 驗證常駐設定
+const isValidRecurringSetting = computed(() => {
+  return recurringData.value.startDate &&
+         recurringData.value.endDate &&
+         new Date(recurringData.value.endDate) > new Date(recurringData.value.startDate)
 })
 
 // 表單驗證
@@ -309,12 +472,6 @@ const isFormValid = computed(() => {
          !errors.value.title
 })
 
-// 監聽經驗值自動計算
-watch([() => form.value.difficulty, () => form.value.priority], () => {
-  if (!form.value.experience || form.value.experience === calculatedExperience.value) {
-    form.value.experience = calculatedExperience.value
-  }
-})
 
 // 驗證表單
 const validateForm = () => {
@@ -346,13 +503,26 @@ const resetForm = () => {
     description: '',
     priority: 2,
     difficulty: 3,
-    experience: 0,
-    due_date: '',
     generate_subtasks: false
   }
   dailyTaskSubtype.value = 'simple'
   showAdvanced.value = false
   errors.value = {}
+
+  // 重置常駐目標數據
+  isRecurringTaskFlow.value = false
+  formData.value = {
+    title: '',
+    description: '',
+    difficulty: 3,
+    priority: 2
+  }
+  recurringData.value = {
+    pattern: 'daily',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    target: 0.8
+  }
 }
 
 // 監聽任務類型變化，重置每日任務子類型
@@ -360,6 +530,11 @@ watch(() => form.value.task_type, (newType) => {
   if (newType !== 'daily') {
     dailyTaskSubtype.value = 'simple'
   }
+})
+
+// 監聽每日任務子類型變化（暫時移除自動跳轉）
+watch(() => dailyTaskSubtype.value, (newSubtype) => {
+  // 不再自動跳轉，讓用戶完成表單填寫
 })
 
 // 關閉對話框
@@ -373,10 +548,22 @@ const submitForm = async () => {
   if (!validateForm()) {
     return
   }
-  
+
+  // 如果是每日任務且選擇常駐目標，跳轉到重複設定
+  if (form.value.task_type === 'daily' && dailyTaskSubtype.value === 'recurring') {
+    // 同步表單數據到常駐目標數據
+    formData.value.title = form.value.title
+    formData.value.description = form.value.description
+    formData.value.difficulty = form.value.difficulty
+    formData.value.priority = form.value.priority
+
+    isRecurringTaskFlow.value = true
+    return  // 跳轉到重複設定，不直接創建任務
+  }
+
   loading.value = true
   errors.value = {}
-  
+
   try {
     // 準備任務數據，只包含非空值
     const taskData: any = {
@@ -384,25 +571,17 @@ const submitForm = async () => {
       task_type: form.value.task_type,
       priority: form.value.priority,
       difficulty: form.value.difficulty,
-      experience: form.value.experience || calculatedExperience.value
+      experience: calculatedExperience.value
     }
 
-    // 處理每日任務的重複性屬性
+    // 處理每日任務的重複性屬性（這裡只處理simple類型）
     if (form.value.task_type === 'daily') {
-      taskData.is_recurring = dailyTaskSubtype.value === 'recurring' ? 1 : 0
-      if (dailyTaskSubtype.value === 'recurring') {
-        taskData.recurrence_pattern = 'daily'
-        taskData.completion_target = 0.8 // 預設完成率目標
-      }
+      taskData.is_recurring = 0  // simple 類型都是非重複性
     }
     
     // 只在有值時添加可選字段
     if (form.value.description?.trim()) {
       taskData.description = form.value.description.trim()
-    }
-    
-    if (form.value.due_date) {
-      taskData.due_date = `${form.value.due_date}T23:59:59Z`
     }
     
     // 調用 API 創建任務
@@ -439,6 +618,107 @@ const submitForm = async () => {
   }
 }
 
+// 對話框標題
+const getDialogTitle = () => {
+  if (isRecurringTaskFlow.value) {
+    return '創建常駐目標 - 重複設定'
+  }
+  return '創建新任務'
+}
+
+// 提交按鈕文字
+const getSubmitButtonText = () => {
+  if (loading.value) {
+    if (form.value.generate_subtasks) {
+      return '創建並生成子任務中...'
+    }
+    return '創建中...'
+  }
+
+  // 如果是每日任務且選擇常駐目標
+  if (form.value.task_type === 'daily' && dailyTaskSubtype.value === 'recurring') {
+    return '設定重複規則 →'
+  }
+
+  // 一般任務
+  if (form.value.generate_subtasks) {
+    return '創建並生成子任務'
+  }
+  return '創建任務'
+}
+
+// 返回基本表單
+const backToBasicForm = () => {
+  // 同步常駐目標數據回原表單
+  form.value.title = formData.value.title
+  form.value.description = formData.value.description
+  form.value.difficulty = formData.value.difficulty
+  form.value.priority = formData.value.priority
+
+  isRecurringTaskFlow.value = false
+  dailyTaskSubtype.value = 'simple'  // 暫時重置為simple，讓用戶重新選擇
+}
+
+// 快速期間設定
+const setQuickDuration = (days: number) => {
+  const today = new Date()
+  const endDate = new Date(today.getTime() + (days - 1) * 24 * 60 * 60 * 1000)
+
+  recurringData.value.startDate = today.toISOString().split('T')[0]
+  recurringData.value.endDate = endDate.toISOString().split('T')[0]
+}
+
+const isQuickDuration = (days: number) => {
+  return totalDays.value === days
+}
+
+// 創建常駐目標
+const createRecurringTask = async () => {
+  if (!isValidRecurringSetting.value) return
+
+  loading.value = true
+
+  try {
+    // 構建請求数據
+    const taskData = {
+      title: formData.value.title,
+      description: formData.value.description || undefined,
+      task_type: 'daily',
+      priority: formData.value.priority,
+      difficulty: formData.value.difficulty,
+      experience: suggestedExp.value,
+      is_recurring: 1,
+      recurrence_pattern: recurringData.value.pattern,
+      start_date: `${recurringData.value.startDate}T00:00:00Z`,
+      end_date: `${recurringData.value.endDate}T23:59:59Z`,
+      completion_target: recurringData.value.target
+    }
+
+    // 調用後端 API
+    const response = await apiClient.createTask(taskData)
+
+    if (response.success) {
+      loading.value = false
+
+      // 顯示成功提示
+      const showToast = inject<(text: string, duration?: number) => void>('showToast')
+      if (showToast) {
+        showToast('🎉 常駐目標創建成功！', 3000)
+      }
+
+      emit('created', response.data)
+      closeDialog()
+    } else {
+      throw new Error(response.message || '創建失敗')
+    }
+  } catch (error) {
+    console.error('創建常駐目標失敗:', error)
+    errors.value.general = '創建失敗，請稍後再試'
+  } finally {
+    loading.value = false
+  }
+}
+
 // 監聽標題變化進行驗證
 watch(() => form.value.title, () => {
   if (errors.value.title) {
@@ -446,3 +726,45 @@ watch(() => form.value.title, () => {
   }
 })
 </script>
+
+<style scoped>
+/* 滑動條樣式 */
+.slider-gradient::-webkit-slider-track {
+  background: linear-gradient(to right, #fecaca, #fef3c7, #d1fae5);
+  border-radius: 0.375rem;
+  height: 0.75rem;
+}
+
+.slider-gradient::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.slider-gradient::-moz-range-track {
+  background: linear-gradient(to right, #fecaca, #fef3c7, #d1fae5);
+  border-radius: 0.375rem;
+  height: 0.75rem;
+  border: none;
+}
+
+.slider-gradient::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 移除 Firefox 的 focus 輪廓 */
+.slider-gradient::-moz-focus-outer {
+  border: 0;
+}
+</style>

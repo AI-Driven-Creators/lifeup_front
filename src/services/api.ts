@@ -86,7 +86,13 @@ export class ApiClient {
     user_id?: string,
     parent_task_id?: string,
     task_order?: number,
-    due_date?: string
+    due_date?: string,
+    // 常駐目標相關參數
+    is_recurring?: number,
+    recurrence_pattern?: string,
+    start_date?: string,
+    end_date?: string,
+    completion_target?: number
   }) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/tasks', {
       method: 'POST',
