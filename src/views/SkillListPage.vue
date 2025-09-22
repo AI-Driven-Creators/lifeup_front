@@ -42,11 +42,78 @@
       </template>
       </div>
     </div>
+
+    <!-- 新增技能對話框 -->
+    <div v-if="showCreateDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showCreateDialog = false">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">新增技能學習計畫</h3>
+          <button @click="showCreateDialog = false" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="handleGenerateTasks">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">我想學習的技能</label>
+              <input
+                v-model="skillForm.skillName"
+                type="text"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="例如：Vue.js前端開發、英語口說、設計思維"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">目標描述</label>
+              <textarea
+                v-model="skillForm.goalDescription"
+                rows="3"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="描述你想達到的具體目標，例如：能夠獨立開發一個完整的前端專案、能夠流利地進行英語會議、掌握設計思維的核心方法"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">目標期限</label>
+              <input
+                v-model="skillForm.deadline"
+                type="date"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div class="flex space-x-3 mt-6">
+            <button
+              type="button"
+              @click="showCreateDialog = false"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="!skillForm.skillName || !skillForm.goalDescription || !skillForm.deadline || generating"
+              class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {{ generating ? '生成中...' : '生成任務' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import SkillSection from '@/components/features/SkillSection.vue'
 import { apiClient } from '@/services/api'
@@ -55,6 +122,15 @@ import type { Skill } from '@/types'
 const loading = ref(true)
 const error = ref<string | null>(null)
 const allSkills = ref<Skill[]>([])
+
+// 新增技能對話框相關狀態
+const showCreateDialog = ref(false)
+const generating = ref(false)
+const skillForm = ref({
+  skillName: '',
+  goalDescription: '',
+  deadline: ''
+})
 
 // 從後端獲取的技能數據按類別分組
 const technicalSkills = computed(() => 
@@ -96,8 +172,43 @@ const fetchSkills = async () => {
   }
 }
 
-// 組件掛載時獲取數據
+// 處理生成任務（目前只做UI反饋）
+const handleGenerateTasks = async () => {
+  generating.value = true
+
+  // 模擬處理時間
+  await new Promise(resolve => setTimeout(resolve, 2000))
+
+  // 暫時只在控制台顯示表單數據
+  console.log('準備生成任務:', skillForm.value)
+
+  // 關閉對話框並重置表單
+  showCreateDialog.value = false
+  skillForm.value = {
+    skillName: '',
+    goalDescription: '',
+    deadline: ''
+  }
+
+  generating.value = false
+
+  // 顯示成功提示（暫時）
+  alert('任務生成功能開發中...')
+}
+
+// 監聽來自底部導航的新增技能事件
+const handleAddSkillEvent = () => {
+  showCreateDialog.value = true
+}
+
+// 組件掛載時獲取數據並監聽事件
 onMounted(() => {
   fetchSkills()
+  window.addEventListener('add-skill-requested', handleAddSkillEvent)
+})
+
+// 組件卸載時移除事件監聽
+onUnmounted(() => {
+  window.removeEventListener('add-skill-requested', handleAddSkillEvent)
 })
 </script>
