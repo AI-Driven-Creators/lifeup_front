@@ -179,9 +179,9 @@ const loadTasksByType = async () => {
 const toggleTask = async (taskId: string) => {
   try {
     // 先記錄任務完成前的狀態
-    const allTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
-    const task = allTasks.find(t => t.id === taskId)
-    const wasCompleted = task?.status === 'completed'
+    const currentAllTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
+    const originalTask = currentAllTasks.find(t => t.id === taskId)
+    const wasCompleted = originalTask?.status === 'completed'
     
     await taskStore.toggleTaskStatus(taskId)
     
@@ -198,8 +198,9 @@ const toggleTask = async (taskId: string) => {
       userStore.updateExperience(updatedTask.experience)
       
       // 根據任務類型增加對應屬性
-      if (task.attributes) {
-        Object.entries(task.attributes).forEach(([attr, value]) => {          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
+      if (updatedTask.attributes) {
+        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {
+          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value as number)
         })
       }
     }
@@ -281,7 +282,7 @@ const handleCloseCreateDialog = () => {
 const handleTaskCreated = async (newTask: Task) => {
   try {
     // 根據任務類型將新任務加入對應列表
-    switch (newTask.task_type || newTask.type) {
+    switch (newTask.type) {
       case 'main':
         mainTasks.value.push(newTask)
         break
@@ -297,7 +298,7 @@ const handleTaskCreated = async (newTask: Task) => {
     }
 
     // 檢查任務狀態來決定提示訊息
-    const isStarted = newTask.status === 'in_progress' || newTask.status === 1
+    const isStarted = newTask.status === 'in_progress'
     const taskTitle = newTask.title || '新任務'
 
     if (isStarted) {

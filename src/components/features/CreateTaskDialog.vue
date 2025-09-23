@@ -781,6 +781,8 @@ watch([() => props.show, () => props.editTaskData], ([isShow, editData]) => {
   }
 }, { immediate: true })
 
+</script>
+
 <style scoped>
 /* 滑動條樣式 */
 .slider-gradient::-webkit-slider-track {
