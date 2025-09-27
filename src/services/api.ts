@@ -207,6 +207,16 @@ export class ApiClient {
     return this.request<{ success: boolean, data: any[], message: string }>('/api/achievements');
   }
 
+  async getAchievementDetails(achievementId: string) {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/achievements/${achievementId}`);
+  }
+
+  async syncAchievementStats() {
+    return this.request<{ success: boolean, data: { synced_achievements: number, message: string }, message: string }>('/api/achievements/sync-stats', {
+      method: 'POST',
+    });
+  }
+
   async getUserAchievements(userId: string) {
     return this.request<{ success: boolean, data: any[], message: string }>(`/api/users/${userId}/achievements`);
   }

@@ -14,6 +14,10 @@ export interface Achievement {
   unlocked: boolean
   progress: number
   achieved_at?: string
+  // 新增統計數據字段
+  completion_count?: number  // 完成此成就的用戶數量
+  total_users?: number       // 應用程式總用戶數量
+  completion_rate?: number   // 完成率 (completion_count / total_users)
 }
 
 export const useAchievementStore = defineStore('achievement', () => {
@@ -23,6 +27,7 @@ export const useAchievementStore = defineStore('achievement', () => {
   const error = ref<string | null>(null)
   const generatingAchievement = ref(false)
   const generationResult = ref<{ achievement: Achievement, isUnlocked: boolean, message: string } | null>(null)
+  const syncingStats = ref(false) // 統計同步狀態
 
   // 計算屬性
   const unlockedAchievements = computed(() => 
@@ -56,18 +61,75 @@ export const useAchievementStore = defineStore('achievement', () => {
       loading.value = true
       error.value = null
 
-      const response = await apiClient.getUserAchievementsStatus(userId)
-      
-      if (response.success && response.data) {
-        achievements.value = response.data
-      } else {
-        error.value = response.message || '獲取成就數據失敗'
+      // 首先同步成就統計數據
+      await syncAchievementStatistics()
+
+      // 獲取用戶成就狀態
+      const userAchievementsResponse = await apiClient.getUserAchievementsStatus(userId)
+
+      if (!userAchievementsResponse.success || !userAchievementsResponse.data) {
+        error.value = userAchievementsResponse.message || '獲取成就數據失敗'
+        return
       }
+
+      // 獲取所有成就（包含統計數據）
+      const allAchievementsResponse = await apiClient.getAchievements()
+
+      if (!allAchievementsResponse.success || !allAchievementsResponse.data) {
+        error.value = allAchievementsResponse.message || '獲取成就統計數據失敗'
+        return
+      }
+
+      // 合併用戶成就狀態和統計數據
+      const userAchievements = userAchievementsResponse.data
+      const allAchievements = allAchievementsResponse.data
+
+      // 創建統計數據映射
+      const statsMap = new Map()
+      allAchievements.forEach((ach: any) => {
+        statsMap.set(ach.id, {
+          completion_count: ach.completion_count || 0,
+          total_users: ach.total_users || 0,
+          completion_rate: ach.completion_rate || 0
+        })
+      })
+
+      // 將統計數據合併到用戶成就中
+      achievements.value = userAchievements.map((userAch: any) => {
+        const stats = statsMap.get(userAch.id) || {}
+        return {
+          ...userAch,
+          ...stats
+        }
+      })
+
     } catch (err) {
       console.error('獲取成就數據失敗:', err)
       error.value = '網絡錯誤，無法載入成就數據'
     } finally {
       loading.value = false
+    }
+  }
+
+  // 同步成就統計數據
+  async function syncAchievementStatistics() {
+    try {
+      syncingStats.value = true
+      console.log('正在同步成就統計數據...')
+
+      const response = await apiClient.syncAchievementStats()
+
+      if (response.success) {
+        console.log('成就統計同步成功:', response.data?.message)
+      } else {
+        console.warn('成就統計同步失敗:', response.message)
+        // 不拋出錯誤，讓數據獲取繼續進行
+      }
+    } catch (err) {
+      console.warn('成就統計同步失敗:', err)
+      // 不拋出錯誤，讓數據獲取繼續進行
+    } finally {
+      syncingStats.value = false
     }
   }
 
@@ -258,6 +320,7 @@ export const useAchievementStore = defineStore('achievement', () => {
     error.value = null
     generatingAchievement.value = false
     generationResult.value = null
+    syncingStats.value = false
   }
 
   return {
@@ -267,6 +330,7 @@ export const useAchievementStore = defineStore('achievement', () => {
     error,
     generatingAchievement,
     generationResult,
+    syncingStats,
     
     // 計算屬性
     unlockedAchievements,
@@ -278,6 +342,7 @@ export const useAchievementStore = defineStore('achievement', () => {
     
     // 行為
     fetchUserAchievements,
+    syncAchievementStatistics,
     unlockAchievement,
     getAchievementById,
     getAchievementsByCategory,
