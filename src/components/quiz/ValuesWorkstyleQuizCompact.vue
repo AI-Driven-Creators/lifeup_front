@@ -2,76 +2,53 @@
   <div class="space-y-6">
     <div class="text-center mt-8">
       <h2 class="text-2xl font-bold text-gray-800 mb-2">
-        🎯 價值觀與工作風格配對
+        價值觀與工作風格配對
       </h2>
       <p class="text-gray-600 mb-6">
         什麼樣的工作環境和價值觀最適合你？
       </p>
     </div>
 
-    <div v-if="currentQuestion < questions.length" class="max-w-3xl mx-auto">
-      <!-- 進度條 -->
-      <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-        <div
-          class="bg-purple-600 h-2 rounded-full transition-all duration-300"
-          :style="{ width: ((currentQuestion + 1) / questions.length * 100) + '%' }"
-        />
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border p-8">
-        <div class="mb-6">
-          <div class="text-sm text-purple-600 font-medium mb-2">
-            第 {{ currentQuestion + 1 }} 題，共 {{ questions.length }} 題
-          </div>
-          <h3 class="text-xl font-semibold text-gray-800 mb-4">
-            {{ questions[currentQuestion].title }}
-          </h3>
-          <p class="text-gray-600 leading-relaxed">
-            {{ questions[currentQuestion].description }}
-          </p>
+    <div v-if="currentQuestion < questions.length" class="max-w-2xl mx-auto">
+      <!-- 簡潔進度條 -->
+      <div class="mb-4">
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div
+            class="bg-purple-600 h-2 rounded-full transition-all duration-300"
+            :style="{ width: ((currentQuestion + 1) / questions.length * 100) + '%' }"
+          />
         </div>
-
-        <div class="space-y-3">
-          <button
-            v-for="(option, index) in questions[currentQuestion].options"
-            :key="index"
-            @click="selectAnswer(option.values, option.score)"
-            class="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
-          >
-            <div class="flex items-start">
-              <span class="text-2xl mr-4 flex-shrink-0">{{ option.icon }}</span>
-              <div>
-                <div class="font-medium text-gray-800 mb-2">
-                  {{ option.label }}
-                </div>
-                <div class="text-sm text-gray-600 leading-relaxed">
-                  {{ option.description }}
-                </div>
-              </div>
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 完成頁面 -->
-    <div v-else class="max-w-2xl mx-auto text-center">
-      <div class="bg-white rounded-xl shadow-sm border p-8">
-        <div class="text-6xl mb-4">🎊</div>
-        <h3 class="text-xl font-semibold text-gray-800 mb-4">
-          價值觀分析完成！
-        </h3>
-        <p class="text-gray-600 mb-6">
-          已分析你的工作價值觀和偏好風格
+        <p class="text-sm text-gray-500 mt-2 text-center">
+          第 {{ currentQuestion + 1 }} 題，共 {{ questions.length }} 題
         </p>
+      </div>
+
+      <div class="text-center mb-6">
+        <h3 class="text-lg font-medium text-gray-800 mb-4">
+          {{ questions[currentQuestion].title }}
+        </h3>
+        <p class="text-gray-600">
+          {{ questions[currentQuestion].description }}
+        </p>
+      </div>
+
+      <div class="space-y-3">
         <button
-          @click="completeQuiz"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          v-for="(option, index) in questions[currentQuestion].options"
+          :key="index"
+          @click="selectAnswer(option.values, option.score)"
+          class="w-full text-left p-4 hover:bg-gray-50 hover:border-gray-300 bg-transparent border border-gray-200 rounded-lg transition-colors"
         >
-          查看測驗結果
+          <div class="font-medium text-gray-800">
+            {{ option.label }}
+          </div>
+          <div class="text-sm text-gray-600 mt-1">
+            {{ option.description }}
+          </div>
         </button>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -384,7 +361,8 @@ const selectAnswer = (values: string[], scores: number[]) => {
     if (currentQuestion.value < questions.length - 1) {
       currentQuestion.value++
     } else {
-      currentQuestion.value++
+      // 最後一題完成後直接完成測驗
+      completeQuiz()
     }
   }, 100)
 }

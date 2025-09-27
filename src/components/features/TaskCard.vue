@@ -63,7 +63,10 @@
         </div>
         
         <!-- 技能標籤 -->
-        <SkillTags :skill-tags="skillObjects" />
+        <SkillTags
+          :skill-tags="skillObjects"
+          :max-display="task.is_parent_task ? 2 : undefined"
+        />
       </div>
     </div>
   </div>

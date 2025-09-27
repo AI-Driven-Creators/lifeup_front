@@ -22,7 +22,7 @@ export const CAREER_DATABASE = {
   'ui_ux_designer': {
     name: 'UI/UX設計師',
     description: '專精於用戶介面與體驗設計',
-    matchValues: ['creativity', 'helping', 'beauty'],
+    matchValues: ['creativity', 'helping', 'achievement'],
     matchInterests: ['art_design', 'technology'],
     matchTalents: ['理念', '個別', '體諒'],
     matchWorkStyles: ['視覺型學習', '創意思維', '小團隊協作', '定期回饋', '用戶導向'],
@@ -42,7 +42,7 @@ export const CAREER_DATABASE = {
   'frontend_developer': {
     name: '前端開發工程師',
     description: '專責網頁前端開發與優化',
-    matchValues: ['creativity', 'achievement', 'precision'],
+    matchValues: ['creativity', 'achievement', 'growth'],
     matchInterests: ['technology', 'art_design'],
     matchTalents: ['理念', '完美', '學習'],
     matchWorkStyles: ['視覺型學習', '創意思維', '獨立工作', '定期回饋', '快節奏'],
@@ -52,7 +52,7 @@ export const CAREER_DATABASE = {
   'backend_developer': {
     name: '後端開發工程師',
     description: '負責伺服器端邏輯與資料庫設計',
-    matchValues: ['logic', 'security', 'efficiency'],
+    matchValues: ['knowledge', 'security', 'achievement'],
     matchInterests: ['technology', 'engineering'],
     matchTalents: ['分析', '戰略', '審慎'],
     matchWorkStyles: ['邏輯分析', '獨立工作', '系統思維', '階段回饋', '穩定節奏'],
@@ -62,7 +62,7 @@ export const CAREER_DATABASE = {
   'fullstack_developer': {
     name: '全端開發工程師',
     description: '同時負責前端與後端開發',
-    matchValues: ['versatility', 'challenge', 'growth'],
+    matchValues: ['growth', 'adventure', 'achievement'],
     matchInterests: ['technology', 'engineering'],
     matchTalents: ['學習', '適應', '統籌'],
     matchWorkStyles: ['整合思維', '彈性適應', '快速學習', '多任務處理', '彈性節奏'],
@@ -72,7 +72,7 @@ export const CAREER_DATABASE = {
   'mobile_developer': {
     name: '行動應用開發師',
     description: '開發手機與平板應用程式',
-    matchValues: ['innovation', 'user_focus', 'mobility'],
+    matchValues: ['creativity', 'helping', 'growth'],
     matchInterests: ['technology', 'art_design'],
     matchTalents: ['理念', '個別', '學習'],
     matchWorkStyles: ['動覺型學習', '用戶導向', '小團隊協作', '即時回饋', '快節奏'],
@@ -82,7 +82,7 @@ export const CAREER_DATABASE = {
   'devops_engineer': {
     name: 'DevOps工程師',
     description: '負責開發與營運流程整合自動化',
-    matchValues: ['efficiency', 'automation', 'reliability'],
+    matchValues: ['achievement', 'growth', 'responsibility'],
     matchInterests: ['technology', 'engineering'],
     matchTalents: ['統籌', '戰略', '完善'],
     matchWorkStyles: ['系統思維', '流程導向', '跨團隊協作', '監控反饋', '自動化偏好'],
@@ -92,7 +92,7 @@ export const CAREER_DATABASE = {
   'cybersecurity_specialist': {
     name: '資訊安全專家',
     description: '保護組織的資訊系統與數據安全',
-    matchValues: ['security', 'responsibility', 'vigilance'],
+    matchValues: ['security', 'responsibility', 'honesty'],
     matchInterests: ['technology', 'science'],
     matchTalents: ['審慎', '分析', '責任'],
     matchWorkStyles: ['分析型決策', '高結構化', '獨立工作', '監控導向', '警覺性高'],
@@ -102,7 +102,7 @@ export const CAREER_DATABASE = {
   'blockchain_developer': {
     name: '區塊鏈開發師',
     description: '開發基於區塊鏈技術的應用',
-    matchValues: ['innovation', 'decentralization', 'future'],
+    matchValues: ['creativity', 'independence', 'growth'],
     matchInterests: ['technology', 'finance'],
     matchTalents: ['學習', '前瞻', '理念'],
     matchWorkStyles: ['前瞻思維', '創新導向', '獨立研究', '社群協作', '去中心化'],
@@ -112,7 +112,7 @@ export const CAREER_DATABASE = {
   'cloud_architect': {
     name: '雲端架構師',
     description: '設計和實施雲端基礎架構',
-    matchValues: ['scalability', 'efficiency', 'innovation'],
+    matchValues: ['achievement', 'knowledge', 'creativity'],
     matchInterests: ['technology', 'engineering'],
     matchTalents: ['戰略', '前瞻', '統籌'],
     matchWorkStyles: ['系統思維', '戰略規劃', '跨團隊領導', '長期規劃', '技術前瞻'],
@@ -122,7 +122,7 @@ export const CAREER_DATABASE = {
   'game_developer': {
     name: '遊戲開發師',
     description: '設計和開發電子遊戲',
-    matchValues: ['creativity', 'entertainment', 'challenge'],
+    matchValues: ['creativity', 'fun', 'adventure'],
     matchInterests: ['technology', 'art_design', 'gaming'],
     matchTalents: ['理念', '專注', '學習'],
     matchWorkStyles: ['創意思維', '整合思維', '小團隊協作', '快速迭代', '玩家導向'],
@@ -132,7 +132,7 @@ export const CAREER_DATABASE = {
   'robotics_engineer': {
     name: '機器人工程師',
     description: '設計和開發機器人系統',
-    matchValues: ['innovation', 'precision', 'future'],
+    matchValues: ['creativity', 'achievement', 'growth'],
     matchInterests: ['engineering', 'technology'],
     matchTalents: ['理念', '戰略', '完美'],
     matchWorkStyles: ['動覺型學習', '精密型思維', '跨領域整合', '實驗導向', '機器交互'],
@@ -142,7 +142,7 @@ export const CAREER_DATABASE = {
   'iot_developer': {
     name: '物聯網開發師',
     description: '開發連接實體世界的智慧裝置',
-    matchValues: ['connectivity', 'innovation', 'utility'],
+    matchValues: ['helping', 'creativity', 'growth'],
     matchInterests: ['technology', 'engineering'],
     matchTalents: ['關聯', '理念', '統籌'],
     matchWorkStyles: ['關聯思維', '跨平台整合', '系統交互', '實作導向', '物理世界'],
@@ -152,7 +152,7 @@ export const CAREER_DATABASE = {
   'data_scientist': {
     name: '數據科學家',
     description: '分析大數據並提供商業洞察',
-    matchValues: ['knowledge', 'achievement', 'challenge'],
+    matchValues: ['knowledge', 'achievement', 'adventure'],
     matchInterests: ['technology', 'science'],
     matchTalents: ['分析', '思維', '蒐集'],
     matchWorkStyles: ['分析型決策', '邏輯分析', '獨立工作', '數據導向', '深度思考'],
@@ -162,7 +162,7 @@ export const CAREER_DATABASE = {
   'data_analyst': {
     name: '數據分析師',
     description: '收集和分析數據以支持決策',
-    matchValues: ['accuracy', 'insight', 'helping'],
+    matchValues: ['achievement', 'insight', 'helping'],
     matchInterests: ['science', 'business'],
     matchTalents: ['分析', '蒐集', '思維'],
     matchWorkStyles: ['細節思維', '邏輯分析', '數據可視化', '定期回饋', '商業導向'],
@@ -172,7 +172,7 @@ export const CAREER_DATABASE = {
   'machine_learning_engineer': {
     name: '機器學習工程師',
     description: '開發和部署AI機器學習模型',
-    matchValues: ['innovation', 'automation', 'precision'],
+    matchValues: ['creativity', 'growth', 'achievement'],
     matchInterests: ['technology', 'science'],
     matchTalents: ['學習', '分析', '戰略'],
     matchWorkStyles: ['抽象思維', '算法設計', '實驗導向', '快速學習', '技術前瞻'],
@@ -182,7 +182,7 @@ export const CAREER_DATABASE = {
   'database_administrator': {
     name: '資料庫管理員',
     description: '管理和維護組織的資料庫系統',
-    matchValues: ['reliability', 'security', 'organization'],
+    matchValues: ['responsibility', 'security', 'achievement'],
     matchInterests: ['technology', 'science'],
     matchTalents: ['審慎', '責任', '統籌'],
     matchWorkStyles: ['高結構化', '謹慎決策', '獨立工作', '監控導向', '穩定環境'],
@@ -196,7 +196,7 @@ export const CAREER_DATABASE = {
   'ai_engineer': {
     name: 'AI工程師',
     description: '開發人工智慧解決方案',
-    matchValues: ['innovation', 'knowledge', 'future'],
+    matchValues: ['creativity', 'knowledge', 'growth'],
     matchInterests: ['technology', 'science'],
     matchTalents: ['學習', '前瞻', '理念'],
     matchWorkStyles: ['前瞻思維', '創新導向', '抽象思維', '實驗導向', '未來導向'],
@@ -280,7 +280,7 @@ export const CAREER_DATABASE = {
   'kindergarten_teacher': {
     name: '幼兒園教師',
     description: '教育和照顧學齡前兒童',
-    matchValues: ['nurturing', 'patience', 'development'],
+    matchValues: ['helping', 'growth', 'family'],
     matchInterests: ['education', 'social_work'],
     matchTalents: ['體諒', '包容', '積極'],
     matchWorkStyles: ['遊戲式學習', '耐心引導', '愛心照顧', '創意教學', '多元活動'],
@@ -290,7 +290,7 @@ export const CAREER_DATABASE = {
   'special_education_teacher': {
     name: '特殊教育教師',
     description: '為身心障礙學生提供專業教育',
-    matchValues: ['inclusion', 'patience', 'advocacy'],
+    matchValues: ['helping', 'justice', 'growth'],
     matchInterests: ['education', 'healthcare'],
     matchTalents: ['體諒', '個別', '恢復'],
     matchWorkStyles: ['個別化教學', '耐心引導', '無障礙環境', '專業支持', '行為管理'],
@@ -300,7 +300,7 @@ export const CAREER_DATABASE = {
   'language_teacher': {
     name: '語言教師',
     description: '教授外語或母語課程',
-    matchValues: ['communication', 'culture', 'bridge'],
+    matchValues: ['helping', 'knowledge', 'growth'],
     matchInterests: ['education', 'language'],
     matchTalents: ['溝通', '包容', '個別'],
     matchWorkStyles: ['語言浸潤', '文化交流', '互動學習', '溝通導向', '多元表達'],
@@ -310,7 +310,7 @@ export const CAREER_DATABASE = {
   'vocational_trainer': {
     name: '職業訓練師',
     description: '提供職業技能培訓和就業輔導',
-    matchValues: ['practical', 'empowerment', 'skill'],
+    matchValues: ['helping', 'growth', 'achievement'],
     matchInterests: ['education', 'consulting'],
     matchTalents: ['伯樂', '溝通', '責任'],
     matchWorkStyles: ['實作導向', '技能培養', '就業導向', '動手學習', '就業市場'],
@@ -320,7 +320,7 @@ export const CAREER_DATABASE = {
   'educational_consultant': {
     name: '教育顧問',
     description: '為學生和家長提供教育規劃建議',
-    matchValues: ['guidance', 'future', 'personalized'],
+    matchValues: ['guidance', 'growth', 'personalized'],
     matchInterests: ['education', 'consulting'],
     matchTalents: ['個別', '前瞻', '戰略'],
     matchWorkStyles: ['個別化諮詢', '教育規劃', '未來導向', '資訊整合', '家庭服務'],
@@ -340,7 +340,7 @@ export const CAREER_DATABASE = {
   'curriculum_designer': {
     name: '課程設計師',
     description: '設計和開發教育課程內容',
-    matchValues: ['education', 'structure', 'impact'],
+    matchValues: ['knowledge', 'achievement', 'helping'],
     matchInterests: ['education', 'writing'],
     matchTalents: ['戰略', '統籌', '理念'],
     matchWorkStyles: ['系統思維', '結構化設計', '學習理論', '需求分析', '教育導向'],
@@ -350,7 +350,7 @@ export const CAREER_DATABASE = {
   'educational_technology_specialist': {
     name: '教育科技專家',
     description: '將科技應用於教育環境中',
-    matchValues: ['innovation', 'education', 'efficiency'],
+    matchValues: ['creativity', 'education', 'achievement'],
     matchInterests: ['education', 'technology'],
     matchTalents: ['理念', '學習', '統籌'],
     matchWorkStyles: ['教育技術', '數位化學習', '创新應用', '跨領域整合', '效率提升'],
@@ -366,7 +366,7 @@ export const CAREER_DATABASE = {
   'graphic_designer': {
     name: '平面設計師',
     description: '創作視覺傳達設計作品',
-    matchValues: ['creativity', 'beauty', 'achievement'],
+    matchValues: ['creativity', 'creativity', 'achievement'],
     matchInterests: ['art_design', 'media'],
     matchTalents: ['理念', '個別', '完美'],
     matchWorkStyles: ['視覺型學習', '美學思維', '創意表達', '獨立創作', '設計精密'],
@@ -416,7 +416,7 @@ export const CAREER_DATABASE = {
   'industrial_designer': {
     name: '工業設計師',
     description: '設計產品的外觀、功能和使用體驗',
-    matchValues: ['creativity', 'functionality', 'innovation'],
+    matchValues: ['creativity', 'functionality', 'creativity'],
     matchInterests: ['art_design', 'engineering'],
     matchTalents: ['理念', '戰略', '個別'],
     matchWorkStyles: ['產品思維', '功能設計', '人因工程', '工程理解', '用戶中心'],
@@ -436,7 +436,7 @@ export const CAREER_DATABASE = {
   'jewelry_designer': {
     name: '珠寶設計師',
     description: '設計和製作珠寶首飾',
-    matchValues: ['beauty', 'craftsmanship', 'luxury'],
+    matchValues: ['creativity', 'craftsmanship', 'luxury'],
     matchInterests: ['art_design', 'crafts'],
     matchTalents: ['理念', '完美', '個別'],
     matchWorkStyles: ['精工細作', '貴重材料', '手工藝術', '美學追求', '個人化定製'],
@@ -476,7 +476,7 @@ export const CAREER_DATABASE = {
   'technical_writer': {
     name: '技術文件撰寫師',
     description: '撰寫技術說明和操作手冊',
-    matchValues: ['clarity', 'helping', 'precision'],
+    matchValues: ['clarity', 'helping', 'achievement'],
     matchInterests: ['writing', 'technology'],
     matchTalents: ['溝通', '統籌', '個別'],
     matchWorkStyles: ['技術文案', '結構化寫作', '清晰表達', '用戶導向', '文件組織'],
@@ -496,7 +496,7 @@ export const CAREER_DATABASE = {
   'content_strategist': {
     name: '內容策略師',
     description: '規劃和管理品牌內容策略',
-    matchValues: ['strategy', 'communication', 'influence'],
+    matchValues: ['achievement', 'creativity', 'helping'],
     matchInterests: ['writing', 'marketing'],
     matchTalents: ['戰略', '溝通', '前瞻'],
     matchWorkStyles: ['內容策略', '品牌思維', '數據分析', '跨媒體', '目標受眾'],
@@ -506,7 +506,7 @@ export const CAREER_DATABASE = {
   'photographer': {
     name: '攝影師',
     description: '透過影像記錄和創作藝術',
-    matchValues: ['creativity', 'beauty', 'moment'],
+    matchValues: ['creativity', 'adventure', 'achievement'],
     matchInterests: ['art_design', 'media'],
     matchTalents: ['理念', '個別', '專注'],
     matchWorkStyles: ['視覺藝術', '光影捕捉', '美學感官', '瞬間捕捉', '創意角度'],
@@ -516,7 +516,7 @@ export const CAREER_DATABASE = {
   'wedding_photographer': {
     name: '婚禮攝影師',
     description: '專門拍攝婚禮和重要慶典',
-    matchValues: ['joy', 'memory', 'service'],
+    matchValues: ['fun', 'helping', 'creativity'],
     matchInterests: ['art_design', 'hospitality'],
     matchTalents: ['個別', '體諒', '積極'],
     matchWorkStyles: ['情感捕捉', '人際互動', '壓力應對', '服務導向', '記錄珍貴'],
@@ -526,7 +526,7 @@ export const CAREER_DATABASE = {
   'food_photographer': {
     name: '美食攝影師',
     description: '專精於食物和餐廳攝影',
-    matchValues: ['aesthetics', 'detail', 'appetite'],
+    matchValues: ['creativity', 'achievement', 'growth'],
     matchInterests: ['art_design', 'food'],
     matchTalents: ['完美', '個別', '專注'],
     matchWorkStyles: ['美食造型', '細節完美', '色彩配置', '光影技巧', '食欲誘發'],
@@ -536,7 +536,7 @@ export const CAREER_DATABASE = {
   'commercial_photographer': {
     name: '商業攝影師',
     description: '為企業和品牌提供攝影服務',
-    matchValues: ['professionalism', 'quality', 'service'],
+    matchValues: ['responsibility', 'achievement', 'helping'],
     matchInterests: ['art_design', 'business'],
     matchTalents: ['責任', '個別', '溝通'],
     matchWorkStyles: ['商業思維', '品牌導向', '客戶服務', '品質保證', '多元風格'],
@@ -546,7 +546,7 @@ export const CAREER_DATABASE = {
   'video_editor': {
     name: '影片剪輯師',
     description: '製作和編輯影音內容',
-    matchValues: ['creativity', 'achievement', 'technology'],
+    matchValues: ['creativity', 'achievement', 'growth'],
     matchInterests: ['media', 'art_design'],
     matchTalents: ['專注', '完美', '理念'],
     matchWorkStyles: ['時間線編輯', '故事節奏', '視覺特效', '細節打磨', '影視語言'],
@@ -566,7 +566,7 @@ export const CAREER_DATABASE = {
   'interior_designer': {
     name: '室內設計師',
     description: '設計室內空間和環境',
-    matchValues: ['creativity', 'beauty', 'practicality'],
+    matchValues: ['creativity', 'creativity', 'practicality'],
     matchInterests: ['art_design', 'architecture'],
     matchTalents: ['理念', '個別', '戰略'],
     matchWorkStyles: ['空間設計', '美學配置', '客戶需求', '實用性考量', '空間規劃'],
@@ -618,7 +618,7 @@ export const CAREER_DATABASE = {
   'financial_analyst': {
     name: '財務分析師',
     description: '分析財務數據並提供投資建議',
-    matchValues: ['accuracy', 'achievement', 'knowledge'],
+    matchValues: ['achievement', 'achievement', 'knowledge'],
     matchInterests: ['finance', 'business'],
     matchTalents: ['分析', '審慎', '蒐集'],
     matchWorkStyles: ['數據分析', '財務模型', '風險評估', '市場研究', '投資策略'],
@@ -638,7 +638,7 @@ export const CAREER_DATABASE = {
   'business_analyst': {
     name: '商業分析師',
     description: '分析業務流程並提出改善建議',
-    matchValues: ['efficiency', 'analysis', 'improvement'],
+    matchValues: ['achievement', 'analysis', 'improvement'],
     matchInterests: ['business', 'consulting'],
     matchTalents: ['分析', '戰略', '完善'],
     matchWorkStyles: ['流程分析', '效率優化', '數據驅動', '溝通協調', '問題解決'],
@@ -648,7 +648,7 @@ export const CAREER_DATABASE = {
   'investment_banker': {
     name: '投資銀行家',
     description: '提供企業融資和併購服務',
-    matchValues: ['money', 'strategy', 'deals'],
+    matchValues: ['wealth', 'achievement', 'growth'],
     matchInterests: ['finance', 'business'],
     matchTalents: ['分析', '競爭', '溝通'],
     matchWorkStyles: ['金融分析', '交易導向', '高壓適應', '客戶服務', '競爭環境'],
@@ -658,7 +658,7 @@ export const CAREER_DATABASE = {
   'venture_capitalist': {
     name: '創業投資人',
     description: '投資有潛力的新創公司',
-    matchValues: ['innovation', 'risk', 'growth'],
+    matchValues: ['creativity', 'adventure', 'growth'],
     matchInterests: ['business', 'technology'],
     matchTalents: ['前瞻', '戰略', '自信'],
     matchWorkStyles: ['投資眼光', '風險評估', '編性互動', '未來導向', '創新識別'],
@@ -668,7 +668,7 @@ export const CAREER_DATABASE = {
   'real_estate_agent': {
     name: '房地產經紀人',
     description: '協助買賣和租賃房地產',
-    matchValues: ['service', 'negotiation', 'commission'],
+    matchValues: ['helping', 'wealth', 'achievement'],
     matchInterests: ['real_estate', 'business'],
     matchTalents: ['交往', '溝通', '競爭'],
     matchWorkStyles: ['客戶服務', '談判技巧', '市場敏感', '關係建立', '物業管理'],
@@ -678,7 +678,7 @@ export const CAREER_DATABASE = {
   'insurance_agent': {
     name: '保險業務員',
     description: '銷售保險產品並提供保障規劃',
-    matchValues: ['protection', 'service', 'trust'],
+    matchValues: ['helping', 'security', 'responsibility'],
     matchInterests: ['finance', 'business'],
     matchTalents: ['溝通', '交往', '責任'],
     matchWorkStyles: ['保障規劃', '信任建立', '風險評估', '關懷服務', '長期關係'],
@@ -698,7 +698,7 @@ export const CAREER_DATABASE = {
   'tax_consultant': {
     name: '稅務顧問',
     description: '提供稅務規劃和申報服務',
-    matchValues: ['accuracy', 'compliance', 'saving'],
+    matchValues: ['achievement', 'responsibility', 'helping'],
     matchInterests: ['finance', 'consulting'],
     matchTalents: ['審慎', '分析', '責任'],
     matchWorkStyles: ['稅法專業', '細節處理', '遵法遵規', '節稅規劃', '客戶咨詢'],
@@ -708,7 +708,7 @@ export const CAREER_DATABASE = {
   'supply_chain_manager': {
     name: '供應鏈經理',
     description: '管理產品從生產到配送的整個流程',
-    matchValues: ['efficiency', 'coordination', 'optimization'],
+    matchValues: ['achievement', 'coordination', 'optimization'],
     matchInterests: ['business', 'engineering'],
     matchTalents: ['統籌', '戰略', '關聯'],
     matchWorkStyles: ['供應鏈管理', '物流協調', '成本控制', '風險管理', '效率優化'],
@@ -718,7 +718,7 @@ export const CAREER_DATABASE = {
   'quality_assurance_manager': {
     name: '品質保證經理',
     description: '確保產品和服務符合品質標準',
-    matchValues: ['quality', 'standards', 'improvement'],
+    matchValues: ['achievement', 'responsibility', 'growth'],
     matchInterests: ['engineering', 'business'],
     matchTalents: ['完美', '審慎', '責任'],
     matchWorkStyles: ['品質管控', '標準制定', '流程優化', '檢驗驗證', '持續改善'],
@@ -754,7 +754,7 @@ export const CAREER_DATABASE = {
   'pharmacist': {
     name: '藥師',
     description: '調配藥物並提供用藥諮詢',
-    matchValues: ['helping', 'accuracy', 'responsibility'],
+    matchValues: ['helping', 'achievement', 'responsibility'],
     matchInterests: ['healthcare', 'science'],
     matchTalents: ['審慎', '責任', '學習'],
     matchWorkStyles: ['藥學專業', '細心調配', '用藥安全', '患者諮詢', '法規遵循'],
@@ -784,7 +784,7 @@ export const CAREER_DATABASE = {
   'dentist': {
     name: '牙醫師',
     description: '診斷和治療口腔疾病',
-    matchValues: ['precision', 'health', 'service'],
+    matchValues: ['achievement', 'health', 'service'],
     matchInterests: ['healthcare', 'science'],
     matchTalents: ['完美', '專注', '責任'],
     matchWorkStyles: ['精細操作', '牙科專業', '患者照護', '預防醫學', '美容考量'],
@@ -794,7 +794,7 @@ export const CAREER_DATABASE = {
   'veterinarian': {
     name: '獸醫師',
     description: '診斷和治療動物疾病',
-    matchValues: ['compassion', 'animals', 'healing'],
+    matchValues: ['helping', 'health', 'responsibility'],
     matchInterests: ['healthcare', 'animals'],
     matchTalents: ['體諒', '學習', '恢復'],
     matchWorkStyles: ['動物醫學', '行為觀察', '動物關懷', '多種類治療', '主人溝通'],
@@ -804,7 +804,7 @@ export const CAREER_DATABASE = {
   'psychiatrist': {
     name: '精神科醫師',
     description: '診斷和治療精神疾病',
-    matchValues: ['mental_health', 'understanding', 'healing'],
+    matchValues: ['health', 'helping', 'knowledge'],
     matchInterests: ['healthcare', 'psychology'],
     matchTalents: ['體諒', '分析', '恢復'],
     matchWorkStyles: ['心理評估', '治療關係', '藥物治療', '危機介入', '心理教育'],
@@ -824,7 +824,7 @@ export const CAREER_DATABASE = {
   'speech_therapist': {
     name: '語言治療師',
     description: '治療語言和溝通障礙',
-    matchValues: ['communication', 'patience', 'progress'],
+    matchValues: ['helping', 'growth', 'health'],
     matchInterests: ['healthcare', 'education'],
     matchTalents: ['體諒', '溝通', '個別'],
     matchWorkStyles: ['語言評估', '溝通訓練', '耐心指導', '個別化治療', '進步追蹤'],
@@ -834,7 +834,7 @@ export const CAREER_DATABASE = {
   'radiologic_technologist': {
     name: '放射師',
     description: '操作醫學影像設備進行檢查',
-    matchValues: ['precision', 'technology', 'safety'],
+    matchValues: ['achievement', 'technology', 'safety'],
     matchInterests: ['healthcare', 'technology'],
     matchTalents: ['專注', '責任', '審慎'],
     matchWorkStyles: ['影像技術', '輻射安全', '精確操作', '患者安全', '技術更新'],
@@ -844,7 +844,7 @@ export const CAREER_DATABASE = {
   'medical_laboratory_technician': {
     name: '醫檢師',
     description: '進行醫學檢驗和實驗室分析',
-    matchValues: ['accuracy', 'science', 'diagnosis'],
+    matchValues: ['achievement', 'knowledge', 'helping'],
     matchInterests: ['healthcare', 'science'],
     matchTalents: ['分析', '專注', '審慎'],
     matchWorkStyles: ['實驗室分析', '品質控制', '細節精準', '檢驗技術', '數據分析'],
@@ -854,7 +854,7 @@ export const CAREER_DATABASE = {
   'paramedic': {
     name: '緊急救護員',
     description: '提供緊急醫療救護服務',
-    matchValues: ['urgency', 'lifesaving', 'courage'],
+    matchValues: ['helping', 'health', 'adventure'],
     matchInterests: ['healthcare', 'sports'],
     matchTalents: ['行動', '恢復', '自信'],
     matchWorkStyles: ['緊急應變', '救命優先', '壓力應對', '快速決策', '團隊協作'],
@@ -864,7 +864,7 @@ export const CAREER_DATABASE = {
   'public_health_specialist': {
     name: '公共衛生專家',
     description: '研究和改善社區健康問題',
-    matchValues: ['prevention', 'community', 'data'],
+    matchValues: ['health', 'helping', 'knowledge'],
     matchInterests: ['healthcare', 'science'],
     matchTalents: ['分析', '戰略', '幫助'],
     matchWorkStyles: ['流行病學', '社區健康', '預防醫學', '數據分析', '政策制定'],
@@ -886,7 +886,7 @@ export const CAREER_DATABASE = {
   'lab_technician': {
     name: '實驗室技術員',
     description: '執行實驗和維護實驗設備',
-    matchValues: ['accuracy', 'knowledge', 'procedure'],
+    matchValues: ['achievement', 'knowledge', 'procedure'],
     matchInterests: ['science', 'technology'],
     matchTalents: ['專注', '完美', '審慎'],
     matchWorkStyles: ['實驗操作', '細節精準', '程序遵循', '安全意識', '品質控制'],
@@ -896,7 +896,7 @@ export const CAREER_DATABASE = {
   'environmental_scientist': {
     name: '環境科學家',
     description: '研究環境問題並提出解決方案',
-    matchValues: ['environment', 'responsibility', 'future'],
+    matchValues: ['knowledge', 'responsibility', 'growth'],
     matchInterests: ['science', 'environment'],
     matchTalents: ['分析', '關聯', '前瞻'],
     matchWorkStyles: ['環境研究', '數據分析', '系統思維', '長期規劃', '跨域整合'],
@@ -918,7 +918,7 @@ export const CAREER_DATABASE = {
   'hotel_manager': {
     name: '飯店經理',
     description: '管理飯店營運和客戶服務',
-    matchValues: ['service', 'excellence', 'leadership'],
+    matchValues: ['helping', 'achievement', 'responsibility'],
     matchInterests: ['hospitality', 'business'],
     matchTalents: ['統籌', '取悅', '責任'],
     matchWorkStyles: ['飯店管理', '客戶服務', '品質保證', '團隊管理', '多元文化'],
@@ -950,7 +950,7 @@ export const CAREER_DATABASE = {
   'engineer': {
     name: '工程師',
     description: '設計和開發技術解決方案',
-    matchValues: ['problem_solving', 'precision', 'innovation'],
+    matchValues: ['problem_solving', 'achievement', 'creativity'],
     matchInterests: ['engineering', 'technology'],
     matchTalents: ['分析', '戰略', '完善'],
     matchWorkStyles: ['工程思維', '技術解決', '精確設計', '系統整合', '創新研發'],
@@ -970,7 +970,7 @@ export const CAREER_DATABASE = {
   'civil_engineer': {
     name: '土木工程師',
     description: '設計和建造基礎設施',
-    matchValues: ['infrastructure', 'safety', 'durability'],
+    matchValues: ['achievement', 'security', 'responsibility'],
     matchInterests: ['engineering', 'science'],
     matchTalents: ['戰略', '責任', '完美'],
     matchWorkStyles: ['結構設計', '安全至上', '精確計算', '專案管理', '品質保證'],
@@ -980,7 +980,7 @@ export const CAREER_DATABASE = {
   'mechanical_engineer': {
     name: '機械工程師',
     description: '設計和開發機械系統',
-    matchValues: ['innovation', 'efficiency', 'precision'],
+    matchValues: ['creativity', 'achievement', 'achievement'],
     matchInterests: ['engineering', 'technology'],
     matchTalents: ['理念', '分析', '完美'],
     matchWorkStyles: ['機械設計', '創新思維', '精密計算', '系統整合', '效率優化'],
@@ -990,7 +990,7 @@ export const CAREER_DATABASE = {
   'electrical_engineer': {
     name: '電機工程師',
     description: '設計和維護電氣系統',
-    matchValues: ['power', 'safety', 'innovation'],
+    matchValues: ['achievement', 'security', 'creativity'],
     matchInterests: ['engineering', 'technology'],
     matchTalents: ['分析', '審慎', '學習'],
     matchWorkStyles: ['電路設計', '安全第一', '精確分析', '穩定性考量', '系統整合'],
@@ -1000,7 +1000,7 @@ export const CAREER_DATABASE = {
   'chemical_engineer': {
     name: '化學工程師',
     description: '設計化學製程和設備',
-    matchValues: ['transformation', 'efficiency', 'safety'],
+    matchValues: ['creativity', 'achievement', 'security'],
     matchInterests: ['engineering', 'science'],
     matchTalents: ['分析', '戰略', '審慎'],
     matchWorkStyles: ['製程設計', '安全管理', '效率優化', '系統思維', '風險控制'],
@@ -1010,7 +1010,7 @@ export const CAREER_DATABASE = {
   'environmental_engineer': {
     name: '環境工程師',
     description: '解決環境污染和保護問題',
-    matchValues: ['sustainability', 'protection', 'future'],
+    matchValues: ['knowledge', 'responsibility', 'growth'],
     matchInterests: ['engineering', 'environment'],
     matchTalents: ['關聯', '責任', '前瞻'],
     matchWorkStyles: ['環境設計', '永續思維', '系統整合', '未來規劃', '社會責任'],
@@ -1020,7 +1020,7 @@ export const CAREER_DATABASE = {
   'aerospace_engineer': {
     name: '航太工程師',
     description: '設計和開發航空器和太空載具',
-    matchValues: ['exploration', 'precision', 'innovation'],
+    matchValues: ['exploration', 'achievement', 'creativity'],
     matchInterests: ['engineering', 'science'],
     matchTalents: ['理念', '分析', '專注'],
     matchWorkStyles: ['高精度設計', '系統整合', '創新探索', '極致精確', '長期項目'],
@@ -1030,7 +1030,7 @@ export const CAREER_DATABASE = {
   'biomedical_engineer': {
     name: '生醫工程師',
     description: '開發醫療設備和生物技術',
-    matchValues: ['healing', 'innovation', 'precision'],
+    matchValues: ['healing', 'creativity', 'achievement'],
     matchInterests: ['engineering', 'healthcare'],
     matchTalents: ['理念', '學習', '完美'],
     matchWorkStyles: ['醫工結合', '精密設計', '法規遵循', '创新研發', '跨域整合'],
@@ -1050,7 +1050,7 @@ export const CAREER_DATABASE = {
   'manufacturing_engineer': {
     name: '製造工程師',
     description: '優化生產流程和製造系統',
-    matchValues: ['efficiency', 'quality', 'optimization'],
+    matchValues: ['achievement', 'responsibility', 'creativity'],
     matchInterests: ['engineering', 'business'],
     matchTalents: ['完善', '統籌', '分析'],
     matchWorkStyles: ['流程優化', '品質控制', '效率提升', '成本控制', '持續改善'],
@@ -1086,7 +1086,7 @@ export const CAREER_DATABASE = {
   'prosecutor': {
     name: '檢察官',
     description: '代表國家進行刑事起訴',
-    matchValues: ['justice', 'truth', 'public_interest'],
+    matchValues: ['justice', 'honesty', 'responsibility'],
     matchInterests: ['law', 'social_work'],
     matchTalents: ['分析', '溝通', '責任'],
     matchWorkStyles: ['證據分析', '正義執行', '法庭論辯', '案件調查', '公正起訴'],
@@ -1096,7 +1096,7 @@ export const CAREER_DATABASE = {
   'public_defender': {
     name: '公設辯護人',
     description: '為無力聘請律師的被告提供辯護',
-    matchValues: ['equality', 'advocacy', 'service'],
+    matchValues: ['justice', 'helping', 'responsibility'],
     matchInterests: ['law', 'social_work'],
     matchTalents: ['公平', '溝通', '體諒'],
     matchWorkStyles: ['辯護技巧', '權益保障', '弱勢關懷', '法庭策略', '公正代理'],
@@ -1106,7 +1106,7 @@ export const CAREER_DATABASE = {
   'corporate_lawyer': {
     name: '企業法務',
     description: '為企業提供法律諮詢和合規服務',
-    matchValues: ['business', 'compliance', 'advisory'],
+    matchValues: ['responsibility', 'security', 'knowledge'],
     matchInterests: ['law', 'business'],
     matchTalents: ['分析', '審慎', '溝通'],
     matchWorkStyles: ['商法專精', '合規管理', '風險評估', '合約審查', '企業顧問'],
@@ -1116,7 +1116,7 @@ export const CAREER_DATABASE = {
   'patent_attorney': {
     name: '專利律師',
     description: '處理智慧財產權申請和訴訟',
-    matchValues: ['innovation', 'protection', 'technical'],
+    matchValues: ['creativity', 'protection', 'technical'],
     matchInterests: ['law', 'technology'],
     matchTalents: ['分析', '學習', '完美'],
     matchWorkStyles: ['專業深度', '細節導向', '獨立作業', '技術理解', '程序嚴謹'],
@@ -1136,7 +1136,7 @@ export const CAREER_DATABASE = {
   'immigration_lawyer': {
     name: '移民律師',
     description: '協助處理移民和國籍相關法律事務',
-    matchValues: ['opportunity', 'diversity', 'hope'],
+    matchValues: ['helping', 'freedom', 'justice'],
     matchInterests: ['law', 'travel'],
     matchTalents: ['包容', '溝通', '責任'],
     matchWorkStyles: ['跨文化溝通', '程序專精', '案件追蹤', '文件管理', '希望傳遞'],
@@ -1146,7 +1146,7 @@ export const CAREER_DATABASE = {
   'legal_consultant': {
     name: '法律顧問',
     description: '為個人或企業提供法律建議',
-    matchValues: ['advisory', 'prevention', 'expertise'],
+    matchValues: ['knowledge', 'security', 'responsibility'],
     matchInterests: ['law', 'consulting'],
     matchTalents: ['分析', '溝通', '戰略'],
     matchWorkStyles: ['策略思考', '風險評估', '客戶導向', '預防觀念', '專業諮詢'],
@@ -1156,7 +1156,7 @@ export const CAREER_DATABASE = {
   'paralegal': {
     name: '法務助理',
     description: '協助律師進行法律研究和文件準備',
-    matchValues: ['support', 'detail', 'organization'],
+    matchValues: ['helping', 'responsibility', 'knowledge'],
     matchInterests: ['law', 'writing'],
     matchTalents: ['蒐集', '統籌', '審慎'],
     matchWorkStyles: ['支援協作', '文件整理', '研究分析', '程序遵循', '細節把控'],
@@ -1166,7 +1166,7 @@ export const CAREER_DATABASE = {
   'politician': {
     name: '政治人物',
     description: '參與政府決策和民意代表工作',
-    matchValues: ['public_service', 'leadership', 'change'],
+    matchValues: ['helping', 'responsibility', 'growth'],
     matchInterests: ['law', 'social_work'],
     matchTalents: ['溝通', '指揮', '積極'],
     matchWorkStyles: ['公眾演說', '社交網絡', '危機處理', '政策制定', '長期眼光'],
@@ -1182,7 +1182,7 @@ export const CAREER_DATABASE = {
   'journalist': {
     name: '記者',
     description: '採訪新聞和撰寫報導',
-    matchValues: ['truth', 'curiosity', 'communication'],
+    matchValues: ['honesty', 'knowledge', 'creativity'],
     matchInterests: ['media', 'writing'],
     matchTalents: ['蒐集', '溝通', '學習'],
     matchWorkStyles: ['真相探究', '時間壓力', '獨立採訪', '多元接觸', '公正客觀'],
@@ -1192,8 +1192,8 @@ export const CAREER_DATABASE = {
   'broadcaster': {
     name: '主播/播音員',
     description: '主持節目和播報新聞',
-    matchValues: ['communication', 'charisma', 'service'],
-    matchInterests: ['media', 'entertainment'],
+    matchValues: ['creativity', 'fun', 'helping'],
+    matchInterests: ['media', 'fun'],
     matchTalents: ['溝通', '積極', '取悅'],
     matchWorkStyles: ['鎧頭表現', '即時反應', '感染力', '台風穩健', '觀眾互動'],
     requirements: '需要口語表達、台風穩健和媒體素養',
@@ -1202,7 +1202,7 @@ export const CAREER_DATABASE = {
   'flight_attendant': {
     name: '空服員',
     description: '在飛機上提供客艙服務和安全管理',
-    matchValues: ['service', 'safety', 'hospitality'],
+    matchValues: ['helping', 'security', 'adventure'],
     matchInterests: ['travel', 'hospitality'],
     matchTalents: ['取悅', '體諒', '恢復'],
     matchWorkStyles: ['客戶服務', '應變能力', '安全意識', '團隊合作', '空間適應'],
@@ -1232,7 +1232,7 @@ export const CAREER_DATABASE = {
   'hairstylist': {
     name: '髮型設計師',
     description: '設計和造型客戶的髮型',
-    matchValues: ['beauty', 'creativity', 'transformation'],
+    matchValues: ['creativity', 'creativity', 'transformation'],
     matchInterests: ['fashion', 'art_design'],
     matchTalents: ['理念', '個別', '取悅'],
     matchWorkStyles: ['美學創意', '時尚敏感', '個人風格', '客戶互動', '手工精巧'],
@@ -1242,7 +1242,7 @@ export const CAREER_DATABASE = {
   'makeup_artist': {
     name: '彩妝師',
     description: '為客戶提供化妝和造型服務',
-    matchValues: ['beauty', 'artistry', 'enhancement'],
+    matchValues: ['creativity', 'artistry', 'enhancement'],
     matchInterests: ['fashion', 'art_design'],
     matchTalents: ['理念', '個別', '完美'],
     matchWorkStyles: ['美學藝術', '色彩創意', '細節完美', '時尚跟隨', '個人化服務'],
@@ -1312,7 +1312,7 @@ export const CAREER_DATABASE = {
   'casino_dealer': {
     name: '荷官',
     description: '在賭場操作各種博弈遊戲',
-    matchValues: ['precision', 'entertainment', 'neutral'],
+    matchValues: ['achievement', 'fun', 'neutral'],
     matchInterests: ['gaming', 'hospitality'],
     matchTalents: ['專注', '審慎', '公平'],
     matchWorkStyles: ['精確操作', '中立情緒', '壓力耐受', '夜間工作', '瞬間反應'],
@@ -1331,7 +1331,7 @@ export const CAREER_DATABASE = {
   'private_investigator': {
     name: '私家偵探',
     description: '進行私人調查和證據收集',
-    matchValues: ['truth', 'investigation', 'discretion'],
+    matchValues: ['honesty', 'knowledge', 'security'],
     matchInterests: ['law', 'security'],
     matchTalents: ['蒐集', '分析', '審慎'],
     requirements: '需要調查技巧、法律知識和保密能力',
@@ -1340,7 +1340,7 @@ export const CAREER_DATABASE = {
   'funeral_director': {
     name: '殯葬業者',
     description: '協助家屬處理喪葬事宜',
-    matchValues: ['compassion', 'dignity', 'service'],
+    matchValues: ['helping', 'responsibility', 'honesty'],
     matchInterests: ['social_work', 'hospitality'],
     matchTalents: ['體諒', '責任', '和諧'],
     matchWorkStyles: ['沉穩尊重', '情緒支持', '儀式細節', '同理心', '由死理生'],
@@ -1350,7 +1350,7 @@ export const CAREER_DATABASE = {
   'pet_groomer': {
     name: '寵物美容師',
     description: '為寵物提供清潔和美容服務',
-    matchValues: ['animals', 'care', 'beauty'],
+    matchValues: ['helping', 'creativity', 'fun'],
     matchInterests: ['animals', 'art_design'],
     matchTalents: ['體諒', '完美', '專注'],
     matchWorkStyles: ['動物愛心', '美容技藝', '耐心溝通', '溫柔守護', '細節修饰'],
@@ -1360,7 +1360,7 @@ export const CAREER_DATABASE = {
   'animal_trainer': {
     name: '動物訓練師',
     description: '訓練動物表演或工作技能',
-    matchValues: ['animals', 'patience', 'communication'],
+    matchValues: ['helping', 'creativity', 'friendship'],
     matchInterests: ['animals', 'education'],
     matchTalents: ['伯樂', '體諒', '專注'],
     matchWorkStyles: ['耐心教導', '動物感知', '重複練習', '正向強化', '安全意識'],
@@ -1380,7 +1380,7 @@ export const CAREER_DATABASE = {
   'personal_shopper': {
     name: '個人採購顧問',
     description: '為客戶提供購物建議和代購服務',
-    matchValues: ['style', 'service', 'efficiency'],
+    matchValues: ['creativity', 'helping', 'achievement'],
     matchInterests: ['fashion', 'business'],
     matchTalents: ['個別', '蒐集', '交往'],
     matchWorkStyles: ['時尚眼光', '個人化服務', '品味建議', '資源對接', '一對一顧問'],

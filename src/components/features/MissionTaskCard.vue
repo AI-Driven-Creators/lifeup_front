@@ -42,7 +42,10 @@
         
         <!-- 技能標籤和星級 -->
         <div class="flex items-center justify-between">
-          <SkillTags :skill-tags="skillObjects" />
+          <SkillTags
+            :skill-tags="skillObjects"
+            :max-display="task.is_parent_task ? 2 : undefined"
+          />
 
           <!-- 難度星級 -->
           <div class="flex items-center space-x-1 ml-auto">

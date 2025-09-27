@@ -98,14 +98,29 @@ const activeTasks = computed(() => {
     ['in_progress', 'daily_in_progress', 'daily_completed', 'daily_not_completed', 'completed'].includes(task.status)
   )
   
-  // 將任務按完成狀態排序：未完成的在前，已完成的在後
+  // 排序邏輯：職業主線任務保持原始順序，其他任務按完成狀態排序
   return tasks.sort((a, b) => {
-    const aCompleted = a.status === 'completed' || a.status === 'daily_completed'
-    const bCompleted = b.status === 'completed' || b.status === 'daily_completed'
-    
-    if (aCompleted && !bCompleted) return 1  // a 完成，b 未完成，a 排後面
-    if (!aCompleted && bCompleted) return -1 // a 未完成，b 完成，a 排前面
-    return 0 // 同樣狀態保持原順序
+    // 檢查是否為職業主線任務
+    const aIsCareer = a.task_category === 'career_subtask' || a.career_mainline_id
+    const bIsCareer = b.task_category === 'career_subtask' || b.career_mainline_id
+
+    // 如果都是職業主線任務，保持原始順序（按 task_order 或創建時間）
+    if (aIsCareer && bIsCareer) {
+      return (a.task_order || 0) - (b.task_order || 0)
+    }
+
+    // 如果都不是職業主線任務，按完成狀態排序
+    if (!aIsCareer && !bIsCareer) {
+      const aCompleted = a.status === 'completed' || a.status === 'daily_completed'
+      const bCompleted = b.status === 'completed' || b.status === 'daily_completed'
+
+      if (aCompleted && !bCompleted) return 1  // a 完成，b 未完成，a 排後面
+      if (!aCompleted && bCompleted) return -1 // a 未完成，b 完成，a 排前面
+      return 0
+    }
+
+    // 混合情況保持原順序
+    return 0
   })
 })
 

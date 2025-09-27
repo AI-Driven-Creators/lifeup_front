@@ -64,6 +64,9 @@ export interface Task {
   // 每日任務相關
   isRecurring?: boolean; // 是否為重複性任務
   dailyTaskSubtype?: 'simple' | 'recurring'; // 每日任務子類型
+  // 職業任務相關
+  task_category?: string; // 任務分類 (career_mainline, career_subtask 等)
+  career_mainline_id?: string; // 職業主線ID
 }
 
 // 任務進度類型

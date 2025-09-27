@@ -6,11 +6,20 @@
         <h3 class="task-title" :class="{ 'completed': isCompleted }">
           {{ task.title }}
         </h3>
-        <div class="task-exp">
-          {{ getSkillLabel() }} +{{ task.experience }} EXP
+        <div class="skill-tags-container">
+          <div
+            v-for="skill in getDisplaySkills()"
+            :key="skill"
+            class="task-exp"
+          >
+            {{ skill }}
+          </div>
         </div>
       </div>
-      
+
+      <!-- 中間：經驗值 -->
+      <div class="exp-text">+{{ task.experience }}</div>
+
       <!-- 右側：狀態控制 -->
       <div v-if="!isCompleted" 
         class="status-circle"
@@ -47,7 +56,7 @@ const emit = defineEmits<Emits>()
 const router = useRouter()
 
 // 是否已完成
-const isCompleted = computed(() => 
+const isCompleted = computed(() =>
   props.task.status === 'completed' || props.task.status === 'daily_completed'
 )
 
@@ -61,40 +70,14 @@ const handleToggle = () => {
   emit('toggle', props.task.id)
 }
 
-// 獲取技能標籤顯示
-const getSkillLabel = () => {
+// 獲取顯示的技能標籤陣列
+const getDisplaySkills = () => {
   if (!props.task.skillTags || props.task.skillTags.length === 0) {
-    return '通用'
+    return ['通用']
   }
-  
-  // 顯示第一個技能標籤並簡化名稱
-  const firstSkill = props.task.skillTags[0]
-  
-  const skillMap: Record<string, string> = {
-    // 技術技能
-    'Vue.js': 'Vue.js',
-    'Rust': 'Rust', 
-    'JavaScript': 'JS',
-    'TypeScript': 'TS',
-    'UI/UX 設計': '設計',
-    '機器學習': 'ML',
-    '程式設計': '程式',
-    // 軟技能
-    '溝通': '溝通',
-    '領導力': '領導',
-    '問題解決': '解題',
-    '時間管理': '時間',
-    '團隊合作': '團隊',
-    '適應力': '適應',
-    '專注力': '專注',
-    '學習': '學習',
-    '智慧': '智慧',
-    '毅力': '毅力',
-    '創意': '創意',
-    '觀察力': '觀察'
-  }
-  
-  return skillMap[firstSkill] || firstSkill
+
+  // 直接返回完整的技能名稱
+  return props.task.skillTags
 }
 
 </script>
@@ -140,6 +123,13 @@ const getSkillLabel = () => {
   text-decoration: line-through;
 }
 
+.skill-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
 .task-exp {
   font-size: 13px;
   color: #9e8747;
@@ -150,6 +140,21 @@ const getSkillLabel = () => {
   border-radius: 6px;
   display: inline-block;
   border: 1px solid #f4efe5;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exp-text {
+  font-size: 16px;
+  color: #9e8747;
+  font-weight: 700;
+  margin: 0 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .status-circle {

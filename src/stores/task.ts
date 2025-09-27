@@ -306,6 +306,9 @@ export const useTaskStore = defineStore('task', {
         // 每日任務相關
         isRecurring,
         dailyTaskSubtype,
+        // 職業任務相關
+        task_category: backendTask.task_category,
+        career_mainline_id: backendTask.career_mainline_id,
       };
     },
 

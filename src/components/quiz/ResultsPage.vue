@@ -935,7 +935,9 @@
 
           <!-- 任務生成中階段 -->
           <div v-if="currentStage === 'generating'" class="text-center py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <!-- 簡潔轉圈動畫 -->
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mb-6"></div>
+
             <h3 class="text-xl font-semibold text-gray-900 mb-2">AI 正在為你量身打造學習路徑</h3>
             <p class="text-gray-600">
               基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...
@@ -1479,49 +1481,104 @@ const generateCareerSuggestions = () => {
     const talentMatchRate = career.matchTalents.length > 0 ? (talentMatches / career.matchTalents.length) : 0
     // 工作風格匹配率已經從 calculateWorkStyleMatch 函數獲得
     
-    // 計算有效維度數量
+    // 加權匹配機制 - 不同維度有不同重要性
+    const weights = {
+      values: 0.35,      // 價值觀最重要，決定長期滿足感
+      interests: 0.30,   // 興趣次之，影響工作熱忱
+      talents: 0.25,     // 天賦重要，決定工作表現
+      workStyle: 0.10    // 工作風格權重最低，相對可以適應
+    }
+
+    let weightedScore = 0
+    let totalWeight = 0
+
+    if (valueMatches > 0) {
+      weightedScore += valueMatchRate * weights.values
+      totalWeight += weights.values
+    }
+    if (interestMatches > 0) {
+      weightedScore += interestMatchRate * weights.interests
+      totalWeight += weights.interests
+    }
+    if (talentMatches > 0) {
+      weightedScore += talentMatchRate * weights.talents
+      totalWeight += weights.talents
+    }
+    if (workStyleMatchRate > 0) {
+      weightedScore += workStyleMatchRate * weights.workStyle
+      totalWeight += weights.workStyle
+    }
+
+    // 計算加權平均分數
+    const weightedMatchRate = totalWeight > 0 ? weightedScore / totalWeight : 0
+
+    // 計算有效維度數量（保持原有邏輯）
     let validDimensions = 0
-    let totalMatchRate = 0
+    if (valueMatches > 0) validDimensions++
+    if (interestMatches > 0) validDimensions++
+    if (talentMatches > 0) validDimensions++
+    if (workStyleMatchRate > 0) validDimensions++
     
-    if (valueMatches > 0) { totalMatchRate += valueMatchRate; validDimensions++ }
-    if (interestMatches > 0) { totalMatchRate += interestMatchRate; validDimensions++ }
-    if (talentMatches > 0) { totalMatchRate += talentMatchRate; validDimensions++ }
-    if (workStyleMatchRate > 0) { totalMatchRate += workStyleMatchRate; validDimensions++ }
-    
-    // 根據匹配維度數量計算匹配度
+    // 使用加權分數計算更精準的匹配度
     if (validDimensions >= 4) {
-      // 四維全匹配：完美匹配，給予90-98%的超高分
-      const avgMatchRate = totalMatchRate / validDimensions
-      matchPercentage = Math.round(90 + (avgMatchRate * 8))
+      // 四維全匹配：90-98%
+      matchPercentage = Math.round(90 + (weightedMatchRate * 8))
     } else if (validDimensions >= 3) {
-      // 三維匹配：優秀匹配，給予80-89%的高分
-      const avgMatchRate = totalMatchRate / validDimensions
-      matchPercentage = Math.round(80 + (avgMatchRate * 9))
+      // 三維匹配，但需要考慮價值觀匹配的重要性
+      if (valueMatches > 0 && interestMatches > 0) {
+        // 包含價值觀和興趣的三維匹配：85-95%
+        matchPercentage = Math.round(85 + (weightedMatchRate * 10))
+      } else {
+        // 其他三維匹配：75-85%
+        matchPercentage = Math.round(75 + (weightedMatchRate * 10))
+      }
     } else if (validDimensions >= 2) {
-      // 兩維匹配：良好匹配，給予60-79%的中高分
-      const avgMatchRate = totalMatchRate / validDimensions
-      matchPercentage = Math.round(60 + (avgMatchRate * 19))
+      // 兩維匹配，價值觀+興趣組合最佳
+      if (valueMatches > 0 && interestMatches > 0) {
+        // 價值觀+興趣雙匹配：70-85%
+        matchPercentage = Math.round(70 + (weightedMatchRate * 15))
+      } else if (valueMatches > 0) {
+        // 包含價值觀的兩維匹配：65-80%
+        matchPercentage = Math.round(65 + (weightedMatchRate * 15))
+      } else {
+        // 其他兩維匹配：55-70%
+        matchPercentage = Math.round(55 + (weightedMatchRate * 15))
+      }
     } else if (validDimensions >= 1) {
-      // 單維匹配：部分匹配，給予40-59%的基礎分
-      const avgMatchRate = totalMatchRate / validDimensions
-      matchPercentage = Math.round(40 + (avgMatchRate * 19))
+      // 單維匹配
+      if (valueMatches > 0) {
+        // 僅價值觀匹配：50-65%
+        matchPercentage = Math.round(50 + (weightedMatchRate * 15))
+      } else {
+        // 其他單維匹配：30-50%
+        matchPercentage = Math.round(30 + (weightedMatchRate * 20))
+      }
     }
 
-    // 重新定義匹配類型判斷邏輯
+    // 更精準的匹配類型判斷邏輯
     let matchType: 'perfect' | 'excellent' | 'good' | 'partial' = 'partial'
-    
-    if (validDimensions >= 4) {
-      matchType = 'perfect' // 四維全匹配：完美天職
-    } else if (validDimensions >= 3 && valueMatches > 0 && interestMatches > 0 && talentMatches > 0) {
-      matchType = 'excellent' // 核心三維+工作風格：優秀匹配
-    } else if (validDimensions >= 3) {
-      matchType = 'excellent' // 三維匹配：優秀匹配
-    } else if (validDimensions >= 2) {
-      matchType = 'good' // 兩維匹配：良好匹配
+
+    if (validDimensions >= 4 && weightedMatchRate >= 0.8) {
+      matchType = 'perfect' // 四維全匹配且加權分數高：完美天職
+    } else if (validDimensions >= 3 && valueMatches > 0 && interestMatches > 0 && weightedMatchRate >= 0.7) {
+      matchType = 'excellent' // 包含價值觀+興趣的三維高匹配：優秀匹配
+    } else if (validDimensions >= 3 && weightedMatchRate >= 0.6) {
+      matchType = 'excellent' // 三維匹配且分數足夠：優秀匹配
+    } else if (validDimensions >= 2 && valueMatches > 0 && interestMatches > 0 && weightedMatchRate >= 0.6) {
+      matchType = 'good' // 價值觀+興趣雙匹配且分數好：良好匹配
+    } else if (validDimensions >= 2 && weightedMatchRate >= 0.5) {
+      matchType = 'good' // 兩維匹配且分數合格：良好匹配
     }
 
-    // 只推薦至少有兩個維度匹配的職業
-    if (matchType !== 'partial') {
+    // 動態調整推薦門檻 - 只推薦真正值得的職業
+    const shouldRecommend = (
+      (matchType === 'perfect') ||
+      (matchType === 'excellent') ||
+      (matchType === 'good' && weightedMatchRate >= 0.55) // 提高 good 級別的門檻
+    )
+
+    // 使用新的推薦條件
+    if (shouldRecommend) {
       const reasons: string[] = []
       if (valueMatches > 0) {
         reasons.push(`與你的核心價值觀高度契合 (${valueMatches}項匹配)`)
@@ -1552,18 +1609,44 @@ const generateCareerSuggestions = () => {
     }
   })
 
-  // 根據匹配類型和分數排序
-  return careerMatches
-    .sort((a, b) => {
+  // 確保推薦多樣性 - 避免相同類型職業過多
+  const ensureDiversity = (matches: any[]) => {
+    const diversifiedMatches: any[] = []
+    const categoryCount = new Map<string, number>()
+
+    // 按匹配度排序的職業列表
+    const sortedMatches = matches.sort((a, b) => {
       const typeOrder = { 'perfect': 4, 'excellent': 3, 'good': 2, 'partial': 1 }
       const aOrder = typeOrder[a.matchType]
       const bOrder = typeOrder[b.matchType]
-      
+
       if (aOrder !== bOrder) return bOrder - aOrder
       if (a.totalMatches !== b.totalMatches) return b.totalMatches - a.totalMatches
       return b.matchPercentage - a.matchPercentage
     })
-    .slice(0, 6) // 增加到6個職業建議，因為現在有更精準的匹配
+
+    // 確保每個興趣領域最多2個職業
+    for (const match of sortedMatches) {
+      const career = CAREER_DATABASE[match.career as keyof typeof CAREER_DATABASE]
+      if (!career?.matchInterests) continue
+
+      // 檢查該職業的主要興趣領域
+      const primaryInterest = career.matchInterests[0]
+      const currentCount = categoryCount.get(primaryInterest) || 0
+
+      if (currentCount < 2 || diversifiedMatches.length < 3) { // 至少保證前3個最佳匹配
+        diversifiedMatches.push(match)
+        categoryCount.set(primaryInterest, currentCount + 1)
+      }
+
+      if (diversifiedMatches.length >= 6) break
+    }
+
+    return diversifiedMatches
+  }
+
+  // 根據匹配類型和分數排序，並確保多樣性
+  return ensureDiversity(careerMatches)
     .map(match => ({
       ...CAREER_DATABASE[match.career as keyof typeof CAREER_DATABASE],
       matchScore: match.totalMatches,

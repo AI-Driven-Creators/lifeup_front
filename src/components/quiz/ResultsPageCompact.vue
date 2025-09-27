@@ -480,7 +480,9 @@
 
         <!-- 任務生成中階段 -->
         <div v-if="currentStage === 'generating'" class="text-center py-12">
-          <div class="text-6xl mb-6">⏳</div>
+          <!-- 簡潔轉圈動畫 -->
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mb-6"></div>
+
           <h3 class="text-xl font-semibold text-gray-900 mb-2">AI 正在為你量身打造學習路徑</h3>
           <p class="text-gray-600">
             基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...

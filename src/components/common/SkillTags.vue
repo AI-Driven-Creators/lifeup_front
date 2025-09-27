@@ -3,7 +3,7 @@
   <div v-else-if="skillTags.length === 0"></div>
   <div v-else class="skill-tags flex flex-wrap gap-1 mt-2">
     <span
-      v-for="skillTag in skillTags"
+      v-for="skillTag in displayedSkills"
       :key="skillTag.id"
       class="skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors cursor-pointer"
       :title="skillTag.name"
@@ -12,10 +12,19 @@
       <span class="skill-icon mr-1">🎯</span>
       {{ skillTag.name }}
     </span>
+    <!-- 顯示剩餘技能數量 -->
+    <span
+      v-if="hasMoreSkills"
+      class="skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+      :title="`還有 ${remainingCount} 個技能`"
+    >
+      +{{ remainingCount }}
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 interface Skill {
@@ -25,10 +34,35 @@ interface Skill {
 
 interface Props {
   skillTags?: Skill[] | undefined
+  maxDisplay?: number // 最大顯示數量，undefined表示顯示全部
 }
 
 const props = defineProps<Props>()
 const router = useRouter()
+
+// 計算顯示的技能
+const displayedSkills = computed(() => {
+  if (!props.skillTags || props.maxDisplay === undefined) {
+    return props.skillTags || []
+  }
+  return props.skillTags.slice(0, props.maxDisplay)
+})
+
+// 是否有更多技能
+const hasMoreSkills = computed(() => {
+  if (!props.skillTags || props.maxDisplay === undefined) {
+    return false
+  }
+  return props.skillTags.length > props.maxDisplay
+})
+
+// 剩餘技能數量
+const remainingCount = computed(() => {
+  if (!props.skillTags || props.maxDisplay === undefined) {
+    return 0
+  }
+  return Math.max(0, props.skillTags.length - props.maxDisplay)
+})
 
 const handleSkillClick = (skill: Skill) => {
   router.push({

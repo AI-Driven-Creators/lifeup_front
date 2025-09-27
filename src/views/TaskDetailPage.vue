@@ -170,6 +170,12 @@
                     順序 {{ subtask.task_order }}
                   </span>
                 </div>
+
+                <!-- 技能標籤 -->
+                <SkillTags
+                  :skill-tags="getSkillObjectsForTask(subtask)"
+                  class="mt-2"
+                />
               </div>
               
               <!-- 狀態控制 -->
@@ -300,9 +306,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
+import { useSkillStore } from '@/stores/skill'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
+import SkillTags from '@/components/common/SkillTags.vue'
 import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
 import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
 import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
@@ -311,6 +319,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
+const skillStore = useSkillStore()
 
 // 響應式數據
 const task = ref<Task | null>(null)
@@ -351,13 +360,42 @@ const sortedSubtasks = computed(() => {
       }
       return priorityA - priorityB
     } else {
-      // 檢查是否為職業主線任務
-      const isCareerTask = task.value?.task_category === 'career_mainline' ||
-                          a.task_category === 'career_subtask' ||
-                          b.task_category === 'career_subtask'
+      // 檢查父任務是否為職業主線任務
+      const isCareerMainline = task.value?.task_category === 'career_mainline' ||
+                              task.value?.career_mainline_id
 
-      if (isCareerTask) {
-        // 職業主線任務：始終按照 task_order 順序排列，不受狀態影響
+      // 檢查當前兩個子任務是否都是職業相關
+      const aIsCareer = a.task_category === 'career_subtask' || a.career_mainline_id
+      const bIsCareer = b.task_category === 'career_subtask' || b.career_mainline_id
+
+      // 調試信息
+      console.log('排序調試:', {
+        parentTask: {
+          task_category: task.value?.task_category,
+          career_mainline_id: task.value?.career_mainline_id,
+          isCareerMainline
+        },
+        taskA: {
+          title: a.title,
+          task_category: a.task_category,
+          career_mainline_id: a.career_mainline_id,
+          task_order: a.task_order,
+          status: a.status,
+          isCareer: aIsCareer
+        },
+        taskB: {
+          title: b.title,
+          task_category: b.task_category,
+          career_mainline_id: b.career_mainline_id,
+          task_order: b.task_order,
+          status: b.status,
+          isCareer: bIsCareer
+        }
+      })
+
+      // 如果是職業主線任務，且兩個子任務都是職業相關的，使用順序排序
+      if (isCareerMainline && aIsCareer && bIsCareer) {
+        console.log('使用職業主線排序:', (a.task_order || 0) - (b.task_order || 0))
         return (a.task_order || 0) - (b.task_order || 0)
       } else {
         // 普通任務：保持原有排序邏輯
@@ -384,6 +422,20 @@ const sortedSubtasks = computed(() => {
     }
   })
 })
+
+// 獲取任務的技能對象
+const getSkillObjectsForTask = (task: Task) => {
+  if (!task.skillTags || task.skillTags.length === 0) {
+    return []
+  }
+  if (!skillStore.skills.length) {
+    // 技能列表還在載入中，返回 undefined 表示載入中狀態
+    return undefined
+  }
+  return task.skillTags
+    .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
+    .filter(skill => !!skill) as { id: string; name: string }[]
+}
 
 // 任務進度數據
 const taskProgress = computed(() => {
@@ -790,5 +842,9 @@ const handleDeleteTask = async () => {
 // 頁面載入時獲取任務詳情
 onMounted(() => {
   loadTaskDetail()
+  // 載入技能數據
+  if (skillStore.skills.length === 0 && !skillStore.loading) {
+    skillStore.fetchSkills()
+  }
 })
 </script>
