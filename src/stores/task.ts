@@ -288,7 +288,9 @@ export const useTaskStore = defineStore('task', {
         description: backendTask.description,
         type: (backendTask.task_type as Task['type']) || this.mapPriorityToType(backendTask.priority),
         difficulty: Math.min(5, Math.max(1, backendTask.difficulty || backendTask.priority || 1)) as Task['difficulty'],
-        experience: backendTask.experience || this.calculateExperience(backendTask.difficulty || backendTask.priority || 1),
+        experience: backendTask.experience !== null && backendTask.experience !== undefined
+          ? backendTask.experience
+          : this.calculateExperience(backendTask.difficulty || backendTask.priority || 1),
         estimatedTime: this.estimateTime(backendTask.difficulty || backendTask.priority || 1),
         status: status,
         deadline: backendTask.due_date ? new Date(backendTask.due_date) : undefined,

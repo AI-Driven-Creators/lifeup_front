@@ -91,21 +91,14 @@
               </div>
             </div>
 
-            <!-- 經驗值和任務順序 -->
+            <!-- 經驗值顯示和任務順序 -->
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  經驗值
-                  <span class="text-xs text-gray-500">(建議: {{ calculatedExperience }})</span>
-                </label>
-                <input
-                  v-model.number="form.experience"
-                  type="number"
-                  min="5"
-                  max="200"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  :placeholder="calculatedExperience.toString()"
-                />
+                <label class="block text-sm font-medium text-gray-700 mb-2">經驗值</label>
+                <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                  {{ calculatedExperience }} EXP
+                  <span class="text-xs text-gray-500 ml-2">(自動計算)</span>
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">任務順序</label>
@@ -119,15 +112,6 @@
               </div>
             </div>
 
-            <!-- 截止日期 -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">截止日期</label>
-              <input
-                v-model="form.due_date"
-                type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
           </div>
 
           <!-- 錯誤訊息 -->
@@ -183,7 +167,6 @@ const form = ref({
   description: '',
   priority: 2,
   difficulty: 3,
-  experience: 0,
   task_order: 1,
   due_date: ''
 })
@@ -193,9 +176,9 @@ const showAdvanced = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
 
-// 計算經驗值
+// 計算經驗值 - 使用與原先父任務相同的計算方式
 const calculatedExperience = computed(() => {
-  return Math.floor(form.value.difficulty * 10 + form.value.priority * 5)
+  return form.value.difficulty * 20 + form.value.priority * 10
 })
 
 // 表單驗證
@@ -205,12 +188,7 @@ const isFormValid = computed(() => {
          !errors.value.title
 })
 
-// 監聽經驗值自動計算
-watch([() => form.value.difficulty, () => form.value.priority], () => {
-  if (!form.value.experience || form.value.experience === calculatedExperience.value) {
-    form.value.experience = calculatedExperience.value
-  }
-})
+// 經驗值會根據難度和優先級自動計算，不需要監聽
 
 
 // 驗證表單
@@ -243,7 +221,6 @@ const resetForm = () => {
     description: '',
     priority: 2,
     difficulty: 3,
-    experience: 0,
     task_order: 1,
     due_date: ''
   }
@@ -273,7 +250,7 @@ const submitForm = async () => {
       task_type: 'main', // 子任務默認為主線任務類型
       priority: form.value.priority,
       difficulty: form.value.difficulty,
-      experience: form.value.experience || calculatedExperience.value,
+      experience: calculatedExperience.value,
       parent_task_id: props.parentTaskId,
       task_order: form.value.task_order,
     }

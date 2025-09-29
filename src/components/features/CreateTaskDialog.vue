@@ -162,14 +162,6 @@
               </div>
             </div>
 
-            <!-- 經驗值預覽 -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">經驗值</label>
-              <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
-                {{ calculatedExperience }} EXP
-                <span class="text-xs text-gray-500 ml-2">(根據優先級和難度自動計算)</span>
-              </div>
-            </div>
 
 
             <!-- 生成子任務選項 -->
@@ -571,8 +563,12 @@ const submitForm = async () => {
       title: form.value.title.trim(),
       task_type: form.value.task_type,
       priority: form.value.priority,
-      difficulty: form.value.difficulty,
-      experience: calculatedExperience.value
+      difficulty: form.value.difficulty
+    }
+
+    // 只有每日任務才傳遞經驗值，其他任務由子任務決定經驗值
+    if (form.value.task_type === 'daily') {
+      taskData.experience = calculatedExperience.value
     }
 
     // 處理每日任務的重複性屬性（這裡只處理simple類型）

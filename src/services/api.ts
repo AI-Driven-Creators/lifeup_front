@@ -131,7 +131,7 @@ export class ApiClient {
     return this.request<{ success: boolean, data: any[], message: string }>('/api/tasks/homepage');
   }
 
-  async startTask(id: string, generateSubtasks: boolean = true) {
+  async startTask(id: string, generateSubtasks: boolean = false) {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${id}/start`, {
       method: 'POST',
       body: JSON.stringify({ generate_subtasks: generateSubtasks }),

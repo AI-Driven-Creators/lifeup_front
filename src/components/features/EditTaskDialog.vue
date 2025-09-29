@@ -119,30 +119,20 @@
               </div>
             </div>
 
-            <!-- 經驗值 -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                經驗值
-                <span class="text-xs text-gray-500">(建議: {{ calculatedExperience }})</span>
-              </label>
-              <input
-                v-model.number="form.experience"
-                type="number"
-                min="10"
-                max="500"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                :placeholder="calculatedExperience.toString()"
-              />
+            <!-- 經驗值 - 父任務顯示總和，子任務自動計算 -->
+            <div v-if="isParentTask">
+              <label class="block text-sm font-medium text-gray-700 mb-2">經驗值</label>
+              <div class="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700">
+                {{ props.task?.experience || 0 }} EXP
+                <span class="text-xs text-blue-500 ml-2">(由所有子任務計算)</span>
+              </div>
             </div>
-
-            <!-- 截止日期 -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">截止日期</label>
-              <input
-                v-model="form.due_date"
-                type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+            <div v-else>
+              <label class="block text-sm font-medium text-gray-700 mb-2">經驗值</label>
+              <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                {{ calculatedExperience }} EXP
+                <span class="text-xs text-gray-500 ml-2">(自動計算)</span>
+              </div>
             </div>
           </div>
 
@@ -238,8 +228,16 @@ const taskTypes = [
   }
 ]
 
-// 計算經驗值
+// 判斷是否為父任務
+const isParentTask = computed(() => {
+  return props.task?.is_parent_task === true || props.task?.is_parent_task === 1
+})
+
+// 計算經驗值 (只對非父任務有效)
 const calculatedExperience = computed(() => {
+  if (isParentTask.value) {
+    return 0 // 父任務經驗值不由此計算
+  }
   return form.value.difficulty * 20 + form.value.priority * 10
 })
 
@@ -264,10 +262,12 @@ watch(() => props.show, (show) => {
   }
 })
 
-// 監聽經驗值自動計算
+// 監聽經驗值自動計算 (只對非父任務有效)
 watch([() => form.value.difficulty, () => form.value.priority], () => {
-  if (!form.value.experience || form.value.experience === calculatedExperience.value) {
-    form.value.experience = calculatedExperience.value
+  if (!isParentTask.value) {
+    if (!form.value.experience || form.value.experience === calculatedExperience.value) {
+      form.value.experience = calculatedExperience.value
+    }
   }
 })
 
@@ -342,8 +342,12 @@ const submitForm = async () => {
       title: form.value.title.trim(),
       task_type: form.value.task_type,
       priority: form.value.priority,
-      difficulty: form.value.difficulty,
-      experience: form.value.experience || calculatedExperience.value
+      difficulty: form.value.difficulty
+    }
+
+    // 只有非父任務才更新經驗值
+    if (!isParentTask.value) {
+      updateData.experience = form.value.experience || calculatedExperience.value
     }
 
     // 只在有值時添加可選字段
