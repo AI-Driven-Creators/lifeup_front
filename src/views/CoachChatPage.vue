@@ -1,8 +1,9 @@
-﻿<template>
+<template>
   <!-- 減去 App.vue main 的 pb-20(5rem) 以避免垂直溢出，需要時可調整 -->
   <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
     <!-- 頁面標題 -->
     <PageHeader
+      title="小教練"
       class="border-b border-gray-200"
       :showProfileIcon="false"
     >
@@ -84,10 +85,26 @@
       :taskJson="previewTaskJson"
       :taskPreview="taskPreviewText"
       :validationErrors="validationErrors"
+      :isConfirming="isCreatingTask"
       @confirm="confirmCreateTask"
       @cancel="cancelTaskCreation"
       @edit="editTask"
     />
+    
+    <!-- 全頁面 Loading 遮罩（在生成/提交期間顯示，避免與預覽對話框重疊） -->
+    <div
+      v-if="(isGeneratingTask || isCreatingTask) && !showTaskPreview"
+      class="fixed inset-0 z-40 bg-black/40 flex items-center justify-center"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div class="bg-white rounded-xl shadow-xl px-6 py-5 flex flex-col items-center gap-3">
+        <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="text-gray-700 font-medium">
+          {{ isCreatingTask ? '正在創建任務，請稍候…' : '正在生成內容，請稍候…' }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -106,6 +123,7 @@ const router = useRouter()
 const messages = ref<ChatMessageType[]>([])
 const quickReplies = ref<string[]>([])
 const loading = ref(false)
+const isCreatingTask = ref(false)
 const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
 // 個性相關狀態
@@ -211,6 +229,7 @@ const handlePersonalityChange = async () => {
 }
 // 任務生成相關狀態
 const showTaskPreview = ref(false)
+const isGeneratingTask = ref(false)
 const previewTaskJson = ref<any>(null)
 const taskPreviewText = ref('')
 const validationErrors = ref<string[]>([])
@@ -459,6 +478,7 @@ const generateTaskFromText = async (taskDescription: string) => {
   scrollToBottom()
   
   loading.value = true
+  isGeneratingTask.value = true
   
   try {
     // 使用 generateTaskFromChat API，但只傳送用戶的任務描述
@@ -563,12 +583,14 @@ const generateTaskFromText = async (taskDescription: string) => {
     scrollToBottom()
   } finally {
     loading.value = false
+    isGeneratingTask.value = false
   }
 }
 
 // 確認創建任務
 const confirmCreateTask = async () => {
   loading.value = true
+  isCreatingTask.value = true
   try {
     // 先保存任務標題，因為稍後會清空 previewTaskJson
     const taskTitle = previewTaskJson.value?.title || '新任務'
@@ -601,6 +623,7 @@ const confirmCreateTask = async () => {
     showToast && showToast('創建任務失敗，請稍後再試。')
   } finally {
     loading.value = false
+    isCreatingTask.value = false
   }
 }
 
