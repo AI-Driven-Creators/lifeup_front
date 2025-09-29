@@ -411,55 +411,10 @@ const handleSendMessage = async (content: string, isTaskMode: boolean) => {
   }
 }
 
-// 處理任務模式狀態變更
+// 處理任務模式狀態變更（切換時不在對話中插入任何訊息）
 const handleTaskModeChange = (isActive: boolean) => {
   isTaskModeActive.value = isActive
-  
-  // 當切換到任務模式時，顯示系統訊息
-  if (isActive) {
-    const systemMessage: ChatMessageType = {
-      id: Date.now().toString(),
-      role: 'system',
-      content: '已切換到「任務創建模式」',
-      timestamp: new Date()
-    }
-    messages.value.push(systemMessage)
-    
-    // 添加任務模式說明
-    const taskModeMessage: ChatMessageType = {
-      id: (Date.now() + 1).toString(),
-      role: 'coach',
-      content: '現在進入任務創建模式！直接描述你想要完成的任務，我會幫你生成結構化的任務資料。例如：「每天早上跑步30分鐘」、「學習Python程式設計」、「完成專案報告」等。\n\n注意：任務模式下不會導入任何個性設定，系統會以中立、專業的方式處理任務生成。',
-      timestamp: new Date()
-    }
-    messages.value.push(taskModeMessage)
-    
-    // 滾動到底部
-    nextTick(() => scrollToBottom())
-  } else {
-    // 切換回普通模式
-    const systemMessage: ChatMessageType = {
-      id: Date.now().toString(),
-      role: 'system',
-      content: '已切換回「普通對話模式」',
-      timestamp: new Date()
-    }
-    messages.value.push(systemMessage)
-    
-    // 恢復個性模式提示
-    if (selectedPersonality.value) {
-      const personalityMessage: ChatMessageType = {
-        id: (Date.now() + 1).toString(),
-        role: 'coach',
-        content: getPersonalityIntroMessage(selectedPersonality.value),
-        timestamp: new Date()
-      }
-      messages.value.push(personalityMessage)
-    }
-    
-    // 滾動到底部
-    nextTick(() => scrollToBottom())
-  }
+  // 切換模式時僅更新狀態，不推送任何聊天訊息
 }
 
 // 從文本直接生成任務
