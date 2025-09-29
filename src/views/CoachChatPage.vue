@@ -53,6 +53,7 @@
         v-for="message in messages"
         :key="message.id"
         :message="message"
+        @dismiss="handleDismissMessage"
       />
       <div v-if="loading" class="text-gray-400 text-sm">教練正在輸入...</div>
     </div>
@@ -145,6 +146,14 @@ const currentPersonality = computed(() => {
 })
 const chatContainer = ref<HTMLDivElement>()
 
+// 子元件請求關閉暫時訊息
+const handleDismissMessage = (id: string) => {
+  const index = messages.value.findIndex(m => m.id === id)
+  if (index !== -1 && messages.value[index].ephemeral) {
+    messages.value.splice(index, 1)
+  }
+}
+
 // 載入可用個性
 const loadAvailablePersonalities = async () => {
   try {
@@ -209,7 +218,8 @@ const handlePersonalityChange = async () => {
         id: Date.now().toString(),
         role: 'system',
         content: `已切換到「${currentPersonality.value?.display_name}」模式`,
-        timestamp: new Date()
+        timestamp: new Date(),
+        ephemeral: true
       }
       messages.value.push(systemMessage)
       
@@ -219,7 +229,8 @@ const handlePersonalityChange = async () => {
         id: (Date.now() + 1).toString(),
         role: 'coach',
         content: personalityIntro,
-        timestamp: new Date()
+        timestamp: new Date(),
+        ephemeral: true
       }
       messages.value.push(coachMessage)
     }
@@ -253,7 +264,8 @@ const loadChatHistory = async () => {
           id: '1',
           role: 'coach',
           content: '嗨！我是你的 AI 小教練。很高興見到你！今天有什麼我可以幫助你的嗎？無論是設定目標、時間管理，還是需要一些鼓勵，我都在這裡支持你。',
-          timestamp: new Date()
+          timestamp: new Date(),
+          ephemeral: true
         })
       }
       
@@ -268,7 +280,8 @@ const loadChatHistory = async () => {
       id: '1',
       role: 'coach',
       content: '嗨！我是你的 AI 小教練。很高興見到你！今天有什麼我可以幫助你的嗎？',
-      timestamp: new Date()
+      timestamp: new Date(),
+      ephemeral: true
     }]
   }
 }
@@ -345,7 +358,8 @@ onMounted(async () => {
       content: selectedPersonality.value 
         ? getPersonalityIntroMessage(selectedPersonality.value) 
         : '你好！我是你的小教練，準備好開始我們的對話了嗎？',
-      timestamp: new Date()
+      timestamp: new Date(),
+      ephemeral: true
     }
     messages.value.push(welcomeMessage)
   }, 100)
@@ -390,7 +404,8 @@ const sendMessage = async (content: string) => {
       id: (Date.now() + 2).toString(),
       role: 'coach',
       content: '發生錯誤，請稍後再試。',
-      timestamp: new Date()
+      timestamp: new Date(),
+      ephemeral: true
     })
     
     await nextTick()
@@ -464,7 +479,8 @@ const generateTaskFromText = async (taskDescription: string) => {
             id: (Date.now() + 1).toString(),
             role: 'coach',
             content: coachResponse,
-            timestamp: new Date()
+            timestamp: new Date(),
+            ephemeral: true
           }
           messages.value.push(coachMessage)
           
@@ -487,7 +503,8 @@ const generateTaskFromText = async (taskDescription: string) => {
             id: (Date.now() + 1).toString(),
             role: 'coach',
             content: errorResponse,
-            timestamp: new Date()
+            timestamp: new Date(),
+            ephemeral: true
           }
           messages.value.push(errorMessage)
           await nextTick()
@@ -509,7 +526,8 @@ const generateTaskFromText = async (taskDescription: string) => {
         id: (Date.now() + 1).toString(),
         role: 'coach',
         content: failResponse,
-        timestamp: new Date()
+        timestamp: new Date(),
+        ephemeral: true
       }
       messages.value.push(failMessage)
       await nextTick()
@@ -531,7 +549,8 @@ const generateTaskFromText = async (taskDescription: string) => {
       id: (Date.now() + 1).toString(),
       role: 'coach',
       content: errorResponse,
-      timestamp: new Date()
+      timestamp: new Date(),
+      ephemeral: true
     }
     messages.value.push(errorMessage)
     await nextTick()
@@ -560,7 +579,8 @@ const confirmCreateTask = async () => {
         id: Date.now().toString(),
         role: 'coach',
         content: `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`,
-        timestamp: new Date()
+        timestamp: new Date(),
+        ephemeral: true
       })
       
       // 清空預覽狀態

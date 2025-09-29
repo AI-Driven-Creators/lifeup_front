@@ -87,6 +87,8 @@ export interface ChatMessage {
   role: 'user' | 'coach' | 'system';
   content: string;
   timestamp: Date;
+  // 是否為暫時訊息（不會被記錄到對話歷史），用於自動淡出
+  ephemeral?: boolean;
 }
 
 export interface CoachStyle {
