@@ -18,17 +18,18 @@
         @keypress.enter="handleSend"
         type="text"
         :placeholder="chatMode === 'task' ? '描述你想創建的任務...' : '輸入訊息'"
-        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        :disabled="props.disabled"
+        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
       >
       <button
         @click="handleSend"
-        :disabled="!inputMessage.trim()"
+        :disabled="props.disabled || !inputMessage.trim()"
         :class="[
           'px-4 py-2 rounded-lg font-medium transition-colors',
-          !inputMessage.trim() 
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+          (props.disabled || !inputMessage.trim())
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
             : chatMode === 'task'
-              ? 'bg-blue-500 text-white hover:bg-blue-600' 
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
               : 'bg-primary-600 text-white hover:bg-primary-700'
         ]"
       >
@@ -50,7 +51,7 @@ interface Emits {
   (e: 'taskModeChange', isTaskMode: boolean): void
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), { disabled: false })
 const emit = defineEmits<Emits>()
 
 const inputMessage = ref('')
