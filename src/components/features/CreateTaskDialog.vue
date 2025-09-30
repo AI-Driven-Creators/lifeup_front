@@ -361,6 +361,9 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// inject 必須在 setup 頂層調用
+const showToast = inject<(text: string, duration?: number) => void>('showToast')
+
 // 表單數據
 const form = ref({
   title: '',
@@ -698,7 +701,6 @@ const createRecurringTask = async () => {
       loading.value = false
 
       // 顯示成功提示
-      const showToast = inject<(text: string, duration?: number) => void>('showToast')
       if (showToast) {
         showToast('🎉 常駐目標創建成功！', 3000)
       }

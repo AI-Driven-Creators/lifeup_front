@@ -273,8 +273,8 @@ export const useTaskStore = defineStore('task', {
       // 直接使用後端返回的狀態，因為後端已經統一處理了每日任務的狀態
       const status = this.mapBackendStatus(backendTask.status)
 
-      // 判斷是否為重複性任務
-      const isRecurring = backendTask.is_recurring === 1;
+      // 判斷是否為重複性任務 (兼容數字和字串)
+      const isRecurring = backendTask.is_recurring === 1 || backendTask.is_recurring === '1' || backendTask.is_recurring === true;
 
       // 判斷每日任務子類型
       let dailyTaskSubtype: 'simple' | 'recurring' | undefined;
