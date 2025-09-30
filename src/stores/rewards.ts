@@ -12,7 +12,6 @@ export interface RewardNotification {
   oldLevel?: number
   newLevel?: number
   duration?: number
-  visible: boolean
 }
 
 export const useRewardsStore = defineStore('rewards', () => {
@@ -27,18 +26,17 @@ export const useRewardsStore = defineStore('rewards', () => {
       message: `完成任務「${taskTitle}」獲得 ${experience} 經驗值`,
       icon: '⭐',
       experience,
-      duration: 3000,
-      visible: true
+      duration: 3000
     }
-    
+
     notifications.value.push(notification)
     autoRemoveNotification(notification.id)
   }
 
   // 添加技能經驗值獲得通知
   const addSkillExperienceNotification = (
-    skillName: string, 
-    experience: number, 
+    skillName: string,
+    experience: number,
     taskTitle: string
   ) => {
     const notification: RewardNotification = {
@@ -49,18 +47,17 @@ export const useRewardsStore = defineStore('rewards', () => {
       icon: '🎯',
       experience,
       skillName,
-      duration: 3000,
-      visible: true
+      duration: 3000
     }
-    
+
     notifications.value.push(notification)
     autoRemoveNotification(notification.id)
   }
 
   // 添加技能升級通知
   const addSkillLevelUpNotification = (
-    skillName: string, 
-    oldLevel: number, 
+    skillName: string,
+    oldLevel: number,
     newLevel: number
   ) => {
     const notification: RewardNotification = {
@@ -72,10 +69,9 @@ export const useRewardsStore = defineStore('rewards', () => {
       skillName,
       oldLevel,
       newLevel,
-      duration: 5000,
-      visible: true
+      duration: 5000
     }
-    
+
     notifications.value.push(notification)
     autoRemoveNotification(notification.id)
   }
@@ -85,11 +81,8 @@ export const useRewardsStore = defineStore('rewards', () => {
   const removeNotification = (id: string) => {
     const index = notifications.value.findIndex(n => n.id === id)
     if (index > -1) {
-      notifications.value[index].visible = false
-      // 延遲移除以允許退場動畫
-      setTimeout(() => {
-        notifications.value.splice(index, 1)
-      }, 300)
+      // 直接從數組中移除，TransitionGroup 會自動處理退場動畫
+      notifications.value.splice(index, 1)
     }
   }
 

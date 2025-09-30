@@ -110,8 +110,6 @@ export const useTaskStore = defineStore('task', {
     },
 
     async toggleTaskStatus(taskId: string, currentStatus?: Task['status'], reverse: boolean = false) {
-      console.log(`toggleTaskStatus called: taskId=${taskId}, currentStatus=${currentStatus}, reverse=${reverse}`);
-
       // 首先嘗試從 store 中找到任務
       let task: Task | null = this.tasks.find(t => t.id === taskId) || null;
       let taskStatus = task?.status || currentStatus;
@@ -141,38 +139,28 @@ export const useTaskStore = defineStore('task', {
       let nextStatus: number;
       let nextStatusString: Task['status'];
 
-      console.log(`Status transition logic: taskStatus=${taskStatus}, reverse=${reverse}`);
-
       if (reverse) {
-        console.log('執行反向切換邏輯');
         // 反向切換：回復到前一個狀態
         if (taskStatus === 'completed') {
           nextStatus = 1; // 回復到進行中
           nextStatusString = 'in_progress';
-          console.log('completed -> in_progress');
         } else if (taskStatus === 'daily_completed') {
           nextStatus = 5; // 回復到每日進行中
           nextStatusString = 'daily_in_progress';
-          console.log('daily_completed -> daily_in_progress');
         } else if (taskStatus === 'in_progress') {
           nextStatus = 0; // 回復到待處理
           nextStatusString = 'pending';
-          console.log('in_progress -> pending');
         } else if (taskStatus === 'daily_in_progress') {
           nextStatus = 0; // 回復到待處理
           nextStatusString = 'pending';
-          console.log('daily_in_progress -> pending');
         } else if (taskStatus === 'daily_not_completed') {
           nextStatus = 0; // 回復到待處理
           nextStatusString = 'pending';
-          console.log('daily_not_completed -> pending');
         } else {
           nextStatus = 0; // pending狀態無法再往回
           nextStatusString = 'pending';
-          console.log('default -> pending');
         }
       } else {
-        console.log('執行正向切換邏輯');
         // 正向切換：進入下一個狀態
         if (taskStatus === 'pending') {
           // 檢查是否為重複性每日任務
@@ -213,8 +201,6 @@ export const useTaskStore = defineStore('task', {
       }
 
       try {
-        console.log(`更新任務狀態: ${taskId} 從 ${taskStatus} 到 ${nextStatusString} (reverse: ${reverse})`);
-
         // 呼叫後端 API 更新任務狀態
         const response = await apiClient.updateTask(taskId, {
           status: nextStatus
@@ -225,21 +211,19 @@ export const useTaskStore = defineStore('task', {
           if (task) {
             task.status = nextStatusString;
           }
-          console.log(`Task ${taskId} status changed to ${nextStatusString}`);
 
           // 根據狀態變化處理經驗值
           if (nextStatusString === 'completed' || nextStatusString === 'daily_completed') {
             // 任務完成，增加經驗值
+            // 如果task不存在，使用getTask API獲取(支援子任務)
             if (!task) {
               try {
-                const tasksResponse = await apiClient.getTasks();
-                if (tasksResponse.success) {
-                  const allTasks = tasksResponse.data.map(this.transformBackendTask);
-                  const foundTask = allTasks.find(t => t.id === taskId);
-                  task = foundTask || null;
+                const taskResponse = await apiClient.getTask(taskId);
+                if (taskResponse.success) {
+                  task = this.transformBackendTask(taskResponse.data);
                 }
               } catch (error) {
-                console.error('Failed to fetch task for completion handling:', error);
+                console.error('從API獲取任務失敗:', error);
               }
             }
             await this.handleTaskCompletion(task);
@@ -247,14 +231,12 @@ export const useTaskStore = defineStore('task', {
             // 從完成狀態回復，扣除經驗值
             if (!task) {
               try {
-                const tasksResponse = await apiClient.getTasks();
-                if (tasksResponse.success) {
-                  const allTasks = tasksResponse.data.map(this.transformBackendTask);
-                  const foundTask = allTasks.find(t => t.id === taskId);
-                  task = foundTask || null;
+                const taskResponse = await apiClient.getTask(taskId);
+                if (taskResponse.success) {
+                  task = this.transformBackendTask(taskResponse.data);
                 }
               } catch (error) {
-                console.error('Failed to fetch task for revert handling:', error);
+                console.error('從API獲取任務失敗:', error);
               }
             }
             await this.handleTaskRevert(task);
@@ -410,7 +392,6 @@ export const useTaskStore = defineStore('task', {
     // 處理任務完成，觸發技能經驗值獲得
     async handleTaskCompletion(task: Task | null) {
       if (!task) {
-        console.log('❌ handleTaskCompletion: task 為空');
         return;
       }
 
@@ -429,31 +410,23 @@ export const useTaskStore = defineStore('task', {
 
         // 獲取所有技能用於查找對應技能
         if (skillStore.skills.length === 0) {
-          console.log('📚 技能列表為空，正在獲取...');
           await skillStore.fetchSkills();
         }
-        console.log('📚 當前技能列表:', skillStore.skills.map(s => s.name));
 
         // 根據任務技能標籤給相應技能增加經驗值
         if (task.skillTags && task.skillTags.length > 0) {
-          console.log(`🏷️ 處理 ${task.skillTags.length} 個技能標籤:`, task.skillTags);
           for (const skillTag of task.skillTags) {
             // 根據技能名稱找到對應的技能
             const targetSkill = skillStore.skills.find(skill => skill.name === skillTag);
             if (targetSkill) {
-              console.log(`✅ 找到對應技能: ${skillTag} -> ${targetSkill.id}`);
               skillExperienceUpdates.push({
                 skillId: targetSkill.id,
                 skillName: targetSkill.name,
                 experience: baseExperience,
                 reason: `完成任務: ${task.title}`
               });
-            } else {
-              console.warn(`❌ 找不到技能: ${skillTag}`);
             }
           }
-        } else {
-          console.log('⚠️ 任務沒有技能標籤');
         }
 
         // 批量更新技能經驗值並顯示通知
@@ -486,8 +459,6 @@ export const useTaskStore = defineStore('task', {
           }
         }
 
-        console.log(`✅ 任務完成獎勵發放完畢！更新了 ${skillExperienceUpdates.length} 個技能`);
-
       } catch (error) {
         console.error('處理任務完成獎勵時發生錯誤:', error);
       }
@@ -496,7 +467,6 @@ export const useTaskStore = defineStore('task', {
     // 處理任務回復，扣除技能經驗值
     async handleTaskRevert(task: Task | null) {
       if (!task) {
-        console.log('❌ handleTaskRevert: task 為空');
         return;
       }
 
@@ -511,35 +481,22 @@ export const useTaskStore = defineStore('task', {
 
         // 獲取所有技能用於查找對應技能
         if (skillStore.skills.length === 0) {
-          console.log('📚 技能列表為空，正在獲取...');
           await skillStore.fetchSkills();
         }
-        console.log('📚 當前技能列表:', skillStore.skills.map(s => s.name));
 
         // 根據任務技能標籤給相應技能扣除經驗值
         if (task.skillTags && task.skillTags.length > 0) {
-          console.log(`🏷️ 處理 ${task.skillTags.length} 個技能標籤回復:`, task.skillTags);
           for (const skillTag of task.skillTags) {
             // 根據技能名稱找到對應的技能
             const targetSkill = skillStore.skills.find(skill => skill.name === skillTag);
             if (targetSkill) {
-              console.log(`✅ 找到對應技能: ${skillTag} -> ${targetSkill.id}`);
               skillExperienceUpdates.push({
                 skillId: targetSkill.id,
                 experience: baseExperience, // 負值，表示扣除
                 reason: `回復任務: ${task.title}`
               });
-            } else {
-              console.warn(`❌ 找不到技能: ${skillTag}`);
             }
           }
-        } else {
-          console.log('⚠️ 任務沒有技能標籤');
-        }
-
-        // 如果沒有技能標籤，不扣除技能經驗值
-        if (skillExperienceUpdates.length === 0) {
-          console.log('⚠️ 任務沒有技能標籤，跳過技能經驗值扣除');
         }
 
         // 批量更新技能經驗值（扣除）
@@ -550,8 +507,6 @@ export const useTaskStore = defineStore('task', {
             console.error(`扣除技能 ${update.skillId} 經驗值失敗:`, error);
           }
         }
-
-        console.log(`✅ 任務回復處理完畢！扣除了 ${skillExperienceUpdates.length} 個技能的經驗值`);
 
       } catch (error) {
         console.error('處理任務回復扣除經驗值時發生錯誤:', error);

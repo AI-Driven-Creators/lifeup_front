@@ -144,8 +144,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { apiClient } from '@/services/api'
+import { useTaskStore } from '@/stores/task'
 import type { Task } from '@/types'
 
 interface Props {
@@ -160,6 +161,10 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const taskStore = useTaskStore()
+
+// 父任務資料
+const parentTask = ref<Task | null>(null)
 
 // 表單數據
 const form = ref({
@@ -264,6 +269,10 @@ const submitForm = async () => {
       subtaskData.due_date = `${form.value.due_date}T23:59:59Z`
     }
 
+    if (parentTask.value?.skillTags && parentTask.value.skillTags.length > 0) {
+      subtaskData.skill_tags = parentTask.value.skillTags
+    }
+
     // 調用 API 創建子任務
     console.log('🚀 發送子任務數據:', subtaskData)
     const response = await apiClient.createTask(subtaskData)
@@ -281,6 +290,27 @@ const submitForm = async () => {
     loading.value = false
   }
 }
+
+// 載入父任務資料
+const loadParentTask = async () => {
+  if (!props.parentTaskId) return
+
+  try {
+    const response = await apiClient.getTask(props.parentTaskId)
+    if (response.success) {
+      parentTask.value = taskStore.transformBackendTask(response.data)
+    }
+  } catch (error) {
+    console.error('載入父任務失敗:', error)
+  }
+}
+
+// 監聽對話框顯示狀態，載入父任務資料
+watch(() => props.show, (isShow) => {
+  if (isShow && props.parentTaskId) {
+    loadParentTask()
+  }
+})
 
 // 監聽標題變化進行驗證
 watch(() => form.value.title, () => {

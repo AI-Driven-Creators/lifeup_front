@@ -1,10 +1,7 @@
 <template>
-  <div 
+  <div
     class="reward-notification"
-    :class="[
-      `notification-${notification.type}`,
-      { 'notification-visible': notification.visible }
-    ]"
+    :class="`notification-${notification.type}`"
     @click="handleClick"
   >
     <!-- 背景動效 -->
