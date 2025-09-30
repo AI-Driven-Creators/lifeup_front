@@ -1017,7 +1017,7 @@ const generateTasks = async () => {
 
     console.log('📤 發送請求:', payload)
 
-    const response = await fetch('http://localhost:8080/api/career/generate-tasks', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1066,7 +1066,7 @@ const saveQuizResults = async () => {
 
     console.log('📤 保存測驗結果請求:', payload)
 
-    const response = await fetch('http://localhost:8080/api/quiz/save-results', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/quiz/save-results`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
