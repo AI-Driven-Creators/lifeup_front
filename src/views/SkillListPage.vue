@@ -28,17 +28,47 @@
       
       <!-- 技能數據 -->
       <template v-else>
-        <!-- 技術技能 -->
-        <SkillSection
-          title="技術技能"
-          :skills="technicalSkills"
-        />
-        
-        <!-- 軟性技能 -->
-        <SkillSection
-          title="軟性技能"
-          :skills="softSkills"
-        />
+        <!-- 已開始的技能 (經驗值 > 0) -->
+        <template v-if="startedSkills.length > 0">
+          <SkillSection
+            title="已開始的技能"
+            :skills="startedSkills"
+          />
+        </template>
+
+        <!-- 未開始的技能 (經驗值 = 0) - 可收合 -->
+        <template v-if="notStartedSkills.length > 0">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="text-lg font-bold text-primary-900">未開始的技能</h2>
+              <button
+                @click="toggleNotStartedSkills"
+                class="p-2 text-gray-600 hover:text-primary-600 transition-colors"
+              >
+                <svg
+                  class="w-5 h-5 transform transition-transform duration-200"
+                  :class="{ 'rotate-180': !isNotStartedCollapsed }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              v-show="!isNotStartedCollapsed"
+              class="grid grid-cols-2 gap-3 transition-all duration-300 ease-in-out"
+            >
+              <SkillCard
+                v-for="skill in notStartedSkills"
+                :key="skill.id"
+                :skill="skill"
+              />
+            </div>
+          </div>
+        </template>
       </template>
       </div>
     </div>
@@ -441,12 +471,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import SkillSection from '@/components/features/SkillSection.vue'
+import SkillCard from '@/components/features/SkillCard.vue'
 import { apiClient } from '@/services/api'
 import type { Skill } from '@/types'
 
 const loading = ref(true)
 const error = ref<string | null>(null)
 const allSkills = ref<Skill[]>([])
+const isNotStartedCollapsed = ref(true) // 預設收合未開始的技能
 
 // 新增技能對話框相關狀態
 const showCreateDialog = ref(false)
@@ -491,14 +523,19 @@ const createSubtaskTemplate = () => ({
   }
 })
 
-// 從後端獲取的技能數據按類別分組
-const technicalSkills = computed(() => 
-  allSkills.value.filter(skill => skill.category === 'technical')
+// 根據經驗值分組技能
+const startedSkills = computed(() =>
+  allSkills.value.filter(skill => skill.experience > 0)
 )
 
-const softSkills = computed(() => 
-  allSkills.value.filter(skill => skill.category === 'soft')
+const notStartedSkills = computed(() =>
+  allSkills.value.filter(skill => skill.experience === 0)
 )
+
+// 切換未開始技能的顯示狀態
+const toggleNotStartedSkills = () => {
+  isNotStartedCollapsed.value = !isNotStartedCollapsed.value
+}
 
 // 獲取技能數據
 const fetchSkills = async () => {
