@@ -36,15 +36,27 @@
           </span>
         </div>
         
-        <p v-if="task.description" class="text-sm text-primary-700 mb-3">
-          {{ task.description }}
-        </p>
+        <!-- 任務描述 -->
+        <div v-if="task.description" class="text-sm mb-3 space-y-2">
+          <p class="text-primary-700">{{ parsedDescription.main }}</p>
+
+          <p v-if="parsedDescription.personality" class="text-primary-700">
+            💡 <span class="font-medium">個性化說明：</span>{{ parsedDescription.personality }}
+          </p>
+
+          <div v-if="parsedDescription.resources && parsedDescription.resources.length > 0">
+            <p class="text-primary-700 font-medium">📚 推薦資源：</p>
+            <ul class="text-primary-700 space-y-0.5 pl-4">
+              <li v-for="(resource, idx) in parsedDescription.resources" :key="idx">• {{ resource }}</li>
+            </ul>
+          </div>
+        </div>
         
         <!-- 技能標籤和星級 -->
         <div class="flex items-center justify-between">
           <SkillTags
             :skill-tags="skillObjects"
-            :max-display="task.is_parent_task ? 2 : undefined"
+            :max-display="task.is_parent_task ? 1 : undefined"
           />
 
           <!-- 難度星級 -->
@@ -119,6 +131,7 @@
         class="btn-primary ml-4"
         :class="{
           'bg-gray-400': task.status === 'completed' || task.status === 'daily_completed',
+          'bg-green-600': task.status === 'in_progress',
           'bg-blue-500': task.status === 'daily_in_progress'
         }"
         @click.stop="handleToggle"
@@ -126,6 +139,8 @@
         {{
           task.status === 'completed' || task.status === 'daily_completed'
             ? '已完成'
+            : task.status === 'in_progress'
+            ? '完成'
             : task.status === 'daily_in_progress'
             ? '進行中'
             : '開始'
@@ -201,6 +216,36 @@ const skillObjects = computed(() => {
   return props.task.skillTags
     .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
     .filter(skill => !!skill) as { id: string; name: string }[]
+})
+
+// 解析任務描述，分離主描述、個性化說明、推薦資源
+const parsedDescription = computed(() => {
+  const description = props.task.description || ''
+
+  console.log('🔍 原始描述:', description)
+
+  // 使用更寬鬆的分割方式
+  const parts = description.split(/\n\n/)
+  console.log('📦 分割後的部分:', parts)
+
+  let main = ''
+  let personality = null
+  let resources: string[] = []
+
+  for (const part of parts) {
+    if (part.includes('💡 個性化說明：') || part.includes('個性化說明：')) {
+      personality = part.replace(/💡\s*個性化說明：/g, '').trim()
+    } else if (part.includes('📚 推薦資源：') || part.includes('推薦資源：')) {
+      const resourceText = part.replace(/📚\s*推薦資源：/g, '').trim()
+      resources = resourceText.split('\n').filter(r => r.trim())
+    } else if (!part.includes('💡') && !part.includes('📚') && part.trim()) {
+      main = part.trim()
+    }
+  }
+
+  console.log('✅ 解析結果:', { main, personality, resources })
+
+  return { main, personality, resources }
 })
 
 const isLoading = ref(false)

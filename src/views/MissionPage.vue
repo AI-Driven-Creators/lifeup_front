@@ -1,13 +1,13 @@
 <template>
   <!-- 調整高度避免被底部導航影響，並確保內容區域可滾動 -->
-  <div class="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-primary-50">
+  <div class="flex flex-col min-h-screen bg-primary-50">
     <!-- 頁面標題 -->
     <div class="shrink-0">
       <PageHeader title="任務總覽" />
     </div>
 
     <!-- 可滾動內容區域 -->
-    <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="pb-20">
       <!-- 載入狀態 -->
       <div v-if="loading" class="px-4 py-8 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -182,8 +182,8 @@ const toggleTask = async (taskId: string) => {
     const currentAllTasks = [...mainTasks.value, ...sideTasks.value, ...challengeTasks.value, ...dailyTasks.value]
     const originalTask = currentAllTasks.find(t => t.id === taskId)
     const wasCompleted = originalTask?.status === 'completed'
-    
-    await taskStore.toggleTaskStatus(taskId)
+
+    await taskStore.toggleTaskStatus(taskId, originalTask?.status)
     
     // 重新載入任務數據確保狀態同步
     await loadTasksByType()

@@ -2,7 +2,7 @@
   <div id="app" class="min-h-screen bg-primary-50">
     <div class="max-w-sm mx-auto bg-primary-50 min-h-screen relative">
       <!-- 主要內容區域 -->
-      <main class="pb-20">
+      <main>
         <RouterView />
       </main>
       

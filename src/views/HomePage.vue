@@ -38,7 +38,7 @@
         >
           <div class="text-center">
             <div class="font-semibold text-lg">找到你的理想職業</div>
-            <div class="text-sm text-slate-600">30分鐘測驗，獲得專屬職涯建議</div>
+            <div class="text-sm text-slate-600">5分鐘測驗，獲得專屬職涯建議</div>
           </div>
         </button>
       </div>
@@ -144,8 +144,8 @@ const toggleTask = async (taskId: string) => {
     // 先從本地任務中找到任務
     const task = homepageTasks.value.find(t => t.id === taskId)
     const wasCompleted = task?.status === 'completed' || task?.status === 'daily_completed'
-    
-    await taskStore.toggleTaskStatus(taskId)
+
+    await taskStore.toggleTaskStatus(taskId, task?.status)
     
     // 重新載入任務以確保狀態同步（移除手動狀態更新，依賴後端回應）
     await loadHomepageTasks()

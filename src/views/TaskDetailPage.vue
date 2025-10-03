@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <div class="h-screen bg-primary-50 flex flex-col overflow-hidden">
     <!-- 頂部導航區域 -->
     <div class="bg-gray-100 px-4 py-4 flex items-center">
       <!-- 返回按鈕 -->
@@ -65,42 +65,65 @@
     </div>
 
     <!-- 任務詳情內容 -->
-    <div v-else-if="task" class="flex flex-col">
-      <!-- 任務信息區域 -->
-      <div class="bg-gray-100 px-4 py-5">
-        <h2 class="text-2xl font-bold text-primary-900 mb-2">
-          {{ task.title }}
-        </h2>
-        <p class="text-primary-700 text-base">
-          等級：{{ task.difficulty }} | 成長：{{ task.experience }} XP
-        </p>
-        
-        <!-- 任務日期顯示 -->
-        <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1">
-          📅 {{ formatTaskDate((task as any).task_date) }}
-        </p>
-        
-        <!-- 任務描述 -->
-        <p v-if="task.description" class="text-primary-700 text-sm mt-3">
-          {{ task.description }}
-        </p>
-        
-        <!-- 任務狀態標籤 -->
-        <div class="mt-3 flex items-center space-x-2">
-          <span class="status-badge text-xs px-2 py-1 rounded-full" :class="getStatusBadgeClass(task.status)">
-            {{ getStatusDisplayText(task.status) }}
-          </span>
-          <!-- 每日任務子類型標記 -->
-          <span v-if="task.dailyTaskSubtype === 'recurring'" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">常駐目標</span>
-          <span v-else-if="task.dailyTaskSubtype === 'simple'" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">今日行動</span>
-        </div>
-        
-        <!-- 任務進度條 -->
-        <div v-if="task.progress || task.is_parent_task" class="mt-4">
-          <TaskProgressBar 
-            :progress="taskProgress" 
-            :showDailyStats="task.isRecurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
-          />
+    <div v-else-if="task" class="flex-1 flex flex-col" :class="task.is_parent_task ? 'overflow-y-auto' : ''">
+      <!-- 如果不是父任務，顯示為單個任務卡片 -->
+      <div v-if="!task.is_parent_task" class="bg-white px-6 py-6 flex-1 overflow-hidden">
+        <MissionTaskCard
+          :task="task"
+          @toggle="handleToggleTask"
+          @taskUpdated="handleTaskUpdated"
+        />
+      </div>
+
+      <!-- 如果是父任務，顯示原本的任務信息區域 -->
+      <div v-else>
+        <!-- 任務信息區域 -->
+        <div class="bg-gray-100 px-4 py-5">
+          <h2 class="text-2xl font-bold text-primary-900 mb-2">
+            {{ task.title }}
+          </h2>
+          <p class="text-primary-700 text-base">
+            等級：{{ task.difficulty }} | 成長：{{ task.experience }} XP
+          </p>
+
+          <!-- 任務日期顯示 -->
+          <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1">
+            📅 {{ formatTaskDate((task as any).task_date) }}
+          </p>
+
+          <!-- 任務描述 -->
+          <div v-if="task.description" class="text-sm mt-3 space-y-2">
+            <p class="text-primary-700">{{ parseTaskDescription(task.description).main }}</p>
+
+            <p v-if="parseTaskDescription(task.description).personality" class="text-primary-700">
+              💡 <span class="font-medium">個性化說明：</span>{{ parseTaskDescription(task.description).personality }}
+            </p>
+
+            <div v-if="parseTaskDescription(task.description).resources.length > 0">
+              <p class="text-primary-700 font-medium">📚 推薦資源：</p>
+              <ul class="text-primary-700 pl-4 mt-0.5">
+                <li v-for="(resource, rIdx) in parseTaskDescription(task.description).resources" :key="rIdx">• {{ resource }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 任務狀態標籤 -->
+          <div class="mt-3 flex items-center space-x-2">
+            <span class="status-badge text-xs px-2 py-1 rounded-full" :class="getStatusBadgeClass(task.status)">
+              {{ getStatusDisplayText(task.status) }}
+            </span>
+            <!-- 每日任務子類型標記 -->
+            <span v-if="task.dailyTaskSubtype === 'recurring'" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">常駐目標</span>
+            <span v-else-if="task.dailyTaskSubtype === 'simple'" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">今日行動</span>
+          </div>
+
+          <!-- 任務進度條 -->
+          <div v-if="task.progress || task.is_parent_task" class="mt-4">
+            <TaskProgressBar
+              :progress="taskProgress"
+              :showDailyStats="task.isRecurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
+            />
+          </div>
         </div>
       </div>
 
@@ -127,101 +150,14 @@
           </div>
         </div>
         
-        <div class="space-y-3">
-          <div
+        <div class="space-y-3 mb-12">
+          <MissionTaskCard
             v-for="subtask in sortedSubtasks"
             :key="subtask.id"
-            class="bg-white rounded-lg p-4 shadow-sm border-l-4"
-            :class="getStatusBorderClass(subtask.status)"
-          >
-            <div class="flex justify-between items-start">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <h4 class="font-medium text-gray-900">{{ subtask.title }}</h4>
-                  <!-- 編輯按鈕 -->
-                  <button
-                    @click="editSubtask(subtask)"
-                    :disabled="isLoading"
-                    class="p-1 rounded text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                    title="編輯子任務"
-                  >
-                    ✏️
-                  </button>
-                </div>
-                <p v-if="subtask.description" class="text-gray-600 text-sm mt-1">{{ subtask.description }}</p>
-                
-                <!-- 任務日期顯示 -->
-                <p v-if="(subtask as any).task_date" class="text-xs text-gray-500 mt-1">
-                  📅 {{ formatTaskDate((subtask as any).task_date) }}
-                </p>
-                
-                <!-- 任務屬性 -->
-                <div class="flex items-center space-x-4 mt-3 text-xs text-gray-500">
-                  <span class="flex items-center">
-                    <span class="w-2 h-2 bg-yellow-400 rounded-full mr-1"></span>
-                    難度 {{ subtask.difficulty }}/5
-                  </span>
-                  <span class="flex items-center">
-                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
-                    {{ subtask.experience }} EXP
-                  </span>
-                  <span v-if="subtask.task_order" class="flex items-center">
-                    <span class="w-2 h-2 bg-purple-400 rounded-full mr-1"></span>
-                    順序 {{ subtask.task_order }}
-                  </span>
-                </div>
-
-                <!-- 技能標籤 -->
-                <SkillTags
-                  :skill-tags="getSkillObjectsForTask(subtask)"
-                  class="mt-2"
-                />
-              </div>
-              
-              <!-- 狀態控制 -->
-              <div class="ml-4 flex flex-col items-end space-y-2">
-                <!-- 狀態標籤 -->
-                <div 
-                  :class="getStatusLabelClass(subtask)"
-                  class="px-2 py-1 rounded-full text-xs font-medium"
-                >
-                  {{ getStatusLabel(subtask) }}
-                </div>
-                
-                <!-- 操作按鈕組 -->
-                <div class="flex space-x-2">
-                  <!-- 主要操作按鈕 -->
-                  <button
-                    v-if="!['completed', 'daily_completed'].includes(subtask.status)"
-                    @click="toggleSubtaskStatus(subtask)"
-                    :disabled="isLoading || (subtask.status === 'paused' && task?.status === 'paused')"
-                    :class="[
-                      getStatusButtonClass(subtask),
-                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                    ]"
-                    class="px-3 py-1 rounded text-sm font-medium transition-colors"
-                  >
-                    {{ isLoading ? '處理中...' : getStatusText(subtask) }}
-                  </button>
-
-                  <!-- 回復按鈕 (僅在已完成時顯示，每日任務不顯示回復按鈕) -->
-                  <button
-                    v-if="!isDailyTask && ['in_progress', 'completed', 'daily_in_progress', 'daily_completed'].includes(subtask.status)"
-                    @click="revertSubtaskStatus(subtask)"
-                    :disabled="isLoading"
-                    :class="[
-                      'px-2 py-1 rounded text-xs font-medium transition-colors border',
-                      'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-400',
-                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                    ]"
-                    :title="getRevertButtonTitle(subtask)"
-                  >
-                    {{ isLoading ? '...' : '↶' }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+            :task="subtask"
+            @toggle="handleToggleSubtask"
+            @taskUpdated="handleSubtaskUpdated"
+          />
         </div>
       </div>
 
@@ -239,28 +175,6 @@
         </div>
       </div>
 
-      <!-- 如果不是大任務 -->
-      <div v-else class="bg-white px-4 py-5">
-        <div class="text-center py-8">
-          <p class="text-gray-600 mb-4">這是一個單獨的任務</p>
-          <div class="flex justify-center">
-            <button
-              v-if="task.status === 'pending'"
-              @click="handleToggleStatus"
-              class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              :disabled="isLoading"
-            >
-              {{ isLoading ? '處理中...' : '標記為完成' }}
-            </button>
-            <span
-              v-else-if="task.status === 'completed'"
-              class="px-6 py-2 bg-green-100 text-green-800 rounded-lg"
-            >
-              已完成
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- 創建子任務對話框 -->
@@ -315,6 +229,7 @@ import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
 import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
 import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import MissionTaskCard from '@/components/features/MissionTaskCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -550,13 +465,19 @@ const loadTaskDetail = async () => {
 }
 
 
+// MissionTaskCard 的 toggle 事件處理（針對主任務本身）
+const handleToggleTask = async (taskId: string) => {
+  if (!task.value) return
+  await handleToggleStatus()
+}
+
 // 切換任務狀態（針對非大任務）
 const handleToggleStatus = async () => {
   if (!task.value) return
 
   isLoading.value = true
   try {
-    await taskStore.toggleTaskStatus(task.value.id)
+    await taskStore.toggleTaskStatus(task.value.id, task.value.status)
     // 重新載入任務詳情
     await loadTaskDetail()
   } catch (err) {
@@ -567,6 +488,14 @@ const handleToggleStatus = async () => {
   }
 }
 
+// MissionTaskCard 的 toggle 事件處理
+const handleToggleSubtask = async (subtaskId: string) => {
+  const subtask = subtasks.value.find(t => t.id === subtaskId)
+  if (subtask) {
+    await toggleSubtaskStatus(subtask)
+  }
+}
+
 // 切換子任務狀態
 const toggleSubtaskStatus = async (subtask: Task) => {
   // 如果父任務暫停，則不允許操作子任務
@@ -574,26 +503,26 @@ const toggleSubtaskStatus = async (subtask: Task) => {
     console.log('父任務暫停中，無法操作子任務')
     return
   }
-  
+
   // 防止重複點擊
   if (isLoading.value) {
     return
   }
-  
+
   isLoading.value = true
   error.value = null
-  
+
   try {
     await taskStore.toggleTaskStatus(subtask.id, subtask.status)
-    
+
     // 重新載入任務詳情以確保數據一致性
     await loadTaskDetail()
-    
+
     console.log('子任務狀態更新成功')
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新子任務狀態失敗'
     console.error('Failed to toggle subtask status:', err)
-    
+
     // 顯示錯誤提示
     setTimeout(() => {
       error.value = null
@@ -772,13 +701,13 @@ const formatTaskDate = (dateString: string) => {
     yesterday.setDate(today.getDate() - 1)
     const dayBeforeYesterday = new Date(today)
     dayBeforeYesterday.setDate(today.getDate() - 2)
-    
+
     // 格式化為 YYYY-MM-DD 進行比較
     const dateStr = date.toISOString().split('T')[0]
     const todayStr = today.toISOString().split('T')[0]
     const yesterdayStr = yesterday.toISOString().split('T')[0]
     const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0]
-    
+
     if (dateStr === todayStr) {
       return '今天'
     } else {
@@ -788,6 +717,29 @@ const formatTaskDate = (dateString: string) => {
   } catch {
     return dateString
   }
+}
+
+// 解析任務描述
+const parseTaskDescription = (description: string) => {
+  if (!description) return { main: '', personality: null, resources: [] }
+
+  const parts = description.split(/\n\n/)
+  let main = ''
+  let personality = null
+  let resources: string[] = []
+
+  for (const part of parts) {
+    if (part.includes('💡 個性化說明：') || part.includes('個性化說明：')) {
+      personality = part.replace(/💡\s*個性化說明：/g, '').trim()
+    } else if (part.includes('📚 推薦資源：') || part.includes('推薦資源：')) {
+      const resourceText = part.replace(/📚\s*推薦資源：/g, '').trim()
+      resources = resourceText.split('\n').filter(r => r.trim())
+    } else if (!part.includes('💡') && !part.includes('📚') && part.trim()) {
+      main = part.trim()
+    }
+  }
+
+  return { main, personality, resources }
 }
 
 // 編輯子任務

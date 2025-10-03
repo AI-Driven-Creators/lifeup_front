@@ -1,13 +1,13 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-xl relative">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-xl relative flex flex-col">
       <!-- 標題 -->
-      <div class="bg-primary-500 text-white p-4 rounded-t-lg">
+      <div class="bg-primary-500 text-white p-4">
         <h2 class="text-xl font-bold">✨ 任務預覽</h2>
       </div>
-      
+
       <!-- 內容 -->
-      <div class="p-6 space-y-4">
+      <div class="p-6 space-y-4 overflow-y-auto flex-1">
         <!-- 錯誤訊息 -->
         <div v-if="validationErrors.length > 0" class="bg-red-50 border border-red-200 rounded-lg p-4">
           <p class="text-red-600 font-semibold mb-2">⚠️ 驗證錯誤：</p>
@@ -31,9 +31,9 @@
               <span class="font-medium">{{ taskJson?.title }}</span>
             </div>
             
-            <div v-if="taskJson?.description">
-              <span class="text-gray-500">描述：</span>
-              <span class="font-medium">{{ taskJson.description }}</span>
+            <div v-if="taskJson?.description" class="md:col-span-2">
+              <span class="text-gray-500 block mb-1">描述：</span>
+              <p class="font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{{ taskJson.description }}</p>
             </div>
             
             <div>
@@ -78,7 +78,7 @@
       </div>
       
       <!-- 操作按鈕 -->
-      <div class="flex justify-end gap-3 p-6 bg-gray-50 rounded-b-lg">
+      <div class="flex justify-end gap-3 p-6 bg-gray-50 border-t border-gray-200">
         <button
           @click="$emit('cancel')"
           class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -147,7 +147,9 @@ const getTaskTypeLabel = (type: string) => {
     'main': '主線任務',
     'side': '副線任務',
     'daily': '日常任務',
-    'challenge': '挑戰任務'
+    'challenge': '挑戰任務',
+    'career_mainline': '職業主線',
+    'career_subtask': '職業學習任務'
   }
   return labels[type] || type || '一般任務'
 }

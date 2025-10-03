@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <div class="min-h-screen bg-primary-50 pb-16">
     <!-- 頁面標題 -->
     <PageHeader title="我的進度" />
     
