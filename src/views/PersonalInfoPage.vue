@@ -119,6 +119,17 @@
     </div>
     
     <div class="px-4 py-6 space-y-6">
+      <!-- 使用者名稱與快速導覽 -->
+      <div class="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4">
+        <div class="text-lg font-semibold">
+          使用者：<span class="text-primary-700">{{ userStore.user?.name || '未登入' }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <RouterLink to="/auth/login" class="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">登入</RouterLink>
+          <RouterLink to="/auth/register" class="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">註冊</RouterLink>
+          <button @click="onLogout" class="px-3 py-2 text-sm border rounded-lg hover:bg-red-50 text-red-600 border-red-300">登出</button>
+        </div>
+      </div>
       <!-- 載入狀態 -->
       <div v-if="userStore.loading" class="text-center py-8">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -169,6 +180,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import UserLevelCard from '@/components/features/UserLevelCard.vue'
 import AdventureStats from '@/components/features/AdventureStats.vue'
@@ -368,4 +380,8 @@ const retryLoadUser = () => {
 onMounted(() => {
   loadUserData()
 })
+
+const onLogout = async () => {
+  await userStore.logout()
+}
 </script>
