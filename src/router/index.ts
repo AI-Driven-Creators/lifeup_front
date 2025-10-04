@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/views/HomePage.vue'
+import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,9 +11,23 @@ const router = createRouter({
       component: HomePage
     },
     {
-      path: '/personal',
-      name: 'personal',
+      path: '/auth/login',
+      name: 'login',
+      component: () => import('@/views/LoginPage.vue')
+    },
+    {
+      path: '/auth/register',
+      name: 'register',
+      component: () => import('@/views/RegisterPage.vue')
+    },
+    {
+      path: '/personal-info',
+      name: 'personal-info',
       component: () => import('@/views/PersonalInfoPage.vue')
+    },
+    {
+      path: '/personal',
+      redirect: { name: 'personal-info' }
     },
     {
       path: '/mission',
@@ -55,6 +70,19 @@ const router = createRouter({
       component: () => import('@/views/PersonalityTestPage.vue')
     }
   ]
+})
+
+// 簡單的全域守衛：未登入則導向登入/註冊
+router.beforeEach((to, from, next) => {
+  const publicRoutes = new Set(['login', 'register'])
+  const userStore = useUserStore()
+  const isAuthenticated = Boolean(userStore.user?.id)
+
+  if (!isAuthenticated && !publicRoutes.has(to.name as string)) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
 })
 
 export default router

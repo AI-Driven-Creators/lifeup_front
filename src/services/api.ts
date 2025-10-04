@@ -30,12 +30,21 @@ export class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+
+      if (isJson) {
+        const data = await response.json();
+        // 對於非 2xx，也回傳後端的 JSON，交由呼叫端判斷 success 與 message
+        return data as T;
+      }
+
+      // 非 JSON 回應：保留既有行為
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
-
-      const data = await response.json();
-      return data;
+      // @ts-expect-error: 非 JSON 回應由呼叫端自行處理
+      return (await response.text()) as T;
     } catch (error) {
       console.error('API Request Error:', error);
       throw error;
@@ -56,10 +65,23 @@ export class ApiClient {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${id}`);
   }
 
-  async createUser(userData: { name: string, email: string }) {
+  async createUser(userData: { name: string, email: string, password: string }) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/users', {
       method: 'POST',
       body: JSON.stringify(userData),
+    });
+  }
+
+  async login(credentials: { email: string, password: string }) {
+    return this.request<{ success: boolean, data: { user: any, message: string }, message: string }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  async logout() {
+    return this.request<{ success: boolean, data: null, message: string }>('/api/auth/logout', {
+      method: 'POST',
     });
   }
 

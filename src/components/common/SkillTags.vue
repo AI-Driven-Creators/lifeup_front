@@ -1,7 +1,7 @@
 <template>
   <div v-if="skillTags === undefined" class="text-xs text-gray-500">載入技能中...</div>
   <div v-else-if="skillTags.length === 0"></div>
-  <div v-else class="skill-tags flex flex-wrap gap-1 mt-2">
+  <div v-else class="skill-tags flex gap-1 mt-2 overflow-x-auto">
     <span
       v-for="skillTag in displayedSkills"
       :key="skillTag.id"

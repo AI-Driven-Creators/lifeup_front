@@ -245,8 +245,8 @@ const handleToggleTask = async (taskId: string) => {
     // 先記錄任務完成前的狀態
     const task = tasks.value.find(t => t.id === taskId)
     const wasCompleted = task?.status === 'completed'
-    
-    await taskStore.toggleTaskStatus(taskId)
+
+    await taskStore.toggleTaskStatus(taskId, task?.status)
     
     // 重新載入任務數據確保狀態同步
     await loadTasks()

@@ -1349,9 +1349,23 @@ const generateCareerSuggestions = () => {
   }
 
   const topValues = values.value.slice(0, 5).map(v => v?.id).filter(Boolean)
-  const topInterests = interests.value.slice(0, 5).map(i => i?.id).filter(Boolean)
+
+  // 興趣領域：取前 5 個並給予遞減權重
+  const top5Interests = interests.value.slice(0, 5).map((i, index) => ({
+    id: i?.id || i?.category,  // 相容 id 或 category
+    // 權重分配：第1=1.0, 第2=0.8, 第3=0.6, 第4=0.4, 第5=0.2
+    weight: Math.max(0.2, 1.0 - (index * 0.2))
+  })).filter(i => i.id)
+
+  const topInterests = top5Interests.map(i => i.id).filter(Boolean) as string[]
   const topTalents = talents.value?.topTalents?.slice(0, 5).map(t => t?.name).filter(Boolean) || []
-  
+
+  // 除錯：輸出興趣領域資訊
+  console.log('🔍 興趣領域除錯資訊：')
+  console.log('- interests.value:', interests.value)
+  console.log('- top5Interests:', top5Interests)
+  console.log('- topInterests:', topInterests)
+
   // 檢查是否為情境式測驗
   const isScenarioWorkStyle = workstyle.value?.workingStyleType
   
@@ -1459,10 +1473,18 @@ const generateCareerSuggestions = () => {
 
     // 價值觀匹配數
     const valueMatches = career.matchValues.filter(v => topValues.includes(v)).length
-    
-    // 興趣領域匹配數
-    const interestMatches = career.matchInterests.filter(i => topInterests.includes(i)).length
-    
+
+    // 興趣領域匹配數（加權計算）
+    let interestMatchScore = 0
+    let interestMatches = 0
+    career.matchInterests.forEach(careerInterest => {
+      const matchedInterest = top5Interests.find(ui => ui.id === careerInterest)
+      if (matchedInterest) {
+        interestMatchScore += matchedInterest.weight
+        interestMatches++
+      }
+    })
+
     // 天賦匹配數
     const talentMatches = career.matchTalents.filter(t => topTalents.includes(t)).length
     
@@ -1471,13 +1493,14 @@ const generateCareerSuggestions = () => {
     const workStyleMatches = Math.round(workStyleMatchRate * 5) // 轉換為匹配數量（最多5個）
 
     const totalMatches = valueMatches + interestMatches + talentMatches + workStyleMatches
-    
+
     // 重新設計匹配度計算 - 基於四維匹配表現
     let matchPercentage = 0
-    
+
     // 分別計算四個維度的匹配率
     const valueMatchRate = career.matchValues.length > 0 ? (valueMatches / career.matchValues.length) : 0
-    const interestMatchRate = career.matchInterests.length > 0 ? (interestMatches / career.matchInterests.length) : 0
+    // 興趣匹配率使用加權分數（最大權重和為 3.0 = 1.0 + 0.8 + 0.6 + 0.4 + 0.2）
+    const interestMatchRate = career.matchInterests.length > 0 ? Math.min(1.0, interestMatchScore / Math.min(career.matchInterests.length, 3.0)) : 0
     const talentMatchRate = career.matchTalents.length > 0 ? (talentMatches / career.matchTalents.length) : 0
     // 工作風格匹配率已經從 calculateWorkStyleMatch 函數獲得
     
@@ -1609,10 +1632,10 @@ const generateCareerSuggestions = () => {
     }
   })
 
-  // 確保推薦多樣性 - 避免相同類型職業過多
+  // 確保推薦多樣性 - 為每個興趣領域都推薦職業
   const ensureDiversity = (matches: any[]) => {
     const diversifiedMatches: any[] = []
-    const categoryCount = new Map<string, number>()
+    const interestCoverage = new Map<string, number>()
 
     // 按匹配度排序的職業列表
     const sortedMatches = matches.sort((a, b) => {
@@ -1625,21 +1648,38 @@ const generateCareerSuggestions = () => {
       return b.matchPercentage - a.matchPercentage
     })
 
-    // 確保每個興趣領域最多2個職業
+    // 第一階段：確保前 3 個用戶興趣領域都有職業推薦
+    const top3UserInterests = topInterests.slice(0, 3)
+    top3UserInterests.forEach(userInterest => {
+      const matchesForInterest = sortedMatches.filter(match => {
+        const career = CAREER_DATABASE[match.career as keyof typeof CAREER_DATABASE]
+        return career?.matchInterests?.includes(userInterest)
+      }).slice(0, 2) // 每個興趣領域取前 2 個
+
+      matchesForInterest.forEach(match => {
+        if (!diversifiedMatches.find(m => m.career === match.career)) {
+          diversifiedMatches.push(match)
+          interestCoverage.set(userInterest, (interestCoverage.get(userInterest) || 0) + 1)
+        }
+      })
+    })
+
+    // 第二階段：補充高分職業，確保達到 6 個推薦
     for (const match of sortedMatches) {
+      if (diversifiedMatches.length >= 6) break
+      if (diversifiedMatches.find(m => m.career === match.career)) continue
+
       const career = CAREER_DATABASE[match.career as keyof typeof CAREER_DATABASE]
       if (!career?.matchInterests) continue
 
-      // 檢查該職業的主要興趣領域
+      // 檢查該職業的主要興趣領域，避免單一領域過度集中
       const primaryInterest = career.matchInterests[0]
-      const currentCount = categoryCount.get(primaryInterest) || 0
+      const currentCount = interestCoverage.get(primaryInterest) || 0
 
-      if (currentCount < 2 || diversifiedMatches.length < 3) { // 至少保證前3個最佳匹配
+      if (currentCount < 2) { // 每個興趣領域最多 2 個職業
         diversifiedMatches.push(match)
-        categoryCount.set(primaryInterest, currentCount + 1)
+        interestCoverage.set(primaryInterest, currentCount + 1)
       }
-
-      if (diversifiedMatches.length >= 6) break
     }
 
     return diversifiedMatches

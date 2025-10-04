@@ -529,9 +529,12 @@ const loadTaskDetail = async () => {
       // 載入任務進度數據
       if (foundTask.is_parent_task || foundTask.isRecurring) {
         try {
+          console.log('📊 開始載入任務進度:', { taskId, title: foundTask.title, isRecurring: foundTask.isRecurring })
           const progressResponse = await apiClient.getTaskProgress(taskId)
+          console.log('📊 進度API回應:', progressResponse)
           if (progressResponse.success) {
             task.value.progress = progressResponse.data
+            console.log('✅ 進度數據已設置:', task.value.progress)
           } else {
             console.warn(`進度API失敗 (${foundTask.title}):`, progressResponse.message)
           }
@@ -545,16 +548,19 @@ const loadTaskDetail = async () => {
       if (foundTask.is_parent_task || foundTask.isRecurring) {
         // 判斷是否為每日任務（重複性任務或任務類型為 daily）
         isDailyTask.value = foundTask.isRecurring || foundTask.type === 'daily'
-        
+
         const subtaskResponse = await apiClient.getSubtasks(taskId, {
           daily: isDailyTask.value,
           days: isDailyTask.value ? 60 : undefined // 每日任務查詢最近60天（涵蓋兩個月）
         })
-        
+
+        console.log('📋 子任務API回應:', subtaskResponse)
+
         if (subtaskResponse.success) {
           subtasks.value = subtaskResponse.data
             .map(taskStore.transformBackendTask)
             .sort((a, b) => (a.task_order || 0) - (b.task_order || 0))
+          console.log('📋 已載入子任務:', subtasks.value.length, '個')
         }
       }
     } else {

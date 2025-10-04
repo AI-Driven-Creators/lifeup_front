@@ -47,7 +47,7 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    async fetchUser(userId: string = '1') {
+    async fetchUser(userId: string) {
       this.loading = true;
       this.error = null;
       
@@ -109,7 +109,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async createUser(userData: { name: string; email: string }) {
+    async createUser(userData: { name: string; email: string; password: string }) {
       this.loading = true;
       this.error = null;
       
@@ -119,6 +119,11 @@ export const useUserStore = defineStore('user', {
           // 更新用戶資料
           this.user.id = response.data.id;
           this.user.name = response.data.name;
+          // 記住當前用戶 ID 並載入完整遊戲化數據
+          try {
+            localStorage.setItem('lifeup_current_user_id', this.user.id);
+          } catch {}
+          await this.fetchUser(this.user.id);
           return response.data;
         } else {
           this.error = response.message || '創建用戶失敗';
@@ -128,6 +133,57 @@ export const useUserStore = defineStore('user', {
         this.error = error instanceof Error ? error.message : '網路錯誤';
         console.error('Failed to create user:', error);
         throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async login(payload: { email: string; password: string }) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const res = await apiClient.login(payload);
+        if (res.success && res.data?.user) {
+          const u = res.data.user;
+          // 僅保留必要欄位到本地 user 狀態
+          this.user.name = u.name ?? this.user.name;
+          this.user.id = u.id ?? this.user.id;
+          try {
+            if (this.user.id) localStorage.setItem('lifeup_current_user_id', this.user.id);
+          } catch {}
+          if (this.user.id) {
+            await this.fetchUser(this.user.id);
+          }
+          return true;
+        }
+        this.error = res.message || '登入失敗';
+        return false;
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : '登入失敗';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async logout() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const res = await apiClient.logout();
+        if (!res.success) {
+          this.error = res.message || '登出失敗';
+        }
+        // 清理本地簡易會話（如有擴展可改為 token/session）
+        this.resetUser();
+        try {
+          const { default: router } = await import('@/router');
+          router.push({ name: 'login' });
+        } catch {}
+        return true;
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : '登出失敗';
+        return false;
       } finally {
         this.loading = false;
       }
@@ -175,10 +231,14 @@ export const useUserStore = defineStore('user', {
     // 初始化用戶數據
     async initializeUser() {
       try {
-        await this.fetchUser();
+        const storedId = (() => { try { return localStorage.getItem('lifeup_current_user_id') || '' } catch { return '' } })();
+        if (storedId) {
+          await this.fetchUser(storedId);
+        } else {
+          await this.fetchFirstAvailableUser();
+        }
       } catch (error) {
-        console.warn('Failed to fetch user data, using default values');
-        // 使用預設值，不影響應用正常運行
+        console.warn('Failed to initialize user, using default values');
       }
     },
 
@@ -188,6 +248,13 @@ export const useUserStore = defineStore('user', {
       this.error = null;
       
       try {
+        // 若有已選中的用戶，優先使用
+        const storedId = (() => { try { return localStorage.getItem('lifeup_current_user_id') || '' } catch { return '' } })();
+        if (storedId) {
+          await this.fetchUser(storedId);
+          return true;
+        }
+
         // 先獲取用戶列表
         const usersResponse = await apiClient.getUsers();
         if (usersResponse.success && usersResponse.data && usersResponse.data.length > 0) {
@@ -196,9 +263,17 @@ export const useUserStore = defineStore('user', {
           
           // 使用第一個用戶的ID獲取完整數據
           await this.fetchUser(firstUser.id);
+          try {
+            if (firstUser.id) localStorage.setItem('lifeup_current_user_id', firstUser.id);
+          } catch {}
           return true;
         } else {
           console.warn('No users found in database');
+          // 沒有任何用戶時，引導到註冊頁
+          try {
+            const { default: router } = await import('@/router');
+            router.push({ name: 'register' });
+          } catch {}
           return false;
         }
       } catch (error) {
@@ -213,24 +288,25 @@ export const useUserStore = defineStore('user', {
     // 重置用戶數據（開發用）
     resetUser() {
       this.user = {
-        id: '1',
-        name: '小雅',
-        level: 1,
+        id: '',
+        name: '',
+        level: 0,
         experience: 0,
-        maxExperience: 100,
-        title: '新手冒險者',
-        adventureDays: 1,
-        consecutiveLoginDays: 1,
+        maxExperience: 0,
+        title: '',
+        adventureDays: 0,
+        consecutiveLoginDays: 0,
         personaType: 'internal' as const,
         attributes: {
-          intelligence: 50,
-          endurance: 50,
-          creativity: 50,
-          social: 50,
-          focus: 50,
-          adaptability: 50
+          intelligence: 0,
+          endurance: 0,
+          creativity: 0,
+          social: 0,
+          focus: 0,
+          adaptability: 0
         }
       };
+      try { localStorage.removeItem('lifeup_current_user_id'); } catch {}
     },
   }
 })

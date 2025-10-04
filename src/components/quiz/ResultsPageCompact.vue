@@ -343,7 +343,8 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       @click.self="closeSurveyModal"
     >
-      <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 lg:p-8">
+      <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="overflow-y-auto flex-1 p-6 lg:p-8">
 
         <!-- 問卷階段 -->
         <div v-if="currentStage === 'survey'">
@@ -515,16 +516,29 @@
                 </div>
                 <div class="flex-1">
                   <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
-                  <p class="text-gray-600 text-sm mt-1">{{ task.description }}</p>
-                  <div class="flex items-center space-x-4 mt-2">
+
+                  <!-- 解析後的描述 -->
+                  <div class="text-sm mt-2 space-y-2">
+                    <p class="text-gray-600">{{ parseTaskDescription(task.description).main }}</p>
+
+                    <p v-if="parseTaskDescription(task.description).personality" class="text-gray-600">
+                      💡 <span class="font-medium">個性化說明：</span>{{ parseTaskDescription(task.description).personality }}
+                    </p>
+
+                    <div v-if="parseTaskDescription(task.description).resources.length > 0">
+                      <p class="text-gray-600 font-medium">📚 推薦資源：</p>
+                      <ul class="text-gray-600 pl-4 mt-0.5">
+                        <li v-for="(resource, rIdx) in parseTaskDescription(task.description).resources" :key="rIdx">• {{ resource }}</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center space-x-4 mt-3">
                     <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      難度: {{ task.difficulty }}/5
+                      難度: {{ task.difficulty }}顆星
                     </span>
                     <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       經驗值: {{ task.experience }}
-                    </span>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {{ task.task_type }}
                     </span>
                   </div>
                 </div>
@@ -549,6 +563,7 @@
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -699,6 +714,29 @@ const surveyAnswers = ref({
 const generatedTasks = ref([])
 const loading = ref(false)
 
+// 解析任務描述的輔助函數
+const parseTaskDescription = (description: string) => {
+  if (!description) return { main: '', personality: null, resources: [] }
+
+  const parts = description.split(/\n\n/)
+  let main = ''
+  let personality = null
+  let resources: string[] = []
+
+  for (const part of parts) {
+    if (part.includes('💡 個性化說明：') || part.includes('個性化說明：')) {
+      personality = part.replace(/💡\s*個性化說明：/g, '').trim()
+    } else if (part.includes('📚 推薦資源：') || part.includes('推薦資源：')) {
+      const resourceText = part.replace(/📚\s*推薦資源：/g, '').trim()
+      resources = resourceText.split('\n').filter(r => r.trim())
+    } else if (!part.includes('💡') && !part.includes('📚') && part.trim()) {
+      main = part.trim()
+    }
+  }
+
+  return { main, personality, resources }
+}
+
 // 計算屬性
 const topInterests = computed(() => {
   return props.results.interests?.interests?.slice(0, 3) || []
@@ -803,22 +841,9 @@ const generateCareerRecommendations = () => {
   const userTalents = topTalents.value.map(t => t.talent)
   const userValues = topValues.value.map(v => v.value)
 
-  // 興趣映射 (簡化版 -> 原版資料庫)
-  const interestMapping: Record<string, string[]> = {
-    technology: ['technology', 'science', 'engineering'],
-    creative: ['art_design', 'creative'],
-    business: ['business', 'economics'],
-    healthcare: ['healthcare', 'medical'],
-    education: ['education', 'training'],
-    social_service: ['social_service', 'helping'],
-    research: ['science', 'research', 'analysis'],
-    manual_skills: ['engineering', 'manual_skills', 'technical']
-  }
-
-  // 將用戶興趣映射到原版資料庫格式
-  const mappedInterests = userInterests.flatMap(interest =>
-    interestMapping[interest] || [interest]
-  )
+  // 新版測驗已經直接使用資料庫格式，不需要映射
+  // 直接使用用戶的興趣領域 ID
+  const mappedInterests = userInterests
 
   const suggestions = Object.entries(CAREER_DATABASE).map(([careerKey, career]) => {
     if (!career || !career.matchValues || !career.matchInterests) {
@@ -918,9 +943,53 @@ const updateCareerSuggestions = () => {
   console.log('💼 生成的職業建議:', suggestions)
   console.log('📈 職業資料庫大小:', Object.keys(CAREER_DATABASE).length)
 
-  perfectMatches.value = suggestions.filter(c => c.matchType === 'perfect').slice(0, 2)
-  excellentMatches.value = suggestions.filter(c => c.matchType === 'excellent').slice(0, 2)
-  goodMatches.value = suggestions.filter(c => c.matchType === 'good').slice(0, 4)
+  // 確保多樣性：嚴格平衡每個興趣領域的推薦
+  const diversifySuggestions = (matches: any[], maxCount: number) => {
+    const diversified: any[] = []
+    const interestCoverage = new Map<string, number>()
+    const userTopInterests = topInterests.value.slice(0, 3).map(i => i.category)
+
+    // 計算每個興趣領域可以有多少個職業（平均分配）
+    const maxPerInterest = Math.ceil(maxCount / userTopInterests.length)
+
+    // 輪流為每個興趣領域添加職業，確保平衡
+    let currentRound = 0
+    const maxRounds = maxPerInterest
+
+    while (diversified.length < maxCount && currentRound < maxRounds) {
+      for (const userInterest of userTopInterests) {
+        if (diversified.length >= maxCount) break
+
+        const currentCount = interestCoverage.get(userInterest) || 0
+        if (currentCount >= maxRounds) continue // 該領域已達上限
+
+        // 找到該興趣領域還沒被選中的職業
+        const matchForInterest = matches.find(match => {
+          if (diversified.find(m => m.career === match.career)) return false
+          const career = CAREER_DATABASE[match.career]
+          return career?.matchInterests?.includes(userInterest)
+        })
+
+        if (matchForInterest) {
+          diversified.push(matchForInterest)
+          interestCoverage.set(userInterest, currentCount + 1)
+        }
+      }
+      currentRound++
+    }
+
+    console.log('📊 興趣領域分佈:', Object.fromEntries(interestCoverage))
+
+    return diversified
+  }
+
+  const perfectCandidates = suggestions.filter(c => c.matchType === 'perfect')
+  const excellentCandidates = suggestions.filter(c => c.matchType === 'excellent')
+  const goodCandidates = suggestions.filter(c => c.matchType === 'good')
+
+  perfectMatches.value = diversifySuggestions(perfectCandidates, 2)
+  excellentMatches.value = diversifySuggestions(excellentCandidates, 2)
+  goodMatches.value = diversifySuggestions(goodCandidates, 4)
 
   console.log('✨ 完美匹配:', perfectMatches.value.length)
   console.log('👍 優秀匹配:', excellentMatches.value.length)
@@ -930,14 +999,22 @@ const updateCareerSuggestions = () => {
 // 格式化名稱函數
 const formatInterestName = (category: string) => {
   const names: Record<string, string> = {
-    technology: '科技創新',
-    creative: '創意表達',
+    technology: 'IT科技',
+    art_design: '藝術設計',
     business: '商業經營',
-    healthcare: '健康照護',
+    engineering: '工程技術',
+    science: '科學研究',
+    healthcare: '醫療健康',
     education: '教育培訓',
-    social_service: '社會服務',
-    research: '研究分析',
-    manual_skills: '技術操作'
+    law: '法律政治',
+    hospitality: '服務款待',
+    writing: '寫作出版',
+    social_work: '社會服務',
+    psychology: '心理諮商',
+    media: '媒體傳播',
+    marketing: '行銷銷售',
+    sports: '體育運動',
+    food: '餐飲美食'
   }
   return names[category] || category
 }
