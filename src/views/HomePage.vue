@@ -177,10 +177,21 @@ const loadHomepageTasks = async () => {
   loading.value = true
   error.value = null
 
+  // 確保用戶已登入
+  if (!userStore.user.id) {
+    console.warn('用戶未登入，無法載入首頁任務')
+    loading.value = false
+    error.value = '請先登入'
+    return
+  }
+
   try {
+    console.log('正在載入首頁任務，user_id:', userStore.user.id)
     const response = await apiClient.getHomepageTasks(userStore.user.id)
+    console.log('首頁任務API響應:', response)
     if (response.success) {
       const tasks = response.data.map(taskStore.transformBackendTask)
+      console.log('解析後的任務數量:', tasks.length)
       
       const tasksWithProgress = await Promise.all(
         tasks.map(async (task) => {
