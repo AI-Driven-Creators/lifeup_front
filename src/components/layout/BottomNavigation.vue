@@ -20,8 +20,8 @@
             <span class="text-xs font-medium">{{ item.label }}</span>
           </router-link>
 
-          <!-- hover時顯示的增加技能按鈕 -->
-          <Transition
+          <!-- hover時顯示的增加技能按鈕 - 暫時隱藏，功能尚未完成 -->
+          <!-- <Transition
             enter-active-class="transition-all duration-200 ease-out"
             enter-from-class="opacity-0 translate-y-2"
             enter-to-class="opacity-100 translate-y-0"
@@ -36,7 +36,7 @@
             >
               + 新增技能
             </button>
-          </Transition>
+          </Transition> -->
         </div>
 
         <!-- 其他導航按鈕 -->
