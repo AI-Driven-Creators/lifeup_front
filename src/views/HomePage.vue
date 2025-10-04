@@ -192,27 +192,39 @@ const loadHomepageTasks = async () => {
     if (response.success) {
       const tasks = response.data.map(taskStore.transformBackendTask)
       console.log('解析後的任務數量:', tasks.length)
-      
-      const tasksWithProgress = await Promise.all(
-        tasks.map(async (task) => {
-          // 為所有首頁任務載入進度（現在都是有父任務的子任務）
-          if (task.parent_task_id) {
-            try {
-              const progressResponse = await apiClient.getTaskProgress(task.parent_task_id, userStore.user.id)
-              if (progressResponse.success) {
-                task.progress = progressResponse.data
-              } else {
-                console.warn(`進度API失敗 (${task.title}):`, progressResponse.message)
-              }
-            } catch (err) {
-              console.warn(`Failed to load progress for task ${task.parent_task_id}:`, err)
-              // 進度載入失敗不影響任務顯示
+
+      // 收集所有唯一的父任務ID
+      const uniqueParentIds = [...new Set(
+        tasks
+          .filter(task => task.parent_task_id)
+          .map(task => task.parent_task_id)
+      )]
+
+      console.log('需要載入進度的父任務數量:', uniqueParentIds.length)
+
+      // 批量載入所有父任務的進度（避免重複查詢）
+      const progressMap = new Map()
+      await Promise.all(
+        uniqueParentIds.map(async (parentId) => {
+          try {
+            const progressResponse = await apiClient.getTaskProgress(parentId!, userStore.user.id)
+            if (progressResponse.success) {
+              progressMap.set(parentId, progressResponse.data)
             }
+          } catch (err) {
+            console.warn(`Failed to load progress for parent task ${parentId}:`, err)
           }
-          return task
         })
       )
-      
+
+      // 將進度數據附加到對應的任務
+      const tasksWithProgress = tasks.map(task => {
+        if (task.parent_task_id && progressMap.has(task.parent_task_id)) {
+          task.progress = progressMap.get(task.parent_task_id)
+        }
+        return task
+      })
+
       homepageTasks.value = tasksWithProgress
     } else {
       error.value = response.message
