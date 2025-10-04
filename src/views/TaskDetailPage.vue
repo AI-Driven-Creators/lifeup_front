@@ -94,28 +94,45 @@
           <span v-if="task.dailyTaskSubtype === 'recurring'" class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">常駐目標</span>
           <span v-else-if="task.dailyTaskSubtype === 'simple'" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">今日行動</span>
         </div>
-        
-        <!-- 任務進度條 -->
-        <div v-if="task.progress || task.is_parent_task" class="mt-4">
-          <TaskProgressBar 
-            :progress="taskProgress" 
+
+        <!-- 任務進度條（非每日任務顯示） -->
+        <div v-if="!isDailyTask && (task.progress || task.is_parent_task)" class="mt-4">
+          <TaskProgressBar
+            :progress="taskProgress"
             :showDailyStats="task.isRecurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
           />
         </div>
       </div>
 
-      <!-- 完成任務區域 -->
-      <div v-if="task.is_parent_task && subtasks.length > 0" class="bg-white px-4 py-5">
+      <!-- 常駐目標專用顯示 -->
+      <div v-if="task.type === 'daily' && task.isRecurring" class="px-4 py-5">
+        <RecurringTaskDetail
+          :task="task"
+          :progress="task.progress"
+          :subtasks="subtasks"
+          :loading="loading"
+          @toggle-status="handleToggleStatus"
+        />
+      </div>
+
+      <!-- 今日行動專用顯示 -->
+      <div v-else-if="task.type === 'daily' && !task.isRecurring" class="px-4 py-5">
+        <SimpleDailyTaskDetail
+          :task="task"
+          :subtasks="subtasks"
+          :loading="isLoading"
+          @toggle-status="(reverse) => handleToggleStatus(reverse)"
+          @edit="showEditDialog = true"
+        />
+      </div>
+
+      <!-- 其他類型任務的子任務列表區域 -->
+      <div v-else-if="task.is_parent_task && subtasks.length > 0" class="bg-white px-4 py-5">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-primary-900">完成任務</h3>
           <div class="flex items-center space-x-3">
-            <!-- 每日任務提示 -->
-            <div v-if="isDailyTask" class="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-full">
-              📅 顯示最近3天（包含今天）
-            </div>
             <!-- 添加子任務按鈕 -->
             <button
-              v-if="!isDailyTask"
               @click="showCreateSubtaskDialog = true"
               class="inline-flex items-center gap-2 px-2 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
               title="添加子任務"
@@ -225,8 +242,8 @@
         </div>
       </div>
 
-      <!-- 如果沒有子任務 -->
-      <div v-else-if="task.is_parent_task" class="bg-white px-4 py-5">
+      <!-- 如果沒有子任務（非每日任務） -->
+      <div v-else-if="task.is_parent_task && task.type !== 'daily'" class="bg-white px-4 py-5">
         <div class="text-center py-8">
           <div class="text-gray-400 text-4xl mb-3">📝</div>
           <p class="text-gray-600 text-sm mb-4">還沒有子任務</p>
@@ -239,8 +256,8 @@
         </div>
       </div>
 
-      <!-- 如果不是大任務 -->
-      <div v-else class="bg-white px-4 py-5">
+      <!-- 如果不是大任務且不是每日任務 -->
+      <div v-else-if="!task.is_parent_task && task.type !== 'daily'" class="bg-white px-4 py-5">
         <div class="text-center py-8">
           <p class="text-gray-600 mb-4">這是一個單獨的任務</p>
           <div class="flex justify-center">
@@ -315,6 +332,8 @@ import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
 import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
 import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import RecurringTaskDetail from '@/components/features/RecurringTaskDetail.vue'
+import SimpleDailyTaskDetail from '@/components/features/SimpleDailyTaskDetail.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -508,7 +527,7 @@ const loadTaskDetail = async () => {
       task.value = foundTask
 
       // 載入任務進度數據
-      if (foundTask.is_parent_task || (foundTask as any).is_recurring) {
+      if (foundTask.is_parent_task || foundTask.isRecurring) {
         try {
           const progressResponse = await apiClient.getTaskProgress(taskId)
           if (progressResponse.success) {
@@ -522,14 +541,14 @@ const loadTaskDetail = async () => {
         }
       }
 
-      // 如果是大任務，載入子任務
-      if (foundTask.is_parent_task) {
+      // 如果是大任務或常駐目標，載入子任務
+      if (foundTask.is_parent_task || foundTask.isRecurring) {
         // 判斷是否為每日任務（重複性任務或任務類型為 daily）
         isDailyTask.value = foundTask.isRecurring || foundTask.type === 'daily'
         
         const subtaskResponse = await apiClient.getSubtasks(taskId, {
           daily: isDailyTask.value,
-          days: isDailyTask.value ? 3 : undefined // 每日任務只查詢最近3天
+          days: isDailyTask.value ? 60 : undefined // 每日任務查詢最近60天（涵蓋兩個月）
         })
         
         if (subtaskResponse.success) {
@@ -550,15 +569,72 @@ const loadTaskDetail = async () => {
 }
 
 
-// 切換任務狀態（針對非大任務）
-const handleToggleStatus = async () => {
+// 切換任務狀態（針對每日任務和常駐目標）
+const handleToggleStatus = async (subtaskIdOrReverse?: string | boolean, reverse: boolean = false) => {
   if (!task.value) return
+
+  console.log('🎯 handleToggleStatus 被調用:', {
+    subtaskIdOrReverse,
+    reverse,
+    isRecurring: task.value.isRecurring,
+    taskType: task.value.type,
+    typeof: typeof subtaskIdOrReverse
+  })
 
   isLoading.value = true
   try {
-    await taskStore.toggleTaskStatus(task.value.id)
-    // 重新載入任務詳情
-    await loadTaskDetail()
+    // 檢查是否為常駐目標
+    const isRecurring = task.value.isRecurring === true
+
+    // 如果是常駐目標且沒有傳入 subtaskId（undefined）
+    if (isRecurring && subtaskIdOrReverse === undefined) {
+      // 創建今日子任務並自動完成
+      console.log('📝 常駐目標：創建今日子任務')
+      const today = new Date().toISOString().split('T')[0]
+
+      const createResponse = await apiClient.createTask({
+        parent_task_id: task.value.id,
+        title: `${task.value.title} - ${today}`,
+        task_type: 'daily',
+        difficulty: task.value.difficulty,
+        experience: task.value.experience,
+        user_id: task.value.user_id,
+        ...{ task_date: today } // 添加 task_date（繞過 TypeScript 類型檢查）
+      } as any)
+
+      if (createResponse.success) {
+        const newSubtaskId = createResponse.data.id
+        console.log('✅ 今日子任務已創建:', newSubtaskId)
+
+        // 將子任務標記為完成
+        await apiClient.updateTask(newSubtaskId, {
+          status: 6 // daily_completed
+        })
+
+        console.log('✅ 今日子任務已完成')
+        await loadTaskDetail()
+      } else {
+        throw new Error(createResponse.message || '創建子任務失敗')
+      }
+    }
+    // 如果第一個參數是字符串，說明是子任務ID
+    else if (typeof subtaskIdOrReverse === 'string') {
+      const subtaskId = subtaskIdOrReverse
+      const subtask = subtasks.value.find(st => st.id === subtaskId)
+
+      if (subtask) {
+        // 切換子任務狀態
+        console.log('🔄 切換子任務狀態:', { subtaskId, currentStatus: subtask.status, reverse })
+        await taskStore.toggleTaskStatus(subtask.id, subtask.status, reverse)
+        await loadTaskDetail()
+      }
+    } else {
+      // 第一個參數是 boolean 或 undefined（今日行動）
+      const isReverse = subtaskIdOrReverse === true || reverse === true
+      console.log('🔄 切換任務狀態:', { taskId: task.value.id, currentStatus: task.value.status, reverse: isReverse })
+      await taskStore.toggleTaskStatus(task.value.id, task.value.status, isReverse)
+      await loadTaskDetail()
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新任務狀態失敗'
     console.error('Failed to toggle task status:', err)

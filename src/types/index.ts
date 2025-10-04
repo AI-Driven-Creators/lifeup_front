@@ -64,6 +64,12 @@ export interface Task {
   // 每日任務相關
   isRecurring?: boolean; // 是否為重複性任務
   dailyTaskSubtype?: 'simple' | 'recurring'; // 每日任務子類型
+  // 常駐目標相關
+  start_date?: Date | string; // 開始日期
+  end_date?: Date | string; // 結束日期
+  recurrence_pattern?: 'daily' | 'weekdays' | 'weekends' | 'weekly'; // 重複模式
+  completion_target?: number; // 目標完成率 (0.0-1.0)
+  completion_rate?: number; // 當前完成率 (0.0-1.0)
   // 職業任務相關
   task_category?: string; // 任務分類 (career_mainline, career_subtask 等)
   career_mainline_id?: string; // 職業主線ID
@@ -75,6 +81,7 @@ export interface TaskProgress {
   total_days: number;
   completed_days: number;
   missed_days: number;
+  consecutive_days: number; // 連續完成天數
   completion_rate: number;
   target_rate: number;
   is_daily_completed: boolean;

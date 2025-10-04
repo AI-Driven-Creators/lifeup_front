@@ -290,6 +290,12 @@ export const useTaskStore = defineStore('task', {
         // 每日任務相關
         isRecurring,
         dailyTaskSubtype,
+        // 常駐目標相關
+        start_date: backendTask.start_date ? new Date(backendTask.start_date) : undefined,
+        end_date: backendTask.end_date ? new Date(backendTask.end_date) : undefined,
+        recurrence_pattern: backendTask.recurrence_pattern,
+        completion_target: backendTask.completion_target,
+        completion_rate: backendTask.completion_rate,
         // 職業任務相關
         task_category: backendTask.task_category,
         career_mainline_id: backendTask.career_mainline_id,
