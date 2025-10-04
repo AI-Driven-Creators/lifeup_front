@@ -422,6 +422,7 @@
 import { ref, computed, watch, inject, onMounted } from 'vue'
 import { apiClient } from '@/services/api'
 import { useSkillStore } from '@/stores/skill'
+import { useUserStore } from '@/stores/user'
 
 interface Props {
   show: boolean
@@ -441,6 +442,7 @@ const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
 // 技能 store
 const skillStore = useSkillStore()
+const userStore = useUserStore()
 
 // 表單數據
 const form = ref({
@@ -706,7 +708,8 @@ const submitForm = async () => {
       title: form.value.title.trim(),
       task_type: form.value.task_type,
       priority: form.value.priority,
-      difficulty: form.value.difficulty
+      difficulty: form.value.difficulty,
+      user_id: userStore.user.id
     }
 
     // 只有每日任務才傳遞經驗值，其他任務由子任務決定經驗值
@@ -836,7 +839,8 @@ const createRecurringTask = async () => {
       recurrence_pattern: recurringData.value.pattern,
       start_date: `${recurringData.value.startDate}T00:00:00Z`,
       end_date: `${recurringData.value.endDate}T23:59:59Z`,
-      completion_target: recurringData.value.target
+      completion_target: recurringData.value.target,
+      user_id: userStore.user.id
     }
 
     // 調用後端 API

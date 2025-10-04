@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
 import { useSkillStore } from './skill'
 import { useRewardsStore } from './rewards'
+import { useUserStore } from './user'
 import type { Task } from '@/types'
 
 export const useTaskStore = defineStore('task', {
@@ -31,7 +32,8 @@ export const useTaskStore = defineStore('task', {
       this.error = null;
 
       try {
-        const response = await apiClient.getTasks();
+        const userStore = useUserStore();
+        const response = await apiClient.getTasks(userStore.user.id);
         if (response.success) {
           // 將後端數據轉換為前端格式
           this.tasks = response.data.map(this.transformBackendTask);
@@ -57,6 +59,7 @@ export const useTaskStore = defineStore('task', {
       this.error = null;
 
       try {
+        const userStore = useUserStore();
         // 將前端數據轉換為後端格式
         const backendTaskData = {
           title: taskData.title,
@@ -65,7 +68,7 @@ export const useTaskStore = defineStore('task', {
           task_type: taskData.type,
           difficulty: taskData.difficulty,
           experience: this.calculateExperience(taskData.difficulty),
-          user_id: 'd487f83e-dadd-4616-aeb2-959d6af9963b', // 使用實際用戶ID
+          user_id: userStore.user.id, // 使用當前用戶ID
           skill_tags: taskData.skillTags || [], // 添加技能標籤
         };
 
@@ -92,7 +95,8 @@ export const useTaskStore = defineStore('task', {
       this.error = null;
 
       try {
-        const response = await apiClient.getTasksByType(taskType);
+        const userStore = useUserStore();
+        const response = await apiClient.getTasksByType(taskType, userStore.user.id);
         if (response.success) {
           const tasks = response.data.map(this.transformBackendTask);
           return tasks;

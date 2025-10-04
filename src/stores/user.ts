@@ -3,6 +3,7 @@ import { apiClient } from '@/services/api'
 import type { User, UserAttributes } from '@/types'
 
 export const useUserStore = defineStore('user', {
+  persist: true,
   state: () => ({
     loading: false,
     error: null as string | null,

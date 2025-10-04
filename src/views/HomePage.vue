@@ -176,9 +176,9 @@ const toggleTask = async (taskId: string) => {
 const loadHomepageTasks = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
-    const response = await apiClient.getHomepageTasks()
+    const response = await apiClient.getHomepageTasks(userStore.user.id)
     if (response.success) {
       const tasks = response.data.map(taskStore.transformBackendTask)
       
@@ -187,7 +187,7 @@ const loadHomepageTasks = async () => {
           // 為所有首頁任務載入進度（現在都是有父任務的子任務）
           if (task.parent_task_id) {
             try {
-              const progressResponse = await apiClient.getTaskProgress(task.parent_task_id)
+              const progressResponse = await apiClient.getTaskProgress(task.parent_task_id, userStore.user.id)
               if (progressResponse.success) {
                 task.progress = progressResponse.data
               } else {

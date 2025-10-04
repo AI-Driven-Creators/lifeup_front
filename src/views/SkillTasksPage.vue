@@ -124,9 +124,11 @@ import { useRoute } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskSection from '@/components/features/TaskSection.vue'
 import { apiClient } from '@/services/api'
+import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
 
 const route = useRoute()
+const userStore = useUserStore()
 const skillName = ref(route.params.skillName as string)
 const skillId = ref(route.query.id as string)
 
@@ -169,7 +171,7 @@ const fetchSkillTasks = async () => {
   
   try {
     // 這裡需要調用後端API根據技能名稱獲取任務
-    const response = await apiClient.getTasksBySkill(skillName.value)
+    const response = await apiClient.getTasksBySkill(skillName.value, userStore.user.id)
     
     if (response.success && response.data) {
       // 解析從後端收到的 skill_tags 字符串

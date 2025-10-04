@@ -473,8 +473,10 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import SkillSection from '@/components/features/SkillSection.vue'
 import SkillCard from '@/components/features/SkillCard.vue'
 import { apiClient } from '@/services/api'
+import { useUserStore } from '@/stores/user'
 import type { Skill } from '@/types'
 
+const userStore = useUserStore()
 const loading = ref(true)
 const error = ref<string | null>(null)
 const allSkills = ref<Skill[]>([])
@@ -541,9 +543,9 @@ const toggleNotStartedSkills = () => {
 const fetchSkills = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
-    const response = await apiClient.getSkills()
+    const response = await apiClient.getSkills(userStore.user.id)
     if (response.success && response.data) {
       // 轉換後端數據格式以匹配前端類型
       allSkills.value = response.data.map((skill: any) => ({

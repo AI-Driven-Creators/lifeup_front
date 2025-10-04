@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
+import { useUserStore } from './user'
 import type { Skill } from '@/types'
 
 export const useSkillStore = defineStore('skill', {
@@ -30,9 +31,10 @@ export const useSkillStore = defineStore('skill', {
     async fetchSkills() {
       this.loading = true;
       this.error = null;
-      
+
       try {
-        const response = await apiClient.getSkills();
+        const userStore = useUserStore();
+        const response = await apiClient.getSkills(userStore.user.id);
         if (response.success) {
           this.skills = response.data.map(this.transformBackendSkill);
         } else {
@@ -55,10 +57,12 @@ export const useSkillStore = defineStore('skill', {
       this.error = null;
 
       try {
+        const userStore = useUserStore();
         const backendSkillData = {
           name: skillData.name,
           description: skillData.description,
           level: 1, // 新技能從等級 1 開始
+          user_id: userStore.user.id, // 使用當前用戶ID
         };
 
         const response = await apiClient.createSkill(backendSkillData);

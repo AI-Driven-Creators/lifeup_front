@@ -90,8 +90,14 @@ export class ApiClient {
   }
 
   // 任務相關 API
-  async getTasks() {
-    return this.request<{ success: boolean, data: any[], message: string }>('/api/tasks');
+  async getTasks(userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/tasks?${queryString}` : '/api/tasks';
+    return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
   async getTask(id: string) {
@@ -145,12 +151,24 @@ export class ApiClient {
     });
   }
 
-  async getTasksByType(taskType: string) {
-    return this.request<{ success: boolean, data: any[], message: string }>(`/api/tasks/type/${taskType}`);
+  async getTasksByType(taskType: string, userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/tasks/type/${taskType}?${queryString}` : `/api/tasks/type/${taskType}`;
+    return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
-  async getHomepageTasks() {
-    return this.request<{ success: boolean, data: any[], message: string }>('/api/tasks/homepage');
+  async getHomepageTasks(userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/tasks/homepage?${queryString}` : '/api/tasks/homepage';
+    return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
   async startTask(id: string, generateSubtasks: boolean = false) {
@@ -194,19 +212,31 @@ export class ApiClient {
   }
 
   // 技能相關 API
-  async getSkills() {
-    return this.request<{ success: boolean, data: any[], message: string }>('/api/skills');
+  async getSkills(userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/skills?${queryString}` : '/api/skills';
+    return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
-  async createSkill(skillData: { name: string, description?: string, level?: number }) {
+  async createSkill(skillData: { name: string, description?: string, level?: number, user_id?: string }) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/skills', {
       method: 'POST',
       body: JSON.stringify(skillData),
     });
   }
 
-  async getTasksBySkill(skillName: string) {
-    return this.request<{ success: boolean, data: any[], message: string }>(`/api/skills/${encodeURIComponent(skillName)}/tasks`);
+  async getTasksBySkill(skillName: string, userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/skills/${encodeURIComponent(skillName)}/tasks?${queryString}` : `/api/skills/${encodeURIComponent(skillName)}/tasks`;
+    return this.request<{ success: boolean, data: any[], message: string }>(url);
   }
 
   async updateSkillExperience(skillId: string, experience: number, reason?: string) {
@@ -274,8 +304,14 @@ export class ApiClient {
   }
 
   // 任務進度相關 API
-  async getTaskProgress(taskId: string) {
-    return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${taskId}/progress`);
+  async getTaskProgress(taskId: string, userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/tasks/${taskId}/progress?${queryString}` : `/api/tasks/${taskId}/progress`;
+    return this.request<{ success: boolean, data: any, message: string }>(url);
   }
 
   // ChatGPT - 透過後端API呼叫

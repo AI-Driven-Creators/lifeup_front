@@ -578,6 +578,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import { CAREER_DATABASE } from '../../data/careerDatabase.js'
 
 // 簡化版職業資料庫
@@ -691,6 +692,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 響應式數據
 const recommendedCareers = ref<any[]>([])
@@ -1070,6 +1072,12 @@ const toggleLearningStyle = (style: string) => {
 const generateTasks = async () => {
   console.log('🚀 開始生成任務...')
 
+  // 防止重複調用
+  if (loading.value) {
+    console.log('⚠️ 任務生成中，忽略重複請求')
+    return
+  }
+
   if (!quizResultId.value) {
     console.log('⚠️ 沒有測驗結果ID，先保存測驗結果')
     await saveQuizResults()
@@ -1089,7 +1097,8 @@ const generateTasks = async () => {
     const payload = {
       quiz_result_id: quizResultId.value,
       selected_career: selectedCareer.value,
-      survey_answers: surveyAnswers.value
+      survey_answers: surveyAnswers.value,
+      user_id: userStore.user.id
     }
 
     console.log('📤 發送請求:', payload)
