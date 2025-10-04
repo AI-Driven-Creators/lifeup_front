@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col">
+  <div class="min-h-screen bg-gray-50 flex flex-col" :class="isMobile ? 'pb-[5.5rem]' : 'pb-10'">
     <div class="jobs-container pt-2 pb-4 flex-1">
       <!-- 點狀進度指示器 -->
-      <div v-if="currentStep < steps.length" class="mt-3 mb-6">
+      <div v-if="currentStep < steps.length" class="mt-5 mb-6">
         <div class="flex justify-center items-center max-w-2xl mx-auto">
           <div v-for="(step, index) in steps" :key="index" class="flex items-center">
             <!-- 進度點 -->
@@ -63,12 +63,6 @@
       />
     </div>
 
-    <!-- Footer -->
-    <div v-if="currentStep < steps.length" class="text-center py-4 mt-auto">
-      <p class="text-sm text-gray-500">
-        🚀 15分鐘快速測驗 - 請根據直覺回答
-      </p>
-    </div>
   </div>
 </template>
 
@@ -77,7 +71,7 @@
  * 簡化版測驗主應用組件 - 15分鐘版本
  * 保留原版準確性，濃縮為3個核心維度
  */
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import InterestsQuizCompact from './InterestsQuizCompact.vue'
 import TalentsQuizCompact from './TalentsQuizCompact.vue'
 import ValuesWorkstyleQuizCompact from './ValuesWorkstyleQuizCompact.vue'
@@ -95,6 +89,22 @@ const props = withDefaults(defineProps<Props>(), {
 // 響應式數據
 const currentStep = ref(0)
 const results = reactive<Record<string, any>>({})
+
+// 檢測是否為手機版
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 640 // sm breakpoint
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 // 測驗步驟配置 - 簡化為3個步驟
 const steps = [
