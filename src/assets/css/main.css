@@ -7,11 +7,13 @@
 
 @layer base {
   body {
-    @apply font-lexend bg-primary-50;
+    @apply font-lexend bg-primary-50 text-primary-800;
+    color-scheme: light only;
   }
-  
+
   * {
     box-sizing: border-box;
+    color-scheme: light only;
   }
 }
 
