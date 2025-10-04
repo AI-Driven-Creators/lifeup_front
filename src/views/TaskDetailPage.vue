@@ -324,6 +324,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import { useSkillStore } from '@/stores/skill'
+import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
@@ -339,6 +340,7 @@ const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
 const skillStore = useSkillStore()
+const userStore = useUserStore()
 
 // 響應式數據
 const task = ref<Task | null>(null)
@@ -530,7 +532,7 @@ const loadTaskDetail = async () => {
       if (foundTask.is_parent_task || foundTask.isRecurring) {
         try {
           console.log('📊 開始載入任務進度:', { taskId, title: foundTask.title, isRecurring: foundTask.isRecurring })
-          const progressResponse = await apiClient.getTaskProgress(taskId)
+          const progressResponse = await apiClient.getTaskProgress(taskId, userStore.user.id)
           console.log('📊 進度API回應:', progressResponse)
           if (progressResponse.success) {
             task.value.progress = progressResponse.data
@@ -604,7 +606,7 @@ const handleToggleStatus = async (subtaskIdOrReverse?: string | boolean, reverse
         task_type: 'daily',
         difficulty: task.value.difficulty,
         experience: task.value.experience,
-        user_id: task.value.user_id,
+        user_id: userStore.user.id,
         ...{ task_date: today } // 添加 task_date（繞過 TypeScript 類型檢查）
       } as any)
 

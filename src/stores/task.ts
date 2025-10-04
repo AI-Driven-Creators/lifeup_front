@@ -303,6 +303,8 @@ export const useTaskStore = defineStore('task', {
         // 職業任務相關
         task_category: backendTask.task_category,
         career_mainline_id: backendTask.career_mainline_id,
+        // 時間戳記
+        updated_at: backendTask.updated_at,
       };
     },
 

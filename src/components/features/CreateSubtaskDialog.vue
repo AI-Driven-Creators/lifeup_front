@@ -147,6 +147,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { apiClient } from '@/services/api'
 import { useTaskStore } from '@/stores/task'
+import { useUserStore } from '@/stores/user'
 import type { Task } from '@/types'
 
 interface Props {
@@ -162,6 +163,7 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const taskStore = useTaskStore()
+const userStore = useUserStore()
 
 // 父任務資料
 const parentTask = ref<Task | null>(null)
@@ -251,6 +253,7 @@ const submitForm = async () => {
   try {
     // 準備子任務數據
     const subtaskData: any = {
+      user_id: userStore.user.id,
       title: form.value.title.trim(),
       task_type: 'main', // 子任務默認為主線任務類型
       priority: form.value.priority,

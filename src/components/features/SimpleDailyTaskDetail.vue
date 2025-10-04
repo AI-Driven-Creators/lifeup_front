@@ -38,45 +38,6 @@
       </div>
     </div>
 
-    <!-- 今日進度卡片 -->
-    <div class="bg-white border border-gray-200 rounded-lg p-4">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-xl">📈</span>
-        <h3 class="text-base font-bold text-gray-900">今日進度</h3>
-      </div>
-
-      <div class="space-y-3">
-        <!-- 完成狀態 -->
-        <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-700">完成狀態</span>
-          <span class="text-sm font-medium" :class="statusTextClass">
-            {{ isCompleted ? '✅ 已完成' : isInProgress ? '⏳ 進行中' : '⭕ 未開始' }}
-          </span>
-        </div>
-
-        <!-- 完成時間 -->
-        <div v-if="completedTime" class="flex justify-between items-center">
-          <span class="text-sm text-gray-700">完成時間</span>
-          <span class="text-sm font-medium text-gray-900">{{ completedTime }}</span>
-        </div>
-
-        <!-- 屬性增長預覽 -->
-        <div v-if="task.attributes" class="pt-3 border-t border-gray-200">
-          <div class="text-xs text-gray-600 mb-2">完成後將獲得屬性提升：</div>
-          <div class="grid grid-cols-3 gap-2">
-            <div
-              v-for="(value, key) in task.attributes"
-              :key="key"
-              class="bg-gradient-to-br from-blue-50 to-purple-50 rounded px-2 py-1 text-center"
-            >
-              <div class="text-xs text-gray-700">{{ getAttributeName(key as string) }}</div>
-              <div class="text-sm font-bold text-blue-600">+{{ value }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 技能標籤 -->
     <div v-if="task.skillTags && task.skillTags.length > 0" class="bg-white border border-gray-200 rounded-lg p-4">
       <div class="flex items-center gap-2 mb-3">
@@ -90,16 +51,29 @@
     <div class="bg-white border border-gray-200 rounded-lg p-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="text-xl">⚡</span>
-        <h3 class="text-base font-bold text-gray-900">快速操作</h3>
+        <h3 class="text-base font-bold text-gray-900">今日操作</h3>
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
-        <!-- 標記完成/取消完成 -->
+      <!-- 今日狀態 -->
+      <div class="mb-3 p-3 rounded-lg" :class="statusBgClass">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">{{ statusIcon }}</span>
+            <div>
+              <p class="font-medium" :class="statusTextClass">{{ statusText }}</p>
+              <p class="text-xs text-gray-500 mt-0.5">{{ todayDate }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快速操作按鈕 -->
+      <div class="flex gap-2">
         <button
           v-if="!isCompleted"
           @click="$emit('toggle-status')"
           :disabled="loading"
-          class="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <span>{{ isInProgress ? '✅' : '▶️' }}</span>
           <span>{{ isInProgress ? '標記完成' : '開始任務' }}</span>
@@ -108,55 +82,49 @@
           v-else
           @click="$emit('toggle-status', true)"
           :disabled="loading"
-          class="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          class="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          <span>↶</span>
+          <span>↩️</span>
           <span>取消完成</span>
-        </button>
-
-        <!-- 編輯任務 -->
-        <button
-          @click="$emit('edit')"
-          :disabled="loading"
-          class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          <span>✏️</span>
-          <span>編輯任務</span>
         </button>
       </div>
     </div>
 
     <!-- 簡易歷史記錄 -->
-    <div class="bg-white border border-gray-200 rounded-lg p-4">
+    <!-- 今日行動不會有子任務，暫時隱藏此區塊 -->
+    <!-- <div class="bg-white border border-gray-200 rounded-lg p-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="text-xl">📜</span>
         <h3 class="text-base font-bold text-gray-900">最近記錄</h3>
       </div>
 
-      <!-- 空狀態 -->
       <div v-if="recentSubtasks.length === 0" class="py-8 text-center">
         <div class="text-4xl mb-2">📭</div>
         <p class="text-gray-500 text-sm">尚無完成記錄</p>
         <p class="text-gray-400 text-xs mt-1">完成任務後這裡會顯示歷史記錄</p>
       </div>
 
-      <!-- 歷史記錄列表 -->
       <div v-else class="space-y-2">
         <div
           v-for="subtask in recentSubtasks"
           :key="subtask.id"
           class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3">
             <span>{{ getSubtaskStatusIcon(subtask) }}</span>
-            <span class="text-sm text-gray-700">{{ formatSubtaskDate(subtask.task_date) }}</span>
+            <div class="flex-1">
+              <div class="text-sm text-gray-900 font-medium">{{ formatSubtaskDate(subtask.task_date) }}</div>
+              <div v-if="subtask.updated_at" class="text-xs text-gray-500 mt-0.5">
+                完成於 {{ formatCompletedTime(subtask.updated_at) }}
+              </div>
+            </div>
           </div>
-          <span class="text-xs" :class="getSubtaskStatusTextClass(subtask)">
+          <div class="text-xs font-medium" :class="getSubtaskStatusTextClass(subtask)">
             {{ getSubtaskStatusText(subtask) }}
-          </span>
+          </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -228,6 +196,13 @@ const statusBadgeClass = computed(() => {
   return 'bg-gray-100 text-gray-700'
 })
 
+// 狀態背景樣式（用於今日操作區）
+const statusBgClass = computed(() => {
+  if (isCompleted.value) return 'bg-green-50'
+  if (isInProgress.value) return 'bg-blue-50'
+  return 'bg-gray-50'
+})
+
 // 完成時間（如果有）
 const completedTime = computed(() => {
   if (!isCompleted.value || !props.task.updated_at) return null
@@ -293,22 +268,25 @@ const getSubtaskStatusTextClass = (subtask: Task) => {
   return 'text-red-600'
 }
 
-// 格式化子任務日期
+// 格式化子任務日期（顯示真實日期）
 const formatSubtaskDate = (dateString?: string) => {
   if (!dateString) return '未知'
 
   const date = new Date(dateString + 'T00:00:00')
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
 
-  const dateStr = date.toISOString().split('T')[0]
-  const todayStr = today.toISOString().split('T')[0]
-  const yesterdayStr = yesterday.toISOString().split('T')[0]
+  return `${year}/${month}/${day}`
+}
 
-  if (dateStr === todayStr) return '今天'
-  if (dateStr === yesterdayStr) return '昨天'
+// 格式化完成時間
+const formatCompletedTime = (updatedAt: string) => {
+  if (!updatedAt) return ''
 
-  return `${date.getMonth() + 1}/${date.getDate()}`
+  const date = new Date(updatedAt)
+  const hours = date.getHours()
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
 }
 </script>
