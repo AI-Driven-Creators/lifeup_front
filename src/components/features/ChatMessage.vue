@@ -17,11 +17,11 @@
     <!-- 訊息內容 -->
     <div class="flex-1 max-w-xs">
       <!-- 發送者名稱 -->
-      <div 
+      <div
         class="text-xs text-gray-500 mb-1"
         :class="message.role === 'user' ? 'text-right' : 'text-left'"
       >
-        {{ message.role === 'coach' ? '小教練' : message.role === 'system' ? '系統' : '小雅' }}
+        {{ message.role === 'coach' ? '小教練' : message.role === 'system' ? '系統' : (userName || '我') }}
       </div>
       
       <!-- 訊息氣泡 -->
@@ -53,6 +53,7 @@ import type { ChatMessage } from '@/types'
 
 interface Props {
   message: ChatMessage
+  userName?: string
 }
 
 const props = defineProps<Props>()

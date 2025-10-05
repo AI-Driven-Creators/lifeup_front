@@ -53,6 +53,7 @@
         v-for="message in messages"
         :key="message.id"
         :message="message"
+        :userName="currentUserName"
         @dismiss="handleDismissMessage"
       />
       <div v-if="loading" class="text-gray-400 text-sm">教練正在輸入...</div>
@@ -136,6 +137,7 @@ const availablePersonalities = ref<Array<{
 }>>([])
 const selectedPersonality = ref<string>('')
 const currentUserId = ref<string>('') // 空字串，讓後端使用預設邏輯
+const currentUserName = ref<string>('') // 用戶名稱
 
 // 計算當前個性資訊
 const currentPersonality = computed(() => {
@@ -348,7 +350,20 @@ onMounted(async () => {
   // 先載入個性資料
   await loadAvailablePersonalities()
   await loadCurrentPersonality()
-  
+
+  // 獲取用戶資料
+  if (currentUserId.value) {
+    try {
+      const userResponse = await apiClient.getUser(currentUserId.value)
+      if (userResponse.success && userResponse.data) {
+        currentUserName.value = userResponse.data.name || currentUserId.value
+      }
+    } catch (error) {
+      console.warn('無法獲取用戶資料，使用 ID 作為名稱')
+      currentUserName.value = currentUserId.value
+    }
+  }
+
   // 等待一個週期確保數據載入完成
   setTimeout(() => {
     // 添加歡迎訊息
