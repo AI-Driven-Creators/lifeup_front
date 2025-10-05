@@ -163,6 +163,7 @@
             </div>
 
             <!-- 技能標籤選擇 -->
+            <!-- 暫時註解：技能標籤選取功能
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
                 關聯技能標籤
@@ -170,7 +171,7 @@
               </label>
 
               <!-- 已選擇的技能標籤 -->
-              <div v-if="form.skill_tags && form.skill_tags.length > 0" class="flex flex-wrap gap-2 mb-2">
+              <!-- <div v-if="form.skill_tags && form.skill_tags.length > 0" class="flex flex-wrap gap-2 mb-2">
                 <span
                   v-for="(tag, index) in form.skill_tags"
                   :key="index"
@@ -187,10 +188,10 @@
                     </svg>
                   </button>
                 </span>
-              </div>
+              </div> -->
 
               <!-- 技能選擇器 -->
-              <div class="relative">
+              <!-- <div class="relative">
                 <input
                   v-model="skillSearchQuery"
                   @focus="showSkillDropdown = true"
@@ -201,12 +202,12 @@
                 />
 
                 <!-- 技能下拉選單 -->
-                <div
+                <!-- <div
                   v-if="showSkillDropdown && (filteredSkills.length > 0 || skillSearchQuery.trim())"
                   class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"
                 >
                   <!-- 從現有技能選擇 -->
-                  <button
+                  <!-- <button
                     v-for="skill in filteredSkills"
                     :key="skill.id"
                     type="button"
@@ -216,10 +217,10 @@
                     <span class="text-lg">🎯</span>
                     <span>{{ skill.name }}</span>
                     <span class="ml-auto text-xs text-gray-500">{{ skill.category === 'technical' ? '技術' : '軟實力' }}</span>
-                  </button>
+                  </button> -->
 
                   <!-- 創建新技能標籤 -->
-                  <button
+                  <!-- <button
                     v-if="skillSearchQuery.trim() && !isExistingSkill(skillSearchQuery.trim())"
                     type="button"
                     @click="addSkillTag(skillSearchQuery.trim())"
@@ -229,12 +230,12 @@
                     <span class="text-blue-600">創建新標籤: "{{ skillSearchQuery.trim() }}"</span>
                   </button>
                 </div>
-              </div>
+              </div> -->
 
-              <p class="text-xs text-gray-500 mt-1">
+              <!-- <p class="text-xs text-gray-500 mt-1">
                 選擇技能標籤可以追蹤相關技能的成長，也可以輸入自訂標籤
               </p>
-            </div>
+            </div> -->
 
 
 
@@ -728,9 +729,10 @@ const submitForm = async () => {
     }
 
     // 添加技能標籤
-    if (form.value.skill_tags && form.value.skill_tags.length > 0) {
-      taskData.skill_tags = form.value.skill_tags
-    }
+    // 暫時註解：技能標籤功能
+    // if (form.value.skill_tags && form.value.skill_tags.length > 0) {
+    //   taskData.skill_tags = form.value.skill_tags
+    // }
     
     // 調用 API 創建任務
     const response = await apiClient.createTask(taskData)
@@ -893,7 +895,8 @@ watch([() => props.show, () => props.editTaskData], ([isShow, editData]) => {
       form.value.description = editData.description || ''
       form.value.priority = editData.priority || 2
       form.value.difficulty = editData.difficulty || 3
-      form.value.skill_tags = editData.skill_tags || []
+      // 暫時註解：技能標籤功能
+      // form.value.skill_tags = editData.skill_tags || []
 
       // 處理截止日期格式（如果需要，但目前表單中沒有這個欄位，所以先註釋掉）
       // const possibleDateFields = [editData.due_date, editData.deadline, editData.end_date, editData.target_date]

@@ -11,12 +11,14 @@
     <div class="notification-content">
       <!-- 圖標和動畫 -->
       <div class="notification-icon">
-        <div class="icon-container">
+        <div class="icon-container" :class="{ 'user-levelup-icon': notification.type === 'user_levelup' }">
           <span class="icon-text">{{ notification.icon }}</span>
-          <div v-if="notification.type === 'skill_levelup'" 
+          <div v-if="notification.type === 'skill_levelup' || notification.type === 'user_levelup'"
                class="celebration-particles">
-            <div v-for="n in 6" :key="n" class="particle" :style="getParticleStyle(n)"></div>
+            <div v-for="n in 8" :key="n" class="particle" :style="getParticleStyle(n)"></div>
           </div>
+          <!-- 使用者升級額外的光環效果 -->
+          <div v-if="notification.type === 'user_levelup'" class="level-ring"></div>
         </div>
       </div>
       
@@ -34,7 +36,7 @@
         </div>
         
         <!-- 升級特效 -->
-        <div v-if="notification.type === 'skill_levelup'" class="level-up-display">
+        <div v-if="notification.type === 'skill_levelup' || notification.type === 'user_levelup'" class="level-up-display">
           <span class="old-level">Lv.{{ notification.oldLevel }}</span>
           <div class="level-arrow">→</div>
           <span class="new-level">Lv.{{ notification.newLevel }}</span>
@@ -146,6 +148,12 @@ onMounted(() => {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255, 255, 255, 0.95));
 }
 
+.notification-user_levelup {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(255, 255, 255, 0.95));
+  animation: userLevelUpPulse 2s ease-in-out infinite;
+}
+
 
 .notification-content {
   display: flex;
@@ -173,6 +181,28 @@ onMounted(() => {
 .icon-text {
   font-size: 20px;
   animation: iconPulse 2s ease-in-out infinite;
+}
+
+.user-levelup-icon {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  animation: userLevelUpRotate 3s linear infinite;
+}
+
+.user-levelup-icon .icon-text {
+  font-size: 24px;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+}
+
+.level-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  border: 2px solid #fbbf24;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: levelRingExpand 2s ease-out infinite;
 }
 
 .notification-text {
@@ -311,6 +341,31 @@ onMounted(() => {
 @keyframes iconPulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
+}
+
+@keyframes userLevelUpPulse {
+  0%, 100% {
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    box-shadow: 0 12px 48px rgba(245, 158, 11, 0.4);
+  }
+}
+
+@keyframes userLevelUpRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes levelRingExpand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
 }
 
 @keyframes experienceGlow {

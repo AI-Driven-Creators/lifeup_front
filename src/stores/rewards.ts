@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export interface RewardNotification {
   id: string
-  type: 'experience' | 'skill_experience' | 'skill_levelup'
+  type: 'experience' | 'skill_experience' | 'skill_levelup' | 'user_levelup'
   title: string
   message: string
   icon?: string
@@ -76,6 +76,25 @@ export const useRewardsStore = defineStore('rewards', () => {
     autoRemoveNotification(notification.id)
   }
 
+  // 添加使用者升級通知
+  const addUserLevelUpNotification = (
+    oldLevel: number,
+    newLevel: number
+  ) => {
+    const notification: RewardNotification = {
+      id: generateId(),
+      type: 'user_levelup',
+      title: '🎊 等級提升！',
+      message: `恭喜升級！你已經從 Lv.${oldLevel} 成長到 Lv.${newLevel}`,
+      icon: '👑',
+      oldLevel,
+      newLevel,
+      duration: 6000
+    }
+
+    notifications.value.push(notification)
+    autoRemoveNotification(notification.id)
+  }
 
   // 移除通知
   const removeNotification = (id: string) => {
@@ -111,6 +130,7 @@ export const useRewardsStore = defineStore('rewards', () => {
     addExperienceNotification,
     addSkillExperienceNotification,
     addSkillLevelUpNotification,
+    addUserLevelUpNotification,
     removeNotification,
     clearAllNotifications
   }

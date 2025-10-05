@@ -73,6 +73,8 @@ export interface Task {
   // 職業任務相關
   task_category?: string; // 任務分類 (career_mainline, career_subtask 等)
   career_mainline_id?: string; // 職業主線ID
+  // 時間戳記
+  updated_at?: string; // 更新時間
 }
 
 // 任務進度類型

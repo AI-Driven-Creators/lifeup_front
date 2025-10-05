@@ -246,6 +246,13 @@ export class ApiClient {
     });
   }
 
+  async updateUserExperience(userId: string, experience: number) {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/experience`, {
+      method: 'POST',
+      body: JSON.stringify({ experience_gain: experience }),
+    });
+  }
+
   // 聊天相關 API
   async sendMessage(message: string) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/chat/send', {

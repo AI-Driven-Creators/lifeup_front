@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
 import type { User, UserAttributes } from '@/types'
+import { useRewardsStore } from './rewards'
 
 export const useUserStore = defineStore('user', {
   persist: true,
@@ -190,13 +191,60 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    updateExperience(amount: number) {
+    async updateExperience(amount: number) {
+      const rewardsStore = useRewardsStore()
+
+      // 先更新前端狀態（樂觀更新）
+      const oldExperience = this.user.experience
+      const oldLevel = this.user.level
+      const oldMaxExperience = this.user.maxExperience
+
       this.user.experience += amount
+
+      // 處理升級
       if (this.user.experience >= this.user.maxExperience) {
         this.levelUp()
       }
-      
-      // TODO: 當後端增加經驗值 API 時，同步到伺服器
+
+      // 處理降級
+      while (this.user.experience < 0 && this.user.level > 1) {
+        this.levelDown()
+      }
+
+      // 如果等級已經是1且經驗值仍為負，將經驗值設為0
+      if (this.user.level <= 1 && this.user.experience < 0) {
+        this.user.level = 1
+        this.user.experience = 0
+        this.user.maxExperience = 100
+      }
+
+      // 同步到後端
+      try {
+        if (this.user.id) {
+          const response = await apiClient.updateUserExperience(this.user.id, amount)
+          if (response.success && response.data) {
+            // 使用後端返回的準確數據更新前端
+            const { profile, level_up, level_down } = response.data
+            this.user.experience = profile.experience ?? this.user.experience
+            this.user.level = profile.level ?? this.user.level
+            this.user.maxExperience = profile.max_experience ?? this.user.maxExperience
+
+            if (level_up) {
+              console.log(`🎉 升級！從 Lv.${oldLevel} 升到 Lv.${this.user.level}`)
+              // 顯示升級動畫通知
+              rewardsStore.addUserLevelUpNotification(oldLevel, this.user.level)
+            } else if (level_down) {
+              console.log(`📉 降級！從 Lv.${oldLevel} 降到 Lv.${this.user.level}`)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('同步經驗值到後端失敗:', error)
+        // 回滾前端狀態
+        this.user.experience = oldExperience
+        this.user.level = oldLevel
+        this.user.maxExperience = oldMaxExperience
+      }
     },
 
     levelUp() {
@@ -204,10 +252,21 @@ export const useUserStore = defineStore('user', {
       this.user.level += 1
       this.user.experience = this.user.experience - this.user.maxExperience
       this.user.maxExperience = Math.floor(this.user.maxExperience * 1.1)
-      
+
       console.log(`🎉 升級！從 Lv.${oldLevel} 升到 Lv.${this.user.level}`);
-      
+
       // TODO: 當後端增加等級 API 時，同步到伺服器
+    },
+
+    levelDown() {
+      const oldLevel = this.user.level;
+      this.user.level -= 1
+      // 計算上一級的最大經驗值（反向計算）
+      this.user.maxExperience = Math.floor(this.user.maxExperience / 1.1)
+      // 將負數經驗值轉換為上一級的正數經驗值
+      this.user.experience = this.user.experience + this.user.maxExperience
+
+      console.log(`📉 降級！從 Lv.${oldLevel} 降到 Lv.${this.user.level}`);
     },
 
     updateAttribute(attribute: keyof UserAttributes, amount: number) {
