@@ -136,7 +136,7 @@ const availablePersonalities = ref<Array<{
   emoji: string
 }>>([])
 const selectedPersonality = ref<string>('')
-const currentUserId = ref<string>('') // 空字串，讓後端使用預設邏輯
+const currentUserId = ref<string>(localStorage.getItem('currentUserId') || '') // 從 localStorage 獲取用戶 ID
 const currentUserName = ref<string>('') // 用戶名稱
 
 // 計算當前個性資訊
@@ -347,6 +347,8 @@ const getPersonalityIntroMessage = (personalityType: string): string => {
 
 // 初始化
 onMounted(async () => {
+  console.log('CoachChatPage 初始化，當前用戶 ID:', currentUserId.value)
+
   // 先載入個性資料
   await loadAvailablePersonalities()
   await loadCurrentPersonality()
