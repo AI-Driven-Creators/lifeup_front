@@ -136,7 +136,7 @@ const availablePersonalities = ref<Array<{
   emoji: string
 }>>([])
 const selectedPersonality = ref<string>('')
-const currentUserId = ref<string>(localStorage.getItem('currentUserId') || '') // 從 localStorage 獲取用戶 ID
+const currentUserId = ref<string>(localStorage.getItem('lifeup_current_user_id') || '') // 從 localStorage 獲取用戶 ID
 const currentUserName = ref<string>('') // 用戶名稱
 
 // 計算當前個性資訊
@@ -251,7 +251,7 @@ const isTaskModeActive = ref(false)
 // 載入歷史對話記錄
 const loadChatHistory = async () => {
   try {
-    const response = await apiClient.getChatMessages()
+    const response = await apiClient.getChatMessages(currentUserId.value)
     if (response.success && response.data) {
       messages.value = response.data.map(msg => ({
         id: msg.id || Date.now().toString(),
@@ -298,7 +298,7 @@ const scrollToBottom = () => {
 // 下載對話記錄
 const downloadHistory = async () => {
   try {
-    const response = await apiClient.downloadChatHistory()
+    const response = await apiClient.downloadChatHistory(currentUserId.value)
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')

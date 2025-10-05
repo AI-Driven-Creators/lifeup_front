@@ -367,13 +367,25 @@ export class ApiClient {
   }
 
   // 聊天記錄相關 API
-  async getChatMessages() {
-    return this.request<{success: boolean, data: any[], message: string}>('/api/chat/messages');
+  async getChatMessages(userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/api/chat/messages?${queryString}` : '/api/chat/messages';
+    return this.request<{success: boolean, data: any[], message: string}>(url);
   }
 
   // 下載所有聊天記錄
-  async downloadChatHistory() {
-    const response = await fetch(`${this.baseURL}/api/chat/messages/all`, {
+  async downloadChatHistory(userId?: string) {
+    const params = new URLSearchParams();
+    if (userId) {
+      params.append('user_id', userId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.baseURL}/api/chat/messages/all?${queryString}` : `${this.baseURL}/api/chat/messages/all`;
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'text/plain',
