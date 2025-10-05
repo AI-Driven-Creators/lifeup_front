@@ -322,10 +322,13 @@ export class ApiClient {
   }
 
   // ChatGPT - 透過後端API呼叫
-  async sendMessageToChatGPT(message: string) {
+  async sendMessageToChatGPT(message: string, userId?: string) {
     return this.request<any>('/api/chat/chatgpt', {
       method: 'POST',
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({
+        message,
+        user_id: userId
+      }),
     });
   }
 
@@ -353,10 +356,13 @@ export class ApiClient {
     });
   }
 
-  async createTaskFromJson(taskJson: any) {
+  async createTaskFromJson(taskJson: any, userId?: string) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/tasks/create-from-json', {
       method: 'POST',
-      body: JSON.stringify(taskJson),
+      body: JSON.stringify({
+        ...taskJson,
+        user_id: userId
+      }),
     });
   }
 
@@ -441,12 +447,14 @@ export class ApiClient {
   }
 
   async sendMessageWithPersonality(message: string, userId?: string) {
+    const payload = {
+      message,
+      user_id: userId
+    };
+    console.log('發送個性化聊天請求:', payload);
     return this.request<{ text: string }>('/api/chat/personality', {
       method: 'POST',
-      body: JSON.stringify({
-        message,
-        user_id: userId
-      }),
+      body: JSON.stringify(payload),
     });
   }
 }

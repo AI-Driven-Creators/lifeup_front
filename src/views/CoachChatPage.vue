@@ -383,14 +383,28 @@ const sendMessage = async (content: string) => {
 
   try {
     // 使用個性化聊天 API（如果有個性系統）或普通聊天 API
-    const res = selectedPersonality.value 
+    const res = selectedPersonality.value
       ? await apiClient.sendMessageWithPersonality(content, currentUserId.value)
-      : await apiClient.sendMessageToChatGPT(content);
+      : await apiClient.sendMessageToChatGPT(content, currentUserId.value);
+
+    // 檢查響應格式
+    let responseText = '';
+    if (res && typeof res === 'object') {
+      if ('text' in res) {
+        responseText = res.text || '（沒有回覆內容）';
+      } else if ('message' in res) {
+        responseText = `錯誤：${res.message}`;
+      } else {
+        responseText = '（沒有回覆內容）';
+      }
+    } else {
+      responseText = '（沒有回覆內容）';
+    }
 
     const coachMessage: ChatMessageType = {
       id: (Date.now() + 1).toString(),
       role: 'coach',
-      content: res.text || '（沒有回覆內容）',
+      content: responseText,
       timestamp: new Date()
     }
     messages.value.push(coachMessage)
@@ -469,7 +483,7 @@ const generateTaskFromText = async (taskDescription: string) => {
           
           // 通過 ChatGPT API 保存對話到數據庫（使用任務模式的特殊格式）
           try {
-            await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+            await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`, currentUserId.value)
           } catch (saveError) {
             console.warn('保存任務模式對話失敗:', saveError)
           }
@@ -493,7 +507,7 @@ const generateTaskFromText = async (taskDescription: string) => {
           
           // 保存對話到數據庫
           try {
-            await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+            await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`, currentUserId.value)
           } catch (saveError) {
             console.warn('保存任務模式對話失敗:', saveError)
           }
@@ -516,7 +530,7 @@ const generateTaskFromText = async (taskDescription: string) => {
       
       // 保存對話到數據庫
       try {
-        await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+        await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`, currentUserId.value)
       } catch (saveError) {
         console.warn('保存任務模式對話失敗:', saveError)
       }
@@ -539,7 +553,7 @@ const generateTaskFromText = async (taskDescription: string) => {
     
     // 保存對話到數據庫
     try {
-      await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`)
+      await apiClient.sendMessageToChatGPT(`[任務模式] ${taskDescription}`, currentUserId.value)
     } catch (saveError) {
       console.warn('保存任務模式對話失敗:', saveError)
     }
@@ -568,8 +582,8 @@ const confirmCreateTask = async () => {
   try {
     // 先保存任務標題，因為稍後會清空 previewTaskJson
     const taskTitle = previewTaskJson.value?.title || '新任務'
-    
-    const res = await apiClient.createTaskFromJson(previewTaskJson.value)
+
+    const res = await apiClient.createTaskFromJson(previewTaskJson.value, currentUserId.value)
     
     if (res.success) {
       showToast && showToast('任務創建成功！')
