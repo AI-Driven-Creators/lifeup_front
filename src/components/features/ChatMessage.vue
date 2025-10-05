@@ -25,16 +25,15 @@
       </div>
       
       <!-- 訊息氣泡 -->
-      <div 
-        class="rounded-lg px-3 py-2 text-sm"
-        :class="message.role === 'coach' 
-          ? 'bg-primary-200 text-primary-900' 
-          : message.role === 'system' 
+      <div
+        class="rounded-lg px-3 py-2 text-sm markdown-content"
+        :class="message.role === 'coach'
+          ? 'bg-primary-200 text-primary-900'
+          : message.role === 'system'
             ? 'bg-gray-200 text-gray-800'
             : 'bg-primary-600 text-white'"
-      >
-        {{ message.content }}
-      </div>
+        v-html="formattedContent"
+      ></div>
       
       <!-- 時間戳記 -->
       <div 
@@ -48,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { ChatMessage } from '@/types'
 
 interface Props {
@@ -74,9 +73,93 @@ onMounted(() => {
 })
 
 const formatTime = (timestamp: Date) => {
-  return timestamp.toLocaleTimeString('zh-TW', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  return timestamp.toLocaleTimeString('zh-TW', {
+    hour: '2-digit',
+    minute: '2-digit'
   })
 }
+
+// 簡單的 Markdown 格式化
+const formattedContent = computed(() => {
+  let content = props.message.content || ''
+
+  // 轉義 HTML 特殊字符
+  content = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // 粗體 **text** 或 __text__
+  content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  content = content.replace(/__(.+?)__/g, '<strong>$1</strong>')
+
+  // 斜體 *text* 或 _text_
+  content = content.replace(/\*(.+?)\*/g, '<em>$1</em>')
+  content = content.replace(/_(.+?)_/g, '<em>$1</em>')
+
+  // 行內代碼 `code`
+  content = content.replace(/`(.+?)`/g, '<code class="inline-code">$1</code>')
+
+  // 代碼塊 ```code```
+  content = content.replace(/```([\s\S]+?)```/g, '<pre class="code-block"><code>$1</code></pre>')
+
+  // 換行
+  content = content.replace(/\n/g, '<br>')
+
+  // 列表項 - item
+  content = content.replace(/^- (.+)$/gm, '<li>$1</li>')
+  content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+
+  // 數字列表 1. item
+  content = content.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+
+  return content
+})
 </script>
+
+<style scoped>
+.markdown-content :deep(strong) {
+  font-weight: 600;
+}
+
+.markdown-content :deep(em) {
+  font-style: italic;
+}
+
+.markdown-content :deep(.inline-code) {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content :deep(.code-block) {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.markdown-content :deep(.code-block code) {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  white-space: pre;
+}
+
+.markdown-content :deep(ul) {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-content :deep(li) {
+  margin: 4px 0;
+}
+
+/* 為白色背景（用戶消息）調整代碼塊顏色 */
+.bg-primary-600 .markdown-content :deep(.inline-code),
+.bg-primary-600 .markdown-content :deep(.code-block) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+</style>
