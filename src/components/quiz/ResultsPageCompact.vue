@@ -491,14 +491,19 @@
         </div>
 
         <!-- 任務生成完成階段 -->
-        <div v-if="currentStage === 'completed'">
+        <div v-if="currentStage === 'preview' || currentStage === 'completed'">
           <div class="mb-8">
             <div class="flex items-center space-x-3 mb-4">
               <span class="text-green-600 text-xl">🎯</span>
-              <h2 class="text-xl font-semibold text-gray-900">職業主線任務已生成</h2>
+              <h2 class="text-xl font-semibold text-gray-900">
+                {{ currentStage === 'preview' ? '任務預覽' : '職業主線任務已生成' }}
+              </h2>
             </div>
             <p class="text-gray-600">
-              恭喜！AI 已根據你的<strong class="text-blue-600">{{ selectedCareer }}</strong>職業選擇和個人特質，為你生成了專屬的學習路徑。
+              {{ currentStage === 'preview'
+                ? `AI 已根據你的 ${selectedCareer} 職業選擇和個人特質，生成了專屬的學習路徑。請確認後保存到你的任務列表。`
+                : `恭喜！你的 ${selectedCareer} 職業主線任務已成功保存。`
+              }}
             </p>
           </div>
 
@@ -517,29 +522,51 @@
                 <div class="flex-1">
                   <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
 
-                  <!-- 解析後的描述 -->
+                  <!-- 任務描述 -->
                   <div class="text-sm mt-2 space-y-2">
-                    <p class="text-gray-600">{{ parseTaskDescription(task.description).main }}</p>
+                    <p class="text-gray-600 whitespace-pre-line">{{ task.description }}</p>
 
-                    <p v-if="parseTaskDescription(task.description).personality" class="text-gray-600">
-                      💡 <span class="font-medium">個性化說明：</span>{{ parseTaskDescription(task.description).personality }}
-                    </p>
+                    <!-- 技能標籤 -->
+                    <div v-if="task.skill_tags && task.skill_tags.length > 0" class="flex flex-wrap gap-1.5 mt-2">
+                      <span
+                        v-for="(skill, sIdx) in task.skill_tags"
+                        :key="sIdx"
+                        class="text-xs px-2 py-1 rounded"
+                        :class="skill.category === 'technical' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'"
+                      >
+                        {{ skill.name }}
+                      </span>
+                    </div>
 
-                    <div v-if="parseTaskDescription(task.description).resources.length > 0">
-                      <p class="text-gray-600 font-medium">📚 推薦資源：</p>
-                      <ul class="text-gray-600 pl-4 mt-0.5">
-                        <li v-for="(resource, rIdx) in parseTaskDescription(task.description).resources" :key="rIdx">• {{ resource }}</li>
+                    <!-- 推薦資源 -->
+                    <div v-if="task.resources && task.resources.length > 0" class="mt-2">
+                      <p class="text-gray-600 font-medium text-xs">📚 推薦資源：</p>
+                      <ul class="text-gray-600 text-xs pl-4 mt-1 space-y-0.5">
+                        <li v-for="(resource, rIdx) in task.resources" :key="rIdx">• {{ resource }}</li>
                       </ul>
                     </div>
                   </div>
 
-                  <div class="flex items-center space-x-4 mt-3">
+                  <div class="flex items-center flex-wrap gap-2 mt-3">
                     <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       難度: {{ task.difficulty }}顆星
                     </span>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span v-if="task.estimated_hours" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      預估時數: {{ task.estimated_hours }}小時
+                    </span>
+                    <span v-if="task.experience" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       經驗值: {{ task.experience }}
                     </span>
+                    <!-- 顯示屬性值 -->
+                    <template v-if="task.attributes && Object.keys(task.attributes).length > 0">
+                      <span
+                        v-for="(value, attr) in task.attributes"
+                        :key="attr"
+                        class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
+                      >
+                        {{ getAttributeName(attr) }}: +{{ value }}
+                      </span>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -555,7 +582,20 @@
               重新選擇職業
             </button>
             <div class="space-x-3">
+              <!-- Preview 階段：顯示保存按鈕 -->
               <button
+                v-if="currentStage === 'preview'"
+                :disabled="loading"
+                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                @click="acceptTasks"
+              >
+                <span class="mr-2">🚀</span>
+                <span v-if="loading">保存中...</span>
+                <span v-else>生成專屬主線任務</span>
+              </button>
+              <!-- Completed 階段：顯示開始執行按鈕 -->
+              <button
+                v-if="currentStage === 'completed'"
                 class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                 @click="goToTasks"
               >
@@ -714,6 +754,7 @@ const surveyAnswers = ref({
   special_requirements: ''
 })
 const generatedTasks = ref([])
+const previewData = ref(null) // 儲存預覽數據
 const loading = ref(false)
 
 // 解析任務描述的輔助函數
@@ -737,6 +778,19 @@ const parseTaskDescription = (description: string) => {
   }
 
   return { main, personality, resources }
+}
+
+// 獲取屬性的中文名稱
+const getAttributeName = (attr: string) => {
+  const attributeNames: Record<string, string> = {
+    intelligence: '智力',
+    endurance: '毅力',
+    creativity: '創造力',
+    social: '社交力',
+    focus: '專注力',
+    adaptability: '適應力'
+  }
+  return attributeNames[attr] || attr
 }
 
 // 計算屬性
@@ -1121,12 +1175,45 @@ const generateTasks = async () => {
     console.log('📋 響應數據:', data)
 
     if (data.success) {
-      generatedTasks.value = data.data.subtasks || []
-      currentStage.value = 'completed'
-      console.log('✅ 任務生成成功:', data.data)
+      console.log('🔍 檢查響應數據結構:', data.data)
+
+      // 儲存完整的預覽數據
+      previewData.value = data.data
+
+      // 判斷數據格式：新格式（預覽模式）或舊格式（已保存）
+      let allTasks = []
+
+      if (data.data.preview_mode) {
+        // 新格式：預覽模式，任務分為三類
+        allTasks = [
+          ...(data.data.main_tasks || []),
+          ...(data.data.daily_tasks || []),
+          ...(data.data.project_tasks || [])
+        ]
+        console.log('📊 main_tasks 數量:', data.data.main_tasks?.length || 0)
+        console.log('📊 daily_tasks 數量:', data.data.daily_tasks?.length || 0)
+        console.log('📊 project_tasks 數量:', data.data.project_tasks?.length || 0)
+      } else {
+        // 舊格式：已保存到資料庫，任務在 subtasks 中
+        allTasks = data.data.subtasks || []
+        console.log('📊 subtasks 數量:', allTasks.length)
+      }
+
+      console.log('📊 最終任務總數:', allTasks.length)
+
+      // 處理任務描述，將 \n 轉換為真正的換行符號
+      allTasks = allTasks.map(task => ({
+        ...task,
+        description: task.description ? task.description.replace(/\\n/g, '\n') : ''
+      }))
+
+      generatedTasks.value = allTasks
+
+      // 進入預覽階段
+      currentStage.value = 'preview'
+      console.log('✅ 任務預覽生成成功')
       console.log('📝 更新狀態到:', currentStage.value)
-      console.log('📋 生成的任務數量:', generatedTasks.value.length)
-      console.log('📋 任務詳細內容:', generatedTasks.value)
+      console.log('📋 預覽任務數量:', generatedTasks.value.length)
     } else {
       throw new Error(data.message || '任務生成失敗')
     }
@@ -1138,6 +1225,51 @@ const generateTasks = async () => {
 
   loading.value = false
   console.log('🏁 生成流程結束，loading:', loading.value)
+}
+
+// 接受並保存任務到資料庫
+const acceptTasks = async () => {
+  console.log('✅ 用戶確認接受任務，開始保存到資料庫...')
+
+  if (!previewData.value) {
+    console.error('❌ 沒有預覽數據')
+    alert('沒有可保存的任務數據')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/accept-tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(previewData.value),
+    })
+
+    console.log('📥 保存任務響應:', response.status, response.statusText)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('📋 保存任務響應數據:', data)
+
+    if (data.success) {
+      // 保存成功，進入完成階段
+      currentStage.value = 'completed'
+      console.log('✅ 任務保存成功，進入完成階段')
+    } else {
+      throw new Error(data.message || '保存任務失敗')
+    }
+  } catch (error) {
+    console.error('❌ 保存任務失敗:', error)
+    alert(`保存任務失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+  }
+
+  loading.value = false
 }
 
 const saveQuizResults = async () => {

@@ -165,7 +165,7 @@
                     ✏️
                   </button>
                 </div>
-                <p v-if="subtask.description" class="text-gray-600 text-sm mt-1">{{ subtask.description }}</p>
+                <p v-if="subtask.description" class="text-gray-600 text-sm mt-1 whitespace-pre-line">{{ subtask.description }}</p>
                 
                 <!-- 任務日期顯示 -->
                 <p v-if="(subtask as any).task_date" class="text-xs text-gray-500 mt-1">
@@ -173,7 +173,7 @@
                 </p>
                 
                 <!-- 任務屬性 -->
-                <div class="flex items-center space-x-4 mt-3 text-xs text-gray-500">
+                <div class="flex items-center flex-wrap gap-4 mt-3 text-xs text-gray-500">
                   <span class="flex items-center">
                     <span class="w-2 h-2 bg-yellow-400 rounded-full mr-1"></span>
                     難度 {{ subtask.difficulty }}/5
@@ -186,6 +186,17 @@
                     <span class="w-2 h-2 bg-purple-400 rounded-full mr-1"></span>
                     順序 {{ subtask.task_order }}
                   </span>
+                  <!-- 顯示屬性值 -->
+                  <template v-if="subtask.attributes && typeof subtask.attributes === 'object' && Object.keys(subtask.attributes).length > 0">
+                    <span
+                      v-for="(value, attr) in subtask.attributes"
+                      :key="attr"
+                      class="flex items-center"
+                    >
+                      <span class="w-2 h-2 bg-blue-400 rounded-full mr-1"></span>
+                      {{ getAttributeName(attr as string) }} +{{ value }}
+                    </span>
+                  </template>
                 </div>
 
                 <!-- 技能標籤 -->
@@ -526,6 +537,22 @@ const loadTaskDetail = async () => {
         return
       }
       
+      // 處理子任務描述的換行符號
+      if (foundTask.subtasks && foundTask.subtasks.length > 0) {
+        console.log('🔍 處理前的第一個子任務描述:', foundTask.subtasks[0]?.description)
+        foundTask.subtasks = foundTask.subtasks.map(subtask => {
+          const originalDesc = subtask.description || ''
+          // 同時處理 \\n 和 \n
+          const processedDesc = originalDesc.replace(/\\n/g, '\n').replace(/\\\\n/g, '\n')
+          console.log('🔍 原始描述長度:', originalDesc.length, '處理後長度:', processedDesc.length)
+          return {
+            ...subtask,
+            description: processedDesc
+          }
+        })
+        console.log('🔍 處理後的第一個子任務描述:', foundTask.subtasks[0]?.description)
+      }
+
       task.value = foundTask
 
       // 載入任務進度數據
@@ -561,6 +588,10 @@ const loadTaskDetail = async () => {
         if (subtaskResponse.success) {
           subtasks.value = subtaskResponse.data
             .map(taskStore.transformBackendTask)
+            .map(subtask => ({
+              ...subtask,
+              description: subtask.description ? subtask.description.replace(/\\n/g, '\n') : ''
+            }))
             .sort((a, b) => (a.task_order || 0) - (b.task_order || 0))
           console.log('📋 已載入子任務:', subtasks.value.length, '個')
         }
@@ -893,6 +924,19 @@ const handleSubtaskUpdated = async (updatedSubtask: Task) => {
 // 處理子任務刪除
 const handleSubtaskDeleted = async (deletedSubtaskId: string) => {
   await loadTaskDetail() // 重新載入任務詳情
+}
+
+// 屬性名稱轉換
+const getAttributeName = (attr: string) => {
+  const attributeNames: Record<string, string> = {
+    intelligence: '智力',
+    endurance: '毅力',
+    creativity: '創造力',
+    social: '社交力',
+    focus: '專注力',
+    adaptability: '適應力'
+  }
+  return attributeNames[attr] || attr
 }
 
 // 處理任務更新

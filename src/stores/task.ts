@@ -418,6 +418,18 @@ export const useTaskStore = defineStore('task', {
         // 實際增加使用者經驗值
         userStore.updateExperience(task.experience);
 
+        // 處理屬性獎勵（如果任務有屬性設定）
+        if (task.attributes && Object.keys(task.attributes).length > 0) {
+          try {
+            await apiClient.updateUserAttributes(userStore.user.id, task.attributes as Record<string, number>);
+            // 重新載入使用者數據以更新屬性
+            await userStore.fetchUser(userStore.user.id);
+            console.log(`✅ 任務完成，屬性更新: ${JSON.stringify(task.attributes)}`);
+          } catch (error) {
+            console.error('更新使用者屬性失敗:', error);
+          }
+        }
+
         // 基本經驗值計算：使用任務本身的經驗值
         const baseExperience = task.experience;
 
@@ -492,6 +504,23 @@ export const useTaskStore = defineStore('task', {
       try {
         // 實際扣除使用者經驗值
         userStore.updateExperience(-task.experience);
+
+        // 扣回屬性獎勵（如果任務有屬性設定）
+        if (task.attributes && Object.keys(task.attributes).length > 0) {
+          try {
+            // 將屬性值取反（扣除）
+            const revertAttributes: Record<string, number> = {};
+            for (const [key, value] of Object.entries(task.attributes)) {
+              revertAttributes[key] = -(value as number);
+            }
+            await apiClient.updateUserAttributes(userStore.user.id, revertAttributes);
+            // 重新載入使用者數據以更新屬性
+            await userStore.fetchUser(userStore.user.id);
+            console.log(`♻️ 任務回復，屬性扣回: ${JSON.stringify(revertAttributes)}`);
+          } catch (error) {
+            console.error('扣回使用者屬性失敗:', error);
+          }
+        }
 
         // 基本經驗值計算：使用任務本身的經驗值（負值表示扣除）
         const baseExperience = -task.experience;

@@ -253,6 +253,14 @@ export class ApiClient {
     });
   }
 
+  // 更新使用者屬性
+  async updateUserAttributes(userId: string, attributes: Record<string, number>) {
+    return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/attributes`, {
+      method: 'POST',
+      body: JSON.stringify({ attributes }),
+    });
+  }
+
   // 聊天相關 API
   async sendMessage(message: string) {
     return this.request<{ success: boolean, data: any, message: string }>('/api/chat/send', {
