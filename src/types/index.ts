@@ -27,6 +27,7 @@ export interface Skill {
   id: string;
   name: string;
   category: 'technical' | 'soft';
+  attribute: 'intelligence' | 'endurance' | 'creativity' | 'social' | 'focus' | 'adaptability'; // 對應六大屬性
   level: number;
   experience: number;
   maxExperience: number;

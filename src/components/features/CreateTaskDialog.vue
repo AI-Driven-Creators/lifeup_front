@@ -162,80 +162,30 @@
               </div>
             </div>
 
-            <!-- 技能標籤選擇 -->
-            <!-- 暫時註解：技能標籤選取功能
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                關聯技能標籤
-                <span class="text-xs text-gray-500 ml-1">(選填，可多選)</span>
-              </label>
-
-              <!-- 已選擇的技能標籤 -->
-              <!-- <div v-if="form.skill_tags && form.skill_tags.length > 0" class="flex flex-wrap gap-2 mb-2">
-                <span
-                  v-for="(tag, index) in form.skill_tags"
-                  :key="index"
-                  class="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm"
-                >
-                  {{ tag }}
-                  <button
-                    type="button"
-                    @click="removeSkillTag(index)"
-                    class="hover:bg-indigo-200 rounded-full p-0.5 transition-colors"
-                  >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </span>
-              </div> -->
-
-              <!-- 技能選擇器 -->
-              <!-- <div class="relative">
-                <input
-                  v-model="skillSearchQuery"
-                  @focus="showSkillDropdown = true"
-                  @input="showSkillDropdown = true"
-                  type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="搜尋或輸入新技能標籤..."
-                />
-
-                <!-- 技能下拉選單 -->
-                <!-- <div
-                  v-if="showSkillDropdown && (filteredSkills.length > 0 || skillSearchQuery.trim())"
-                  class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"
-                >
-                  <!-- 從現有技能選擇 -->
-                  <!-- <button
-                    v-for="skill in filteredSkills"
-                    :key="skill.id"
-                    type="button"
-                    @click="addSkillTag(skill.name)"
-                    class="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2"
-                  >
-                    <span class="text-lg">🎯</span>
-                    <span>{{ skill.name }}</span>
-                    <span class="ml-auto text-xs text-gray-500">{{ skill.category === 'technical' ? '技術' : '軟實力' }}</span>
-                  </button> -->
-
-                  <!-- 創建新技能標籤 -->
-                  <!-- <button
-                    v-if="skillSearchQuery.trim() && !isExistingSkill(skillSearchQuery.trim())"
-                    type="button"
-                    @click="addSkillTag(skillSearchQuery.trim())"
-                    class="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 border-t border-gray-200 bg-blue-50"
-                  >
-                    <span class="text-lg">➕</span>
-                    <span class="text-blue-600">創建新標籤: "{{ skillSearchQuery.trim() }}"</span>
-                  </button>
+            <!-- 系統推薦技能提示 -->
+            <div v-if="suggestedSkills.length > 0" class="mb-4">
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div class="flex items-start gap-2">
+                  <span class="text-lg">✨</span>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-blue-900 mb-1">系統將自動解鎖相關技能</p>
+                    <div class="flex flex-wrap gap-2">
+                      <span
+                        v-for="skillId in suggestedSkills"
+                        :key="skillId"
+                        class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs"
+                      >
+                        <span>{{ getSkillTemplate(skillId)?.icon }}</span>
+                        <span>{{ getSkillTemplate(skillId)?.name }}</span>
+                      </span>
+                    </div>
+                    <p class="text-xs text-blue-600 mt-2">
+                      創建任務時會自動解鎖以上技能
+                    </p>
+                  </div>
                 </div>
-              </div> -->
-
-              <!-- <p class="text-xs text-gray-500 mt-1">
-                選擇技能標籤可以追蹤相關技能的成長，也可以輸入自訂標籤
-              </p>
-            </div> -->
+              </div>
+            </div>
 
 
 
@@ -424,6 +374,7 @@ import { ref, computed, watch, inject, onMounted } from 'vue'
 import { apiClient } from '@/services/api'
 import { useSkillStore } from '@/stores/skill'
 import { useUserStore } from '@/stores/user'
+import { suggestSkillsForTask, getSkillTemplate, SKILL_POOL } from '@/config/skillPool'
 
 interface Props {
   show: boolean
@@ -483,18 +434,7 @@ const dailyTaskSubtype = ref<'simple' | 'recurring'>('simple')
 const isRecurringTaskFlow = ref(false)
 
 // 技能標籤相關狀態
-const skillSearchQuery = ref('')
-const showSkillDropdown = ref(false)
-
-// 點擊外部關閉下拉選單
-if (typeof window !== 'undefined') {
-  window.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement
-    if (!target.closest('.relative')) {
-      showSkillDropdown.value = false
-    }
-  })
-}
+const suggestedSkills = ref<string[]>([]) // 推薦的技能ID列表
 
 // 任務類型選項
 const taskTypes = [
@@ -564,51 +504,6 @@ const isFormValid = computed(() => {
          !errors.value.title
 })
 
-// 過濾的技能列表（根據搜尋關鍵字）
-const filteredSkills = computed(() => {
-  const query = skillSearchQuery.value.toLowerCase().trim()
-  if (!query) {
-    return skillStore.skills
-  }
-  return skillStore.skills.filter(skill =>
-    skill.name.toLowerCase().includes(query)
-  )
-})
-
-// 檢查技能是否已存在
-const isExistingSkill = (skillName: string) => {
-  return skillStore.skills.some(skill =>
-    skill.name.toLowerCase() === skillName.toLowerCase()
-  )
-}
-
-// 添加技能標籤
-const addSkillTag = (skillName: string) => {
-  const trimmedName = skillName.trim()
-  if (!trimmedName) return
-
-  // 檢查是否已添加
-  if (form.value.skill_tags.includes(trimmedName)) {
-    if (showToast) {
-      showToast('此技能標籤已添加', 2000)
-    }
-    return
-  }
-
-  // 添加到列表
-  form.value.skill_tags.push(trimmedName)
-
-  // 清空搜尋框並關閉下拉選單
-  skillSearchQuery.value = ''
-  showSkillDropdown.value = false
-}
-
-// 移除技能標籤
-const removeSkillTag = (index: number) => {
-  form.value.skill_tags.splice(index, 1)
-}
-
-
 // 驗證表單
 const validateForm = () => {
   errors.value = {}
@@ -645,8 +540,7 @@ const resetForm = () => {
   dailyTaskSubtype.value = 'simple'
   showAdvanced.value = false
   errors.value = {}
-  skillSearchQuery.value = ''
-  showSkillDropdown.value = false
+  suggestedSkills.value = []
 
   // 重置常駐目標數據
   isRecurringTaskFlow.value = false
@@ -729,16 +623,33 @@ const submitForm = async () => {
     }
 
     // 添加技能標籤
-    // 暫時註解：技能標籤功能
-    // if (form.value.skill_tags && form.value.skill_tags.length > 0) {
-    //   taskData.skill_tags = form.value.skill_tags
-    // }
-    
+    if (form.value.skill_tags && form.value.skill_tags.length > 0) {
+      taskData.skill_tags = form.value.skill_tags
+    }
+
     // 調用 API 創建任務
     const response = await apiClient.createTask(taskData)
-    
+
     if (response.success) {
       let finalTask = response.data
+
+      // 自動解鎖相關技能
+      if (form.value.skill_tags && form.value.skill_tags.length > 0) {
+        try {
+          // 找出對應的技能ID並解鎖
+          const skillIdsToUnlock = suggestedSkills.value.filter(skillId => {
+            const template = getSkillTemplate(skillId)
+            return template && form.value.skill_tags.includes(template.name)
+          })
+
+          if (skillIdsToUnlock.length > 0) {
+            await skillStore.unlockSkills(skillIdsToUnlock)
+            console.log('✨ 已解鎖技能:', skillIdsToUnlock)
+          }
+        } catch (unlockError) {
+          console.warn('解鎖技能失敗，但任務已創建:', unlockError)
+        }
+      }
       
       // 如果用戶選擇生成子任務，立即開始任務
       if (form.value.generate_subtasks && response.data?.id) {
@@ -874,7 +785,36 @@ watch(() => form.value.title, () => {
   if (errors.value.title) {
     validateForm()
   }
+  // 自動推薦技能標籤
+  updateSkillSuggestions()
 })
+
+// 當描述變化時也更新推薦
+watch(() => form.value.description, () => {
+  updateSkillSuggestions()
+})
+
+// 更新技能推薦
+const updateSkillSuggestions = () => {
+  if (!form.value.title.trim()) {
+    suggestedSkills.value = []
+    form.value.skill_tags = []
+    return
+  }
+
+  const skillIds = suggestSkillsForTask(form.value.title, form.value.description)
+  suggestedSkills.value = skillIds
+
+  // 自動將所有推薦的技能加入 skill_tags
+  if (skillIds.length > 0) {
+    const skillNames = skillIds
+      .map(id => getSkillTemplate(id)?.name)
+      .filter(name => name) as string[]
+    form.value.skill_tags = skillNames
+  } else {
+    form.value.skill_tags = []
+  }
+}
 
 // 組件掛載時載入技能數據
 onMounted(() => {
