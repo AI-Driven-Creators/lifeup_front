@@ -36,15 +36,6 @@
           </p>
         </div>
       </template>
-      <template #action>
-        <button
-          @click="downloadHistory"
-          class="btn-secondary text-sm flex items-center gap-2"
-        >
-          <span>📥</span>
-          <span>下載對話記錄</span>
-        </button>
-      </template>
     </PageHeader>
     
     <!-- 聊天訊息區域 -->
@@ -349,6 +340,9 @@ const getPersonalityIntroMessage = (personalityType: string): string => {
 onMounted(async () => {
   console.log('CoachChatPage 初始化，當前用戶 ID:', currentUserId.value)
 
+  // 設置任務模式為激活狀態
+  isTaskModeActive.value = true
+
   // 先載入個性資料
   await loadAvailablePersonalities()
   await loadCurrentPersonality()
@@ -372,9 +366,7 @@ onMounted(async () => {
     const welcomeMessage: ChatMessageType = {
       id: '1',
       role: 'coach',
-      content: selectedPersonality.value 
-        ? getPersonalityIntroMessage(selectedPersonality.value) 
-        : '你好！我是你的小教練，準備好開始我們的對話了嗎？',
+      content: '你好！我是你的小教練，專門幫助你創建任務。請描述你想要創建的任務，我會為你生成詳細的任務內容！',
       timestamp: new Date(),
       ephemeral: true
     }
@@ -446,21 +438,16 @@ const sendMessage = async (content: string) => {
   }
 }
 
-// 處理發送訊息（同時處理任務模式）
+// 處理發送訊息（現在只有任務創建模式）
 const handleSendMessage = async (content: string, isTaskMode: boolean) => {
-  if (isTaskMode) {
-    // 任務模式：直接生成任務
-    await generateTaskFromText(content)
-  } else {
-    // 普通模式：發送聊天訊息
-    await sendMessage(content)
-  }
+  // 現在只有任務創建模式
+  await generateTaskFromText(content)
 }
 
-// 處理任務模式狀態變更（切換時不在對話中插入任何訊息）
+// 處理任務模式狀態變更（現在任務模式總是激活）
 const handleTaskModeChange = (isActive: boolean) => {
-  isTaskModeActive.value = isActive
-  // 切換模式時僅更新狀態，不推送任何聊天訊息
+  // 現在任務模式總是激活的，不需要處理切換
+  isTaskModeActive.value = true
 }
 
 // 從文本直接生成任務

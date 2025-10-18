@@ -1,23 +1,11 @@
 <template>
   <div class="bg-primary-100 border-t border-primary-200 p-4">
-    <!-- 對話模式選擇 -->
-    <div class="mb-3 flex items-center justify-center">
-      <select
-        v-model="chatMode"
-        @change="handleModeChange"
-        class="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="normal">💬 普通對話模式</option>
-        <option value="task">🎯 任務創建模式</option>
-      </select>
-    </div>
-    
     <div class="flex items-center space-x-2">
       <input
         v-model="inputMessage"
         @keypress.enter="handleSend"
         type="text"
-        :placeholder="chatMode === 'task' ? '描述你想創建的任務...' : '輸入訊息'"
+        placeholder="描述你想創建的任務..."
         :disabled="props.disabled"
         class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
       >
@@ -28,12 +16,10 @@
           'px-4 py-2 rounded-lg font-medium transition-colors',
           (props.disabled || !inputMessage.trim())
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : chatMode === 'task'
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-primary-600 text-white hover:bg-primary-700'
+            : 'bg-blue-500 text-white hover:bg-blue-600'
         ]"
       >
-        {{ chatMode === 'task' ? '創建任務' : '發送' }}
+        創建任務
       </button>
     </div>
   </div>
@@ -55,19 +41,12 @@ const props = withDefaults(defineProps<Props>(), { disabled: false })
 const emit = defineEmits<Emits>()
 
 const inputMessage = ref('')
-const chatMode = ref<'normal' | 'task'>('normal')
-
-const handleModeChange = () => {
-  const isTaskMode = chatMode.value === 'task'
-  emit('taskModeChange', isTaskMode)
-}
 
 const handleSend = () => {
   if (inputMessage.value.trim()) {
-    const isTaskMode = chatMode.value === 'task'
-    emit('send', inputMessage.value.trim(), isTaskMode)
+    // 現在只有任務創建模式
+    emit('send', inputMessage.value.trim(), true)
     inputMessage.value = ''
-    // 移除自動切換回普通模式的邏輯，讓用戶可以連續創建任務
   }
 }
 </script>
