@@ -348,6 +348,35 @@ export class ApiClient {
     });
   }
 
+  // 專家系統任務生成 API
+  async generateTaskWithExpert(description: string, userId?: string) {
+    return this.request<{ 
+      success: boolean, 
+      data: {
+        expert_match: {
+          expert: {
+            name: string,
+            title: string,
+            description: string,
+            expertise_areas: string[],
+            emoji: string
+          },
+          confidence: number,
+          reasoning: string
+        },
+        task_json: any,
+        expert_message: string
+      }, 
+      message: string 
+    }>('/api/tasks/generate-with-expert', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        description: description,
+        user_id: userId 
+      }),
+    });
+  }
+
   async validateAndPreviewTask(taskJson: any) {
     return this.request<{ 
       success: boolean, 

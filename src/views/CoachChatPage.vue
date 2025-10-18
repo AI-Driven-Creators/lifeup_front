@@ -469,16 +469,30 @@ const generateTaskFromText = async (taskDescription: string) => {
   isGeneratingTask.value = true
   
   try {
-    // 使用 generateTaskFromChat API，但只傳送用戶的任務描述
-    const generateRes = await apiClient.generateTaskFromChat([`用戶: ${taskDescription}`])
+    // 使用專家系統生成任務
+    const expertRes = await apiClient.generateTaskWithExpert(taskDescription, currentUserId.value)
     
-    if (generateRes.success && generateRes.data) {
+    if (expertRes.success && expertRes.data) {
+      // 添加專家匹配訊息到對話記錄
+      const expertMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'coach',
+        content: expertRes.data.expert_message,
+        timestamp: new Date(),
+        ephemeral: true
+      }
+      messages.value.push(expertMessage)
+      
+      // 滾動到底部顯示專家訊息
+      await nextTick()
+      scrollToBottom()
+      
       // 驗證並生成預覽
-      const validateRes = await apiClient.validateAndPreviewTask(generateRes.data)
+      const validateRes = await apiClient.validateAndPreviewTask(expertRes.data.task_json)
       
       if (validateRes.success && validateRes.data) {
         if (validateRes.data.is_valid) {
-          previewTaskJson.value = validateRes.data.task_json
+          previewTaskJson.value = expertRes.data.task_json
           taskPreviewText.value = validateRes.data.task_preview || ''
           validationErrors.value = []
           showTaskPreview.value = true
