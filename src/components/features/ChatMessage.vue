@@ -35,6 +35,82 @@
         v-html="formattedContent"
       ></div>
       
+      <!-- 專家選項按鈕 -->
+      <div v-if="message.showExpertOptions" class="mt-3 space-y-2">
+        <div class="text-sm text-gray-600 mb-2">選擇你需要的幫助：</div>
+        <div class="flex flex-wrap gap-2">
+                  <button
+                    @click="handleExpertOption('analyze')"
+                    :disabled="props.isAnalyzing"
+                    :class="[
+                      'px-3 py-2 rounded-lg transition-colors text-sm font-medium',
+                      props.isAnalyzing 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    ]"
+                  >
+                    📊 分析加強方向
+                  </button>
+                  <button
+                    @click="handleExpertOption('goals')"
+                    :disabled="props.isAnalyzing"
+                    :class="[
+                      'px-3 py-2 rounded-lg transition-colors text-sm font-medium',
+                      props.isAnalyzing 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-purple-500 text-white hover:bg-purple-600'
+                    ]"
+                  >
+                    🎯 生成明確目標
+                  </button>
+                  <button
+                    @click="handleExpertOption('resources')"
+                    :disabled="props.isAnalyzing"
+                    :class="[
+                      'px-3 py-2 rounded-lg transition-colors text-sm font-medium',
+                      props.isAnalyzing 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-orange-500 text-white hover:bg-orange-600'
+                    ]"
+                  >
+                    📚 建議學習資源
+                  </button>
+        </div>
+      </div>
+      
+      <!-- 加強方向選項 -->
+      <div v-if="message.showDirections && message.directions" class="mt-3 space-y-2">
+        <div class="space-y-2">
+          <div
+            v-for="(direction, index) in message.directions"
+            :key="index"
+            class="flex items-start space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+            @click="handleDirectionSelect(direction.title)"
+          >
+            <input
+              type="checkbox"
+              :id="`direction-${index}`"
+              class="mt-1"
+              :checked="isDirectionSelected(direction.title)"
+            >
+            <label :for="`direction-${index}`" class="flex-1 cursor-pointer">
+              <div class="font-medium text-gray-900">{{ direction.title }}</div>
+              <div class="text-sm text-gray-600">{{ direction.description }}</div>
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 生成任務按鈕 -->
+      <div v-if="message.showGenerateButton" class="mt-2">
+        <button
+          @click="handleGenerateTask"
+          class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+        >
+          🎯 生成任務
+        </button>
+      </div>
+      
       <!-- 時間戳記 -->
       <div 
         class="text-xs text-gray-400 mt-1"
@@ -47,29 +123,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { ChatMessage } from '@/types'
 
 interface Props {
   message: ChatMessage
   userName?: string
+  isAnalyzing?: boolean
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'dismiss', id: string): void
+  (e: 'generateTask'): void
+  (e: 'expertOption', option: string): void
+  (e: 'directionSelect', title: string): void
 }>()
 
 const isVisible = ref(true)
 
-onMounted(() => {
-  if (props.message.ephemeral) {
-    setTimeout(() => {
-      isVisible.value = false
-      // 等過場動畫結束後從父層移除
-      setTimeout(() => emit('dismiss', props.message.id), 800)
-    }, 6000)
+const handleGenerateTask = () => {
+  emit('generateTask')
+}
+
+const handleExpertOption = (option: string) => {
+  emit('expertOption', option)
+}
+
+const handleDirectionSelect = (title: string) => {
+  // 先更新本地狀態
+  const index = localSelectedDirections.value.indexOf(title)
+  if (index > -1) {
+    localSelectedDirections.value.splice(index, 1)
+  } else {
+    localSelectedDirections.value.push(title)
   }
+  
+  // 然後發送事件給父組件
+  emit('directionSelect', title)
+}
+
+const isDirectionSelected = (title: string) => {
+  return localSelectedDirections.value.includes(title)
+}
+
+// 添加本地狀態來追蹤選中的方向
+const localSelectedDirections = ref<string[]>([])
+
+// 監聽父組件傳入的選中狀態
+watch(() => props.message.directions, (newDirections) => {
+  if (newDirections) {
+    // 重置本地狀態
+    localSelectedDirections.value = []
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  // 移除自動移除訊息的功能，所有訊息都會保持顯示
 })
 
 const formatTime = (timestamp: Date) => {

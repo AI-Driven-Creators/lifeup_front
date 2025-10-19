@@ -349,29 +349,76 @@ export class ApiClient {
   }
 
   // 專家系統任務生成 API
-  async generateTaskWithExpert(description: string, userId?: string) {
+  async generateTaskWithExpert(description: string, expertName: string, expertDescription: string, userId?: string) {
     return this.request<{ 
       success: boolean, 
       data: {
         expert_match: {
           expert: {
             name: string,
-            title: string,
             description: string,
             expertise_areas: string[],
             emoji: string
           },
-          confidence: number,
-          reasoning: string
+          confidence: number
         },
-        task_json: any,
-        expert_message: string
+        task_json: any
       }, 
       message: string 
     }>('/api/tasks/generate-with-expert', {
       method: 'POST',
       body: JSON.stringify({ 
         description: description,
+        user_id: userId,
+        expert_name: expertName,
+        expert_description: expertDescription
+      }),
+    });
+  }
+
+  // 只匹配專家 API（不生成任務）
+  async matchExpertOnly(description: string, userId?: string) {
+    return this.request<{ 
+      success: boolean, 
+      data: {
+        expert_match: {
+          expert: {
+            name: string,
+            description: string,
+            expertise_areas: string[],
+            emoji: string
+          },
+          confidence: number
+        }
+      }, 
+      message: string 
+    }>('/api/tasks/match-expert', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        description: description,
+        user_id: userId 
+      }),
+    });
+  }
+
+  // 專家分析 API
+  async expertAnalysis(description: string, expertName: string, analysisType: string, userId?: string) {
+    return this.request<{ 
+      success: boolean, 
+      data: {
+        analysis_result: string,
+        directions?: Array<{
+          title: string,
+          description: string
+        }>
+      }, 
+      message: string 
+    }>('/api/tasks/expert-analysis', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        description: description,
+        expert_name: expertName,
+        analysis_type: analysisType,
         user_id: userId 
       }),
     });

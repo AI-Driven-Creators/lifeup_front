@@ -99,6 +99,17 @@ export interface ChatMessage {
   timestamp: Date;
   // 是否為暫時訊息（不會被記錄到對話歷史），用於自動淡出
   ephemeral?: boolean;
+  // 是否顯示生成任務按鈕
+  showGenerateButton?: boolean;
+  // 是否顯示專家選項按鈕
+  showExpertOptions?: boolean;
+  // 是否顯示加強方向選項
+  showDirections?: boolean;
+  // 加強方向選項數據
+  directions?: Array<{
+    title: string;
+    description: string;
+  }>;
 }
 
 export interface CoachStyle {
