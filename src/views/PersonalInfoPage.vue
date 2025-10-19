@@ -149,7 +149,10 @@
         
         <!-- 今天的成長 -->
         <TodayGrowth :progress="userStore.todayProgress" :loading="userStore.loading" />
-        
+
+        <!-- 任務完成編年史 -->
+        <TaskHistoryTimeline v-if="userStore.user.id" :user-id="userStore.user.id" />
+
         <!-- 屬性雷達圖 -->
         <AttributesRadar v-if="userStore.user.attributes" :attributes="userStore.user.attributes" />
         
@@ -189,6 +192,7 @@ import TodayGrowth from '@/components/features/TodayGrowth.vue'
 import AttributesRadar from '@/components/features/AttributesRadar.vue'
 import GrowthAdvice from '@/components/features/GrowthAdvice.vue'
 import ApiSettingsDialog from '@/components/settings/ApiSettingsDialog.vue'
+import TaskHistoryTimeline from '@/components/features/TaskHistoryTimeline.vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
