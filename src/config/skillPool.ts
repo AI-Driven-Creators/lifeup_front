@@ -398,31 +398,137 @@ export const SKILL_POOL: SkillTemplate[] = [
 
 /**
  * 根據任務標題和描述，推薦相關技能
+ * 使用加權評分系統，提升匹配準確度
  * @param taskTitle 任務標題
  * @param taskDescription 任務描述
  * @returns 推薦的技能ID列表
  */
 export function suggestSkillsForTask(taskTitle: string, taskDescription: string = ''): string[] {
-  const text = `${taskTitle} ${taskDescription}`.toLowerCase()
-  const matchedSkills: { skillId: string; matchCount: number }[] = []
+  const title = taskTitle.toLowerCase().trim()
+  const description = taskDescription.toLowerCase().trim()
+
+  // 如果標題為空，直接返回
+  if (!title) {
+    return []
+  }
+
+  const matchedSkills: { skillId: string; score: number }[] = []
 
   SKILL_POOL.forEach(skill => {
-    let matchCount = 0
+    let score = 0
+
+    // 先檢查技能名稱是否直接出現在任務中（最高優先級）
+    const skillNameLower = skill.name.toLowerCase()
+    if (title.includes(skillNameLower)) {
+      score += 5.0  // 標題包含技能名稱，給予最高分
+    }
+    if (description && description.includes(skillNameLower)) {
+      score += 2.5  // 描述包含技能名稱
+    }
+
+    // 關鍵字匹配（加權評分）
     skill.keywords.forEach(keyword => {
-      if (text.includes(keyword.toLowerCase())) {
-        matchCount++
+      const lowerKeyword = keyword.toLowerCase()
+
+      // === 標題匹配（權重較高） ===
+
+      // 完全匹配（整個標題 = 關鍵字）
+      if (title === lowerKeyword) {
+        score += 4.0
+      }
+      // 標題包含關鍵字（完整匹配）
+      else if (title.includes(lowerKeyword)) {
+        score += 2.5
+      }
+      // 標題的部分匹配（模糊匹配）
+      else if (containsPartialMatch(title, lowerKeyword)) {
+        score += 1.0
+      }
+
+      // === 描述匹配（權重較低） ===
+
+      if (description) {
+        // 描述完全匹配
+        if (description === lowerKeyword) {
+          score += 2.0
+        }
+        // 描述包含關鍵字
+        else if (description.includes(lowerKeyword)) {
+          score += 1.2
+        }
+        // 描述的部分匹配
+        else if (containsPartialMatch(description, lowerKeyword)) {
+          score += 0.6
+        }
       }
     })
-    if (matchCount > 0) {
-      matchedSkills.push({ skillId: skill.id, matchCount })
+
+    // 只保留有分數的技能
+    if (score > 0) {
+      matchedSkills.push({ skillId: skill.id, score })
     }
   })
 
-  // 按匹配數排序，返回前3個最相關的技能
+  // 按分數排序（由高到低）
+  matchedSkills.sort((a, b) => b.score - a.score)
+
+  // 動態決定返回數量：
+  // - 如果最高分 >= 5.0：高度相關，返回前3個
+  // - 如果最高分 >= 3.0：中度相關，返回前2個
+  // - 如果最高分 >= 1.5：低度相關，返回前1個
+  // - 分數 < 1.0：過濾掉太弱的匹配
+  let returnCount = 1
+  if (matchedSkills.length > 0) {
+    const topScore = matchedSkills[0].score
+    if (topScore >= 5.0) {
+      returnCount = 3
+    } else if (topScore >= 3.0) {
+      returnCount = 2
+    }
+  }
+
+  // 過濾掉分數過低的技能並限制返回數量
   return matchedSkills
-    .sort((a, b) => b.matchCount - a.matchCount)
-    .slice(0, 3)
+    .filter(item => item.score >= 1.0)
+    .slice(0, Math.min(returnCount, 5))
     .map(item => item.skillId)
+}
+
+/**
+ * 檢查是否包含部分匹配（模糊匹配）
+ * 支援詞根匹配和前綴匹配
+ * @param text 要搜尋的文本
+ * @param keyword 關鍵字
+ * @returns 是否匹配
+ */
+function containsPartialMatch(text: string, keyword: string): boolean {
+  // 如果關鍵字太短，不進行部分匹配
+  if (keyword.length < 3) {
+    return false
+  }
+
+  // 1. 前綴匹配：檢查是否包含關鍵字的前幾個字符
+  const prefix = keyword.substring(0, Math.min(keyword.length, 4))
+  if (text.includes(prefix)) {
+    return true
+  }
+
+  // 2. 詞根匹配：去除常見英文後綴
+  const root = keyword.replace(/(ing|ed|s|er|ion|tion|ness|ment)$/i, '')
+  if (root.length >= 3 && root !== keyword && text.includes(root)) {
+    return true
+  }
+
+  // 3. 中文詞組部分匹配：支援2字以上的中文關鍵字
+  if (/[\u4e00-\u9fa5]/.test(keyword) && keyword.length >= 2) {
+    // 嘗試匹配關鍵字的前2個字
+    const chinesePrefix = keyword.substring(0, 2)
+    if (text.includes(chinesePrefix)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 /**
