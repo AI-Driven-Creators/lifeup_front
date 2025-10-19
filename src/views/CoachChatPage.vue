@@ -256,8 +256,50 @@ const currentLearningDuration = ref('')
 // 專家選項暫存
 const selectedExpertOptions = ref<string[]>([])
 const expertOptionMessages = ref<string[]>([])
-const selectedDirections = ref<string[]>([])
+
+type DirectionOption = {
+  title: string
+  description: string
+}
+
+const availableDirections = ref<DirectionOption[]>([])
+const selectedDirections = ref<DirectionOption[]>([])
+const expertOptionOutputs = ref<Record<string, string>>({})
 const isAnalyzing = ref(false)
+
+const currentSkillLevelLabel = ref('')
+const currentLearningDurationLabel = ref('')
+
+const skillLevelLabelMap: Record<string, string> = {
+  beginner: '初學者',
+  intermediate: '有基礎',
+  advanced: '資深',
+  expert: '專家'
+}
+
+const learningDurationLabelMap: Record<string, string> = {
+  '0': '0個月',
+  '1-3': '1~3個月',
+  '3-6': '3~6個月',
+  '6-12': '6個月到1年',
+  '1-3years': '1~3年',
+  '3+years': '3年以上'
+}
+
+const expertOptionLabelMap: Record<string, string> = {
+  analyze: '分析加強方向',
+  goals: '生成明確目標',
+  resources: '建議學習資源'
+}
+
+const formatDirections = (directions: DirectionOption[]): string => {
+  if (!directions || directions.length === 0) {
+    return ''
+  }
+  return directions
+    .map((direction, index) => `${index + 1}. ${direction.title} - ${direction.description}`)
+    .join('\n')
+}
 
 // 載入歷史對話記錄
 const loadChatHistory = async () => {
@@ -476,27 +518,19 @@ const matchExpert = async (taskDescription: string, skillLevel?: string, learnin
   currentTaskDescription.value = taskDescription
   currentSkillLevel.value = skillLevel || 'beginner'
   currentLearningDuration.value = learningDuration || '0'
+  currentSkillLevelLabel.value = skillLevelLabelMap[currentSkillLevel.value] || '初學者'
+  currentLearningDurationLabel.value = learningDurationLabelMap[currentLearningDuration.value] || '0個月'
+  selectedExpertOptions.value = []
+  expertOptionOutputs.value = {}
+  availableDirections.value = []
+  selectedDirections.value = []
   
   // 構建包含技能水平信息的完整描述
   let fullDescription = taskDescription
   
   if (skillLevel && learningDuration) {
-    const skillLevelText = {
-      'beginner': '初學者',
-      'intermediate': '有基礎',
-      'advanced': '資深',
-      'expert': '專家'
-    }[skillLevel] || '初學者'
-    
-    const durationText = {
-      '0': '0個月',
-      '1-3': '1~3個月',
-      '3-6': '3~6個月',
-      '6-12': '6個月到1年',
-      '1-3years': '1~3年',
-      '3+years': '3年以上'
-    }[learningDuration] || '0個月'
-    
+    const skillLevelText = skillLevelLabelMap[skillLevel] || '初學者'
+    const durationText = learningDurationLabelMap[learningDuration] || '0個月'
     fullDescription = `${taskDescription}（我的熟悉程度：${skillLevelText}，已學習時長：${durationText}）`
   }
   
@@ -571,91 +605,116 @@ const generateTaskFromExpert = async () => {
   
   try {
     // 構建包含專家選項的完整描述
-    let fullDescription = `${currentTaskDescription.value}（我的熟悉程度：${currentSkillLevel.value}，已學習時長：${currentLearningDuration.value}）`
+    const baseDescriptionParts = [
+      currentTaskDescription.value
+    ]
+
+    if (currentSkillLevelLabel.value || currentLearningDurationLabel.value) {
+      const skillLabel = currentSkillLevelLabel.value || '初學者'
+      const durationLabel = currentLearningDurationLabel.value || '0個月'
+      baseDescriptionParts.push(`（我的熟悉程度：${skillLabel}，已學習時長：${durationLabel}）`)
+    }
+
+    let fullDescription = baseDescriptionParts.join('')
     
     if (selectedExpertOptions.value.length > 0) {
-      const optionTexts = {
-        'analyze': '分析加強方向',
-        'goals': '生成明確目標',
-        'resources': '建議學習資源'
-      }
-      
       const selectedOptions = selectedExpertOptions.value
-        .map(option => optionTexts[option as keyof typeof optionTexts])
+        .map(option => expertOptionLabelMap[option] || option)
         .join('、')
-      
       fullDescription += `\n\n請特別關注以下方面：${selectedOptions}`
     }
-    
-    // 如果有選擇具體的加強方向，添加到提示詞中
-    if (selectedDirections.value.length > 0) {
-      fullDescription += `\n\n具體的加強方向：${selectedDirections.value.join('、')}`
+
+    const selectedAnalyzeDirections = selectedDirections.value
+      .filter(direction => direction && direction.title)
+
+    if (selectedAnalyzeDirections.length > 0) {
+      fullDescription += `\n\n具體的加強方向：\n${formatDirections(selectedAnalyzeDirections)}`
+    }
+
+    const expertOutputs = Object.values(expertOptionOutputs.value)
+      .filter(output => output && output.trim().length > 0)
+
+    if (expertOutputs.length > 0) {
+      fullDescription += `\n\n先前分析結果彙整：\n${expertOutputs.join('\n\n')}`
     }
     
     // 使用匹配到的專家生成任務
-    const expertRes = await apiClient.generateTaskWithExpert(
-      fullDescription,
-      matchedExpert.value.expert.name,
-      matchedExpert.value.expert.description,
-      currentUserId.value
-    )
-    
-    if (expertRes.success && expertRes.data) {
-      // 驗證並生成預覽
-      const validateRes = await apiClient.validateAndPreviewTask(expertRes.data.task_json)
-      
-      if (validateRes.success && validateRes.data) {
-        if (validateRes.data.is_valid) {
-          previewTaskJson.value = expertRes.data.task_json
-          taskPreviewText.value = validateRes.data.task_preview || ''
-          validationErrors.value = []
-          showTaskPreview.value = true
-          
-          const coachResponse = `我理解了你的需求！我已經為你生成了一個任務：「${validateRes.data.task_json?.title}」。請查看預覽並確認是否要創建這個任務。`
-          
-          // 通過 ChatGPT API 保存對話到數據庫（使用任務模式的特殊格式）
-          try {
-            await apiClient.sendMessageToChatGPT(`[任務模式] ${currentTaskDescription.value}`, currentUserId.value)
-          } catch (saveError) {
-            console.warn('保存任務模式對話失敗:', saveError)
-          }
-          
-          // 添加 AI 教練的回應到對話記錄
-          const coachMessage: ChatMessageType = {
-            id: (Date.now() + 1).toString(),
-            role: 'coach',
-            content: coachResponse,
-            timestamp: new Date(),
-            ephemeral: true
-          }
-          messages.value.push(coachMessage)
-          
-          // 滾動到底部
-          await nextTick()
-          scrollToBottom()
-        } else {
-          // 任務驗證失敗
-          validationErrors.value = validateRes.data.validation_errors || []
-          const errorMessage = `任務生成失敗，請檢查以下問題：\n${validationErrors.value.join('\n')}`
-          
-          const errorCoachMessage: ChatMessageType = {
-            id: (Date.now() + 1).toString(),
-            role: 'coach',
-            content: errorMessage,
-            timestamp: new Date(),
-            ephemeral: true
-          }
-          messages.value.push(errorCoachMessage)
-          
-          await nextTick()
-          scrollToBottom()
-        }
-      } else {
-        throw new Error('任務驗證失敗')
-      }
-    } else {
-      throw new Error('任務生成失敗')
+    const expertRes = await apiClient.generateTaskWithExpert({
+      description: fullDescription,
+      promptDescription: currentTaskDescription.value,
+      userId: currentUserId.value,
+      expertMatch: matchedExpert.value,
+      expertName: matchedExpert.value.expert.name,
+      expertDescription: matchedExpert.value.expert.description,
+      selectedOptions: selectedExpertOptions.value,
+      selectedDirections: selectedAnalyzeDirections,
+      expertOutputs: expertOptionOutputs.value,
+      skillLevelLabel: currentSkillLevelLabel.value,
+      learningDurationLabel: currentLearningDurationLabel.value
+    })
+
+    if (!expertRes.success || !expertRes.data) {
+      console.error('生成任務 API 失敗:', expertRes)
+      throw new Error(expertRes.message || '任務生成失敗')
     }
+
+    // 驗證並生成預覽
+    const validateRes = await apiClient.validateAndPreviewTask(expertRes.data.task_json)
+
+    if (!validateRes.success || !validateRes.data) {
+      console.error('任務驗證 API 失敗:', validateRes)
+      throw new Error(validateRes.message || '任務驗證失敗')
+    }
+
+    const validationPayload = validateRes.data
+
+    if (!validationPayload.is_valid) {
+      validationErrors.value = validationPayload.validation_errors || []
+
+      const errorMessage = validationErrors.value.length > 0
+        ? `任務生成失敗，請檢查以下問題：\n${validationErrors.value.join('\n')}`
+        : '任務生成失敗，請查看輸入內容是否完整。'
+
+      console.warn('任務驗證失敗細節:', validationPayload)
+
+      try {
+        await apiClient.sendMessageToChatGPT(`[任務模式] ${currentTaskDescription.value}`, currentUserId.value)
+      } catch (saveError) {
+        console.warn('保存任務模式對話失敗:', saveError)
+      }
+
+      const errorCoachMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'coach',
+        content: errorMessage,
+        timestamp: new Date(),
+        ephemeral: true
+      }
+      messages.value.push(errorCoachMessage)
+
+      await nextTick()
+      scrollToBottom()
+      return
+    }
+
+    previewTaskJson.value = expertRes.data.task_json
+    taskPreviewText.value = validationPayload.task_preview || ''
+    validationErrors.value = []
+    showTaskPreview.value = true
+
+    const coachResponse = `我理解了你的需求！我已經為你生成了一個任務：「${expertRes.data.task_json?.title}」。請查看預覽並確認是否要創建這個任務。`
+
+    const coachMessage: ChatMessageType = {
+      id: (Date.now() + 1).toString(),
+      role: 'coach',
+      content: coachResponse,
+      timestamp: new Date(),
+      ephemeral: true
+    }
+    messages.value.push(coachMessage)
+
+    await nextTick()
+    scrollToBottom()
   } catch (error) {
     console.error('生成任務失敗:', error)
     const errorResponse = '抱歉，生成任務時發生了錯誤。請稍後再試，或者換一種方式描述你的任務。'
@@ -723,6 +782,7 @@ const handleExpertOption = async (option: string) => {
         const analysisRes = await apiClient.expertAnalysis(
           currentTaskDescription.value,
           matchedExpert.value.expert.name,
+          matchedExpert.value.expert.description,
           option,
           currentUserId.value
         )
@@ -735,6 +795,7 @@ const handleExpertOption = async (option: string) => {
           }
           
           if (option === 'analyze' && analysisRes.data.directions) {
+        availableDirections.value = analysisRes.data.directions
             // 顯示可勾選的加強方向選項
             const directionsMessage: ChatMessageType = {
               id: (Date.now() + Math.random()).toString(),
@@ -746,6 +807,7 @@ const handleExpertOption = async (option: string) => {
               directions: analysisRes.data.directions
             }
             messages.value.push(directionsMessage)
+        expertOptionOutputs.value[option] = formatDirections(analysisRes.data.directions)
           } else {
             // 其他分析類型顯示文字結果
             const analysisMessage: ChatMessageType = {
@@ -756,6 +818,7 @@ const handleExpertOption = async (option: string) => {
               ephemeral: true
             }
             messages.value.push(analysisMessage)
+        expertOptionOutputs.value[option] = analysisRes.data.analysis_result
           }
         }
       } catch (error) {
@@ -800,19 +863,21 @@ const handleExpertOption = async (option: string) => {
 
 // 處理加強方向選擇
 const handleDirectionSelect = (title: string) => {
-  const index = selectedDirections.value.indexOf(title)
+  const index = selectedDirections.value.findIndex(direction => direction.title === title)
   let wasSelected = index > -1
   
   if (wasSelected) {
     // 如果之前已選中，則取消選擇
     selectedDirections.value.splice(index, 1)
   } else {
-    // 如果之前未選中，則添加選擇
-    selectedDirections.value.push(title)
+    const direction = availableDirections.value.find(item => item.title === title)
+    if (direction) {
+      selectedDirections.value.push(direction)
+    }
   }
   
   // 確認選擇狀態並添加確認訊息
-  const isNowSelected = selectedDirections.value.includes(title)
+  const isNowSelected = selectedDirections.value.some(direction => direction.title === title)
   const action = isNowSelected ? '已選擇' : '已取消選擇'
   
   const confirmMessage: ChatMessageType = {
@@ -829,14 +894,16 @@ const handleDirectionSelect = (title: string) => {
     const summaryMessage: ChatMessageType = {
       id: (Date.now() + Math.random()).toString(),
       role: 'coach',
-      content: `目前已選擇 ${selectedDirections.value.length} 個加強方向：${selectedDirections.value.join('、')}`,
+      content: `目前已選擇 ${selectedDirections.value.length} 個加強方向：${selectedDirections.value.map(direction => direction.title).join('、')}`,
       timestamp: new Date(),
       ephemeral: true
     }
     //messages.value.push(summaryMessage)
   }
   
-  console.log('選中的方向:', selectedDirections.value);
+  expertOptionOutputs.value['analyze'] = formatDirections(selectedDirections.value)
+  
+  console.log('選中的方向:', selectedDirections.value)
   nextTick(() => scrollToBottom())
 }
 
@@ -908,4 +975,5 @@ const editTask = () => {
   router.push('/mission?editMode=true')
 }
 </script>
+
 

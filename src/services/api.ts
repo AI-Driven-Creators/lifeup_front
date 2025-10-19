@@ -349,7 +349,19 @@ export class ApiClient {
   }
 
   // 專家系統任務生成 API
-  async generateTaskWithExpert(description: string, expertName: string, expertDescription: string, userId?: string) {
+  async generateTaskWithExpert(payload: {
+    description: string,
+    promptDescription?: string,
+    userId?: string,
+    expertMatch?: any,
+    expertName: string,
+    expertDescription: string,
+    selectedOptions?: string[],
+    selectedDirections?: Array<{ title: string; description: string }>,
+    expertOutputs?: Record<string, string>,
+    skillLevelLabel?: string,
+    learningDurationLabel?: string,
+  }) {
     return this.request<{ 
       success: boolean, 
       data: {
@@ -360,7 +372,9 @@ export class ApiClient {
             expertise_areas: string[],
             emoji: string
           },
-          confidence: number
+          confidence: number,
+          ai_expert_name: string,
+          ai_expert_description: string
         },
         task_json: any
       }, 
@@ -368,10 +382,17 @@ export class ApiClient {
     }>('/api/tasks/generate-with-expert', {
       method: 'POST',
       body: JSON.stringify({ 
-        description: description,
-        user_id: userId,
-        expert_name: expertName,
-        expert_description: expertDescription
+        description: payload.description,
+        prompt_description: payload.promptDescription,
+        user_id: payload.userId,
+        expert_name: payload.expertName,
+        expert_description: payload.expertDescription,
+        expert_match: payload.expertMatch,
+        selected_options: payload.selectedOptions,
+        selected_directions: payload.selectedDirections,
+        expert_outputs: payload.expertOutputs,
+        skill_level_label: payload.skillLevelLabel,
+        learning_duration_label: payload.learningDurationLabel
       }),
     });
   }
@@ -402,7 +423,7 @@ export class ApiClient {
   }
 
   // 專家分析 API
-  async expertAnalysis(description: string, expertName: string, analysisType: string, userId?: string) {
+  async expertAnalysis(description: string, expertName: string, expertDescription: string, analysisType: string, userId?: string) {
     return this.request<{ 
       success: boolean, 
       data: {
@@ -418,6 +439,7 @@ export class ApiClient {
       body: JSON.stringify({ 
         description: description,
         expert_name: expertName,
+        expert_description: expertDescription,
         analysis_type: analysisType,
         user_id: userId 
       }),
