@@ -15,6 +15,16 @@
             {{ skill }}
           </div>
         </div>
+        <!-- 屬性增益顯示 -->
+        <div v-if="hasAttributes" class="attributes-row">
+          <div
+            v-for="(value, attr) in task.attributes"
+            :key="attr"
+            class="attribute-badge"
+          >
+            {{ getAttributeLabel(attr as keyof UserAttributes) }} +{{ value }}
+          </div>
+        </div>
       </div>
 
       <!-- 中間：經驗值 -->
@@ -41,7 +51,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { RotateCcw } from 'lucide-vue-next'
-import type { Task } from '@/types'
+import type { Task, UserAttributes } from '@/types'
 
 interface Props {
   task: Task
@@ -78,6 +88,24 @@ const getDisplaySkills = () => {
 
   // 直接返回完整的技能名稱
   return props.task.skillTags
+}
+
+// 檢查是否有屬性值
+const hasAttributes = computed(() => {
+  return props.task.attributes && Object.keys(props.task.attributes).length > 0
+})
+
+// 屬性名稱映射（使用文字標籤）
+const getAttributeLabel = (attr: keyof UserAttributes): string => {
+  const labels: Record<keyof UserAttributes, string> = {
+    intelligence: '智力',
+    endurance: '毅力',
+    creativity: '創造力',
+    social: '社交力',
+    focus: '專注力',
+    adaptability: '適應力'
+  }
+  return labels[attr] || attr
 }
 
 </script>
@@ -131,19 +159,27 @@ const getDisplaySkills = () => {
 }
 
 .task-exp {
-  font-size: 13px;
-  color: #9e8747;
+  font-size: 12px;
+  color: #78716c;
   font-weight: 600;
   margin: 0;
-  background: linear-gradient(135deg, #fcfaf7 0%, #f4efe5 100%);
-  padding: 4px 8px;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  padding: 4px 10px;
+  border-radius: 8px;
   display: inline-block;
-  border: 1px solid #f4efe5;
+  border: 1px solid #fde68a;
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.task-exp:hover {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fcd34d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(120, 113, 108, 0.1);
 }
 
 .exp-text {
@@ -194,5 +230,49 @@ const getDisplaySkills = () => {
   border-color: #f4efe5;
   transform: translateY(-1px) scale(1.05);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 屬性徽章 */
+.attribute-badge {
+  font-size: 12px;
+  color: #78716c;
+  background: linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%);
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #e7e5e4;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.attribute-badge:hover {
+  background: linear-gradient(135deg, #f5f5f4 0%, #e7e5e4 100%);
+  border-color: #d6d3d1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(120, 113, 108, 0.1);
+}
+
+/* 已完成任務的屬性顯示 */
+.completed-card .attribute-badge {
+  opacity: 0.7;
+  background: linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%);
+  border-color: #e7e5e4;
+  color: #78716c;
+}
+
+/* 已完成任務的技能標籤 */
+.completed-card .task-exp {
+  opacity: 0.7;
+}
+
+/* 屬性行容器 */
+.attributes-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
 </style>

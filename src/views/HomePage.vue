@@ -143,29 +143,16 @@ const toggleTask = async (taskId: string) => {
   try {
     // 先從本地任務中找到任務
     const task = homepageTasks.value.find(t => t.id === taskId)
-    const wasCompleted = task?.status === 'completed' || task?.status === 'daily_completed'
 
-    await taskStore.toggleTaskStatus(taskId, task?.status)
-    
-    // 重新載入任務以確保狀態同步（移除手動狀態更新，依賴後端回應）
+    // 判斷是否為回復操作（任務已完成）
+    const isCompleted = task?.status === 'completed' || task?.status === 'daily_completed'
+
+    // 使用 task store 的 toggleTaskStatus，傳入 reverse 參數
+    await taskStore.toggleTaskStatus(taskId, task?.status, isCompleted)
+
+    // 重新載入任務以確保狀態同步
     await loadHomepageTasks()
-    
-    // 在重新載入後，重新找到任務並檢查是否剛完成
-    const updatedTask = homepageTasks.value.find(t => t.id === taskId)
-    const isNowCompleted = updatedTask?.status === 'completed' || updatedTask?.status === 'daily_completed'
-    
-    // 如果任務剛完成（從其他狀態變成completed），增加經驗值和屬性
-    if (updatedTask && isNowCompleted && !wasCompleted) {
-      // 任務完成時增加經驗值和屬性
-      userStore.updateExperience(updatedTask.experience)
-      
-      // 根據任務類型增加對應屬性
-      if (updatedTask.attributes) {
-        Object.entries(updatedTask.attributes).forEach(([attr, value]) => {          userStore.updateAttribute(attr as keyof typeof userStore.user.attributes, value)
-        })
-      }
-    }
-    
+
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新任務狀態失敗'
     console.error('Failed to toggle task:', err)
