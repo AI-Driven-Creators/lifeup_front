@@ -112,28 +112,8 @@
             ></textarea>
           </div>
 
-          <!-- 進階選項切換 -->
-          <div class="mb-4">
-            <button
-              type="button"
-              @click="showAdvanced = !showAdvanced"
-              class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              <svg
-                class="w-4 h-4 transition-transform"
-                :class="{ 'rotate-180': showAdvanced }"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-              進階選項
-            </button>
-          </div>
-
-          <!-- 進階選項 -->
-          <div v-if="showAdvanced" class="space-y-4 mb-6">
+          <!-- 其他選項 -->
+          <div class="space-y-4 mb-6">
             <!-- 優先級和難度 -->
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -162,27 +142,40 @@
               </div>
             </div>
 
-            <!-- 系統推薦技能提示 -->
-            <div v-if="suggestedSkills.length > 0" class="mb-4">
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div class="flex items-start gap-2">
-                  <span class="text-lg">✨</span>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-blue-900 mb-1">系統將自動解鎖相關技能</p>
-                    <div class="flex flex-wrap gap-2">
-                      <span
-                        v-for="skillId in suggestedSkills"
-                        :key="skillId"
-                        class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs"
-                      >
-                        <span>{{ getSkillTemplate(skillId)?.icon }}</span>
-                        <span>{{ getSkillTemplate(skillId)?.name }}</span>
-                      </span>
-                    </div>
-                    <p class="text-xs text-blue-600 mt-2">
-                      創建任務時會自動解鎖以上技能
-                    </p>
+            <!-- 技能匹配動畫覆蓋層 -->
+            <div v-if="showSkillAnimation" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60]" @click="handleCloseAnimation">
+              <div class="skill-animation-container bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl" @click.stop>
+                <div class="text-center">
+                  <div class="mb-6">
+                    <div class="text-6xl mb-4 animate-bounce">🎯</div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">技能匹配成功</h3>
+                    <p class="text-gray-600">系統已為此任務匹配相關技能</p>
                   </div>
+
+                  <div class="space-y-3 mb-6">
+                    <div
+                      v-for="(skillId, index) in suggestedSkills"
+                      :key="skillId"
+                      class="skill-tag-animate flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg"
+                      :style="{ animationDelay: `${index * 0.3}s` }"
+                    >
+                      <span class="text-2xl">{{ getSkillTemplate(skillId)?.icon }}</span>
+                      <div class="flex-1 text-left">
+                        <div class="font-medium text-gray-900">{{ getSkillTemplate(skillId)?.name }}</div>
+                        <div class="text-xs text-gray-500">{{ getSkillTemplate(skillId)?.description }}</div>
+                      </div>
+                      <svg class="w-5 h-5 text-green-500 check-animate" fill="none" stroke="currentColor" viewBox="0 0 24 24" :style="{ animationDelay: `${index * 0.3 + 0.5}s` }">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <button
+                    @click="handleCloseAnimation"
+                    class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg"
+                  >
+                    太棒了！開始任務
+                  </button>
                 </div>
               </div>
             </div>
@@ -423,7 +416,6 @@ const recurringData = ref({
 })
 
 // UI 狀態
-const showAdvanced = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
 
@@ -435,6 +427,7 @@ const isRecurringTaskFlow = ref(false)
 
 // 技能標籤相關狀態
 const suggestedSkills = ref<string[]>([]) // 推薦的技能ID列表
+const showSkillAnimation = ref(false) // 是否顯示技能生成動畫
 
 // 任務類型選項
 const taskTypes = [
@@ -538,9 +531,9 @@ const resetForm = () => {
     skill_tags: []
   }
   dailyTaskSubtype.value = 'simple'
-  showAdvanced.value = false
   errors.value = {}
   suggestedSkills.value = []
+  showSkillAnimation.value = false
 
   // 重置常駐目標數據
   isRecurringTaskFlow.value = false
@@ -574,6 +567,12 @@ watch(() => dailyTaskSubtype.value, (newSubtype) => {
 const closeDialog = () => {
   resetForm()
   emit('close')
+}
+
+// 處理技能動畫關閉
+const handleCloseAnimation = () => {
+  showSkillAnimation.value = false
+  closeDialog()
 }
 
 // 提交表單
@@ -633,24 +632,6 @@ const submitForm = async () => {
     if (response.success) {
       let finalTask = response.data
 
-      // 自動解鎖相關技能
-      if (form.value.skill_tags && form.value.skill_tags.length > 0) {
-        try {
-          // 找出對應的技能ID並解鎖
-          const skillIdsToUnlock = suggestedSkills.value.filter(skillId => {
-            const template = getSkillTemplate(skillId)
-            return template && form.value.skill_tags.includes(template.name)
-          })
-
-          if (skillIdsToUnlock.length > 0) {
-            await skillStore.unlockSkills(skillIdsToUnlock)
-            console.log('✨ 已解鎖技能:', skillIdsToUnlock)
-          }
-        } catch (unlockError) {
-          console.warn('解鎖技能失敗，但任務已創建:', unlockError)
-        }
-      }
-      
       // 如果用戶選擇生成子任務，立即開始任務
       if (form.value.generate_subtasks && response.data?.id) {
         try {
@@ -663,8 +644,38 @@ const submitForm = async () => {
           console.warn('自動開始任務失敗，但任務已創建成功')
         }
       }
-      
+
       loading.value = false
+
+      // 自動解鎖相關技能並顯示動畫
+      if (form.value.skill_tags && form.value.skill_tags.length > 0) {
+        try {
+          // 找出對應的技能ID並解鎖
+          const skillIdsToUnlock = suggestedSkills.value.filter(skillId => {
+            const template = getSkillTemplate(skillId)
+            return template && form.value.skill_tags.includes(template.name)
+          })
+
+          if (skillIdsToUnlock.length > 0) {
+            // 顯示技能解鎖動畫
+            showSkillAnimation.value = true
+
+            await skillStore.unlockSkills(skillIdsToUnlock)
+            console.log('✨ 已解鎖技能:', skillIdsToUnlock)
+
+            // 發送創建事件（但不關閉對話框，讓用戶觀看動畫）
+            emit('created', finalTask)
+
+            // 動畫完成後由用戶點擊按鈕關閉，不自動關閉
+            return
+          }
+        } catch (unlockError) {
+          console.warn('解鎖技能失敗，但任務已創建:', unlockError)
+          showSkillAnimation.value = false
+        }
+      }
+
+      // 如果沒有技能需要解鎖，直接發送事件並關閉對話框
       emit('created', finalTask)
       closeDialog()
       return
@@ -862,9 +873,6 @@ watch([() => props.show, () => props.editTaskData], ([isShow, editData]) => {
         dailyTaskSubtype.value = editData.is_recurring ? 'recurring' : 'simple'
       }
 
-      // 預設展開進階選項
-      showAdvanced.value = true
-
     } catch (error) {
       console.error('載入預填資料失敗:', error)
     }
@@ -912,5 +920,56 @@ watch([() => props.show, () => props.editTaskData], ([isShow, editData]) => {
 /* 移除 Firefox 的 focus 輪廓 */
 .slider-gradient::-moz-focus-outer {
   border: 0;
+}
+
+/* 技能生成動畫 */
+.skill-animation-container {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.skill-tag-animate {
+  opacity: 0;
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.check-animate {
+  opacity: 0;
+  animation: checkPop 0.4s ease-out forwards;
+}
+
+@keyframes checkPop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>
