@@ -1,13 +1,13 @@
 /**
  * 預設技能池配置
- * 按六大核心屬性分類，每個技能對應到特定屬性
+ * 按六大核心屬性 + 第七屬性（通用）分類
  */
 
 export interface SkillTemplate {
   id: string
   name: string
   category: 'technical' | 'soft'
-  attribute: 'intelligence' | 'endurance' | 'creativity' | 'social' | 'focus' | 'adaptability'
+  attribute: 'intelligence' | 'endurance' | 'creativity' | 'social' | 'focus' | 'adaptability' | 'general'
   icon: string
   description: string
   keywords: string[] // 用於任務匹配的關鍵字
@@ -108,24 +108,6 @@ export const SKILL_POOL: SkillTemplate[] = [
     keywords: ['瑜伽', 'yoga', '伸展', '柔軟度']
   },
   {
-    id: 'skill_reading',
-    name: '閱讀習慣',
-    category: 'soft',
-    attribute: 'endurance',
-    icon: '📚',
-    description: '培養持續閱讀的習慣',
-    keywords: ['閱讀', 'reading', '看書', '書籍']
-  },
-  {
-    id: 'skill_meditation',
-    name: '冥想練習',
-    category: 'soft',
-    attribute: 'endurance',
-    icon: '🧘‍♀️',
-    description: '正念冥想與心靈訓練',
-    keywords: ['冥想', 'meditation', '正念', 'mindfulness']
-  },
-  {
     id: 'skill_early_rising',
     name: '早起習慣',
     category: 'soft',
@@ -212,21 +194,12 @@ export const SKILL_POOL: SkillTemplate[] = [
   // ==================== 社交力 (Social) ====================
   {
     id: 'skill_presentation',
-    name: '簡報技巧',
-    category: 'soft',
-    attribute: 'social',
-    icon: '📊',
-    description: '有效溝通與簡報表達',
-    keywords: ['簡報', 'presentation', 'ppt', '演講', '報告']
-  },
-  {
-    id: 'skill_public_speaking',
-    name: '公開演講',
+    name: '簡報演講',
     category: 'soft',
     attribute: 'social',
     icon: '🎤',
-    description: '公開場合演說能力',
-    keywords: ['演講', 'speaking', '演說', '上台']
+    description: '簡報製作與公開演說能力',
+    keywords: ['簡報', 'presentation', 'ppt', '演講', 'speaking', '演說', '上台', '報告']
   },
   {
     id: 'skill_negotiation',
@@ -264,15 +237,6 @@ export const SKILL_POOL: SkillTemplate[] = [
     description: '社群媒體內容經營',
     keywords: ['社群', 'social media', 'ig', 'facebook', '小紅書', '經營']
   },
-  {
-    id: 'skill_networking',
-    name: '人際網絡',
-    category: 'soft',
-    attribute: 'social',
-    icon: '🌐',
-    description: '建立與維護人際關係',
-    keywords: ['人際', 'networking', '社交', '交友']
-  },
 
   // ==================== 專注力 (Focus) ====================
   {
@@ -282,7 +246,7 @@ export const SKILL_POOL: SkillTemplate[] = [
     attribute: 'focus',
     icon: '⏰',
     description: '有效規劃與管理時間',
-    keywords: ['時間', 'time', '管理', 'management', 'gtd', '番茄']
+    keywords: ['時間', 'time', '管理', 'management', 'gtd', '番茄', 'pomodoro', '工作法', '時間塊']
   },
   {
     id: 'skill_deep_work',
@@ -312,15 +276,6 @@ export const SKILL_POOL: SkillTemplate[] = [
     keywords: ['優先', 'priority', '重要', 'urgent']
   },
   {
-    id: 'skill_pomodoro',
-    name: '番茄工作法',
-    category: 'soft',
-    attribute: 'focus',
-    icon: '🍅',
-    description: '運用番茄鐘提升效率',
-    keywords: ['番茄', 'pomodoro', '工作法', '時間塊']
-  },
-  {
     id: 'skill_distraction_management',
     name: '干擾管理',
     category: 'soft',
@@ -328,6 +283,15 @@ export const SKILL_POOL: SkillTemplate[] = [
     icon: '🔕',
     description: '減少干擾，保持專注',
     keywords: ['干擾', 'distraction', '專心', '分心']
+  },
+  {
+    id: 'skill_goal_setting',
+    name: '目標設定',
+    category: 'soft',
+    attribute: 'focus',
+    icon: '🎯',
+    description: '設定清晰目標與追蹤進度',
+    keywords: ['目標', 'goal', '設定', 'setting', '追蹤', 'tracking', 'okr', 'kpi']
   },
 
   // ==================== 適應力 (Adaptability) ====================
@@ -393,23 +357,139 @@ export const SKILL_POOL: SkillTemplate[] = [
     icon: '🔄',
     description: '適應環境變化的能力',
     keywords: ['變革', 'change', '適應', '轉變']
+  },
+  {
+    id: 'skill_meditation',
+    name: '冥想練習',
+    category: 'soft',
+    attribute: 'adaptability',
+    icon: '🧘‍♀️',
+    description: '正念冥想與心靈訓練',
+    keywords: ['冥想', 'meditation', '正念', 'mindfulness']
+  },
+
+  // ==================== 通用技能（第七屬性 - 生活日常） ====================
+  // 涵蓋更廣泛的生活層面，當任務無法匹配到具體技能時使用
+  {
+    id: 'skill_general_learning',
+    name: '學習成長',
+    category: 'soft',
+    attribute: 'general',
+    icon: '📚',
+    description: '學習、閱讀、進修等知識獲取活動',
+    keywords: ['學習', '閱讀', '看書', '進修', '課程', '讀書', '自學', '學', '書']
+  },
+  {
+    id: 'skill_general_work',
+    name: '工作事務',
+    category: 'soft',
+    attribute: 'general',
+    icon: '💼',
+    description: '工作相關任務、專案、會議等',
+    keywords: ['工作', '任務', '會議', 'meeting', '上班', '專案', 'project', '職場', '業務']
+  },
+  {
+    id: 'skill_general_exercise',
+    name: '運動健身',
+    category: 'soft',
+    attribute: 'general',
+    icon: '🏃',
+    description: '各種運動、健身、體能訓練',
+    keywords: ['運動', '健身', '體能', '鍛鍊', '訓練', '活動', '散步', '爬山', '游泳', '球']
+  },
+  {
+    id: 'skill_general_hobby',
+    name: '創作娛樂',
+    category: 'soft',
+    attribute: 'general',
+    icon: '🎨',
+    description: '藝術創作、興趣愛好、娛樂活動',
+    keywords: ['娛樂', '興趣', '愛好', '休閒', '玩', '看電影', '追劇', '遊戲', '旅行', '旅遊']
+  },
+  {
+    id: 'skill_general_housework',
+    name: '生活家務',
+    category: 'soft',
+    attribute: 'general',
+    icon: '🏠',
+    description: '打掃、整理、採購、煮飯等日常家務',
+    keywords: ['打掃', '掃除', '整理', '清潔', '洗衣', '晾衣', '買菜', '採購', '煮飯', '做飯', '烹飪', '料理', '家務', '家事']
+  },
+  {
+    id: 'skill_general_social',
+    name: '社交互動',
+    category: 'soft',
+    attribute: 'general',
+    icon: '👥',
+    description: '聚會、交友、維繫關係',
+    keywords: ['聚會', '聚餐', '約會', '見面', '拜訪', '探訪', '關係', '朋友', '家人', '聯絡', '問候']
+  },
+  {
+    id: 'skill_general_health',
+    name: '健康保養',
+    category: 'soft',
+    attribute: 'general',
+    icon: '💆',
+    description: '身心健康、休息、保養、醫療',
+    keywords: ['健康', '保養', '休息', '睡眠', '看醫生', '看診', '就醫', '體檢', '檢查', '治療', '按摩', '放鬆']
+  },
+  {
+    id: 'skill_general_finance',
+    name: '理財規劃',
+    category: 'soft',
+    attribute: 'general',
+    icon: '💰',
+    description: '記帳、投資、財務管理',
+    keywords: ['理財', '財務', '金錢', '記帳', '帳單', '繳費', '投資', '存錢', '儲蓄', '預算', '開銷', '花費', '錢']
+  },
+  {
+    id: 'skill_general_personal',
+    name: '個人發展',
+    category: 'soft',
+    attribute: 'general',
+    icon: '🌱',
+    description: '自我探索、習慣養成、目標規劃',
+    keywords: ['目標', '計畫', '規劃', '習慣', '成長', '發展', '自我', '反思', '檢討', '改善']
+  },
+  {
+    id: 'skill_general_project',
+    name: '專案計畫',
+    category: 'soft',
+    attribute: 'general',
+    icon: '🎯',
+    description: '需要長期執行的專案或計畫',
+    keywords: ['專案', 'project', '計畫', 'plan', '企劃', '方案', '提案']
+  },
+  {
+    id: 'skill_general_admin',
+    name: '行政事務',
+    category: 'soft',
+    attribute: 'general',
+    icon: '📝',
+    description: '文書處理、申請手續、繳費等',
+    keywords: ['申請', '手續', '文件', '資料', '表格', '填寫', '辦理', '證件', '行政']
   }
 ]
 
 /**
  * 根據任務標題和描述，推薦相關技能
  * 使用加權評分系統，提升匹配準確度
+ * 包含所有技能（六大屬性 + 通用技能）的關鍵字匹配
+ * 如果無法匹配到任何技能，會自動返回預設的通用技能作為後備
  * @param taskTitle 任務標題
  * @param taskDescription 任務描述
- * @returns 推薦的技能ID列表
+ * @returns 推薦的技能ID列表（至少返回一個）
  */
-export function suggestSkillsForTask(taskTitle: string, taskDescription: string = ''): string[] {
+export function suggestSkillsForTask(
+  taskTitle: string,
+  taskDescription: string = ''
+): string[] {
   const title = taskTitle.toLowerCase().trim()
   const description = taskDescription.toLowerCase().trim()
 
-  // 如果標題為空，直接返回
+  // 如果標題為空，返回預設的通用技能
   if (!title) {
-    return []
+    return ['skill_general_personal']
   }
 
   const matchedSkills: { skillId: string; score: number }[] = []
@@ -488,10 +568,17 @@ export function suggestSkillsForTask(taskTitle: string, taskDescription: string 
   }
 
   // 過濾掉分數過低的技能並限制返回數量
-  return matchedSkills
+  const filteredSkills = matchedSkills
     .filter(item => item.score >= 1.0)
     .slice(0, Math.min(returnCount, 5))
     .map(item => item.skillId)
+
+  // 如果沒有匹配到任何技能，使用通用技能作為後備
+  if (filteredSkills.length === 0) {
+    return ['skill_general_personal'] // 預設返回「個人發展」
+  }
+
+  return filteredSkills
 }
 
 /**
@@ -553,7 +640,7 @@ export function getSkillsByAttribute(attribute: string): SkillTemplate[] {
 }
 
 /**
- * 獲取所有屬性列表
+ * 獲取所有屬性列表（包含通用屬性）
  */
 export const ATTRIBUTES = [
   { key: 'intelligence', label: '智力', icon: '🧠', color: 'blue' },
@@ -561,5 +648,7 @@ export const ATTRIBUTES = [
   { key: 'creativity', label: '創造力', icon: '🎨', color: 'purple' },
   { key: 'social', label: '社交力', icon: '👥', color: 'green' },
   { key: 'focus', label: '專注力', icon: '🎯', color: 'yellow' },
-  { key: 'adaptability', label: '適應力', icon: '🔄', color: 'indigo' }
+  { key: 'adaptability', label: '適應力', icon: '🔄', color: 'indigo' },
+  { key: 'general', label: '日常技能包', icon: '⭐', color: 'gray' }
 ] as const
+
