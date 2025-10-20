@@ -484,9 +484,27 @@
           <!-- 簡潔轉圈動畫 -->
           <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mb-6"></div>
 
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">AI 正在為你量身打造學習路徑</h3>
-          <p class="text-gray-600">
-            基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...
+          <h3 class="text-xl font-semibold text-gray-900 mb-4">AI 正在為你量身打造學習路徑</h3>
+
+          <!-- 進度文字 -->
+          <p class="text-blue-600 font-medium mb-4">
+            {{ progressMessage }}
+          </p>
+
+          <!-- 進度條 -->
+          <div class="max-w-md mx-auto mb-4">
+            <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                class="bg-blue-600 h-full transition-all duration-500 ease-out rounded-full"
+                :style="{ width: `${progressPercent}%` }"
+              ></div>
+            </div>
+            <p class="text-gray-500 text-sm mt-2">{{ progressPercent }}%</p>
+          </div>
+
+          <p class="text-gray-600 text-sm mt-6">
+            基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...<br/>
+            <span class="text-xs text-gray-500">這可能需要 1-2 分鐘，請耐心等候</span>
           </p>
         </div>
 
@@ -541,8 +559,31 @@
                     <!-- 推薦資源 -->
                     <div v-if="task.resources && task.resources.length > 0" class="mt-2">
                       <p class="text-gray-600 font-medium text-xs">📚 推薦資源：</p>
-                      <ul class="text-gray-600 text-xs pl-4 mt-1 space-y-0.5">
-                        <li v-for="(resource, rIdx) in task.resources" :key="rIdx">• {{ resource }}</li>
+                      <ul class="text-gray-600 text-xs pl-4 mt-1 space-y-1">
+                        <li v-for="(resource, rIdx) in task.resources" :key="rIdx" class="flex items-start">
+                          <span class="mr-1">•</span>
+                          <div class="flex-1">
+                            <!-- 如果有 URL，顯示為連結 -->
+                            <a
+                              v-if="resource.url"
+                              :href="resource.url"
+                              target="_blank"
+                              class="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                            >
+                              {{ resource.title }}
+                            </a>
+                            <!-- 如果沒有 URL，顯示為純文字 -->
+                            <span v-else class="text-gray-700">
+                              {{ typeof resource === 'string' ? resource : resource.title }}
+                            </span>
+
+                            <!-- 平台和價格資訊 -->
+                            <span v-if="resource.platform || resource.price" class="text-gray-500 ml-1">
+                              <span v-if="resource.platform">({{ resource.platform }})</span>
+                              <span v-if="resource.price" class="ml-1">| {{ resource.price }}</span>
+                            </span>
+                          </div>
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -574,34 +615,21 @@
           </div>
 
           <!-- 操作按鈕 -->
-          <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+          <div v-if="currentStage === 'preview'" class="flex items-center justify-between pt-6 border-t border-gray-200">
             <button
               @click="backToResults"
               class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               重新選擇職業
             </button>
-            <div class="space-x-3">
-              <!-- Preview 階段：顯示保存按鈕 -->
-              <button
-                v-if="currentStage === 'preview'"
-                :disabled="loading"
-                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-                @click="acceptTasks"
-              >
-                <span class="mr-2">🚀</span>
-                <span v-if="loading">保存中...</span>
-                <span v-else>生成專屬主線任務</span>
-              </button>
-              <!-- Completed 階段：顯示開始執行按鈕 -->
-              <button
-                v-if="currentStage === 'completed'"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                @click="goToTasks"
-              >
-                開始執行任務
-              </button>
-            </div>
+            <button
+              :disabled="loading"
+              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+              @click="acceptTasks"
+            >
+              <span v-if="loading">保存中...</span>
+              <span v-else>創建任務</span>
+            </button>
           </div>
         </div>
         </div>
@@ -756,6 +784,8 @@ const surveyAnswers = ref({
 const generatedTasks = ref([])
 const previewData = ref(null) // 儲存預覽數據
 const loading = ref(false)
+const progressMessage = ref('初始化任務生成系統...')
+const progressPercent = ref(0)
 
 // 解析任務描述的輔助函數
 const parseTaskDescription = (description: string) => {
@@ -1145,7 +1175,14 @@ const generateTasks = async () => {
 
   loading.value = true
   currentStage.value = 'generating'
+  progressMessage.value = '初始化任務生成系統...'
+  progressPercent.value = 0
   console.log('📝 當前狀態:', currentStage.value)
+
+  // 臨時存儲各階段數據
+  let outlineData = null
+  let tasksData = null
+  let resourcesData = null
 
   try {
     const payload = {
@@ -1155,70 +1192,181 @@ const generateTasks = async () => {
       user_id: userStore.user.id
     }
 
-    console.log('📤 發送請求:', payload)
+    console.log('📤 發送 SSE 漸進式生成請求:', payload)
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks-progressive`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
       },
       body: JSON.stringify(payload),
     })
 
-    console.log('📥 收到響應:', response.status, response.statusText)
+    console.log('📥 收到 SSE 響應:', response.status, response.statusText)
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const errorText = await response.text()
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
     }
 
-    const data = await response.json()
-    console.log('📋 響應數據:', data)
+    if (!response.body) {
+      throw new Error('Response body is null')
+    }
 
-    if (data.success) {
-      console.log('🔍 檢查響應數據結構:', data.data)
+    // 使用 ReadableStream 處理 SSE
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
 
-      // 儲存完整的預覽數據
-      previewData.value = data.data
+    while (true) {
+      const { done, value } = await reader.read()
 
-      // 判斷數據格式：新格式（預覽模式）或舊格式（已保存）
-      let allTasks = []
-
-      if (data.data.preview_mode) {
-        // 新格式：預覽模式，任務分為三類
-        allTasks = [
-          ...(data.data.main_tasks || []),
-          ...(data.data.daily_tasks || []),
-          ...(data.data.project_tasks || [])
-        ]
-        console.log('📊 main_tasks 數量:', data.data.main_tasks?.length || 0)
-        console.log('📊 daily_tasks 數量:', data.data.daily_tasks?.length || 0)
-        console.log('📊 project_tasks 數量:', data.data.project_tasks?.length || 0)
-      } else {
-        // 舊格式：已保存到資料庫，任務在 subtasks 中
-        allTasks = data.data.subtasks || []
-        console.log('📊 subtasks 數量:', allTasks.length)
+      if (done) {
+        console.log('✅ SSE 串流結束')
+        break
       }
 
-      console.log('📊 最終任務總數:', allTasks.length)
+      // 解碼數據塊
+      buffer += decoder.decode(value, { stream: true })
 
-      // 處理任務描述，將 \n 轉換為真正的換行符號
-      allTasks = allTasks.map(task => ({
-        ...task,
-        description: task.description ? task.description.replace(/\\n/g, '\n') : ''
-      }))
+      // 處理完整的 SSE 事件（以 \n\n 分隔）
+      const events = buffer.split('\n\n')
+      buffer = events.pop() || '' // 保留未完成的部分
 
-      generatedTasks.value = allTasks
+      for (const event of events) {
+        if (!event.trim() || !event.startsWith('data: ')) continue
 
-      // 進入預覽階段
-      currentStage.value = 'preview'
-      console.log('✅ 任務預覽生成成功')
-      console.log('📝 更新狀態到:', currentStage.value)
-      console.log('📋 預覽任務數量:', generatedTasks.value.length)
-    } else {
-      throw new Error(data.message || '任務生成失敗')
+        try {
+          const jsonStr = event.replace(/^data: /, '').trim()
+          const eventData = JSON.parse(jsonStr)
+
+          console.log('📨 收到 SSE 事件:', eventData.type, eventData)
+
+          // 處理不同類型的事件
+          switch (eventData.type) {
+            case 'status':
+              console.log(`[${eventData.stage}] ${eventData.message} - ${eventData.progress}%`)
+              // 更新 UI 進度顯示
+              progressMessage.value = eventData.message
+              progressPercent.value = eventData.progress
+              break
+
+            case 'outline_complete':
+              console.log('✅ 大綱生成完成')
+              outlineData = eventData.content
+              break
+
+            case 'details_complete':
+              console.log('✅ 細節擴展完成')
+              tasksData = eventData.content
+              break
+
+            case 'resources_complete':
+              console.log('✅ 資源推薦完成')
+              resourcesData = eventData.content
+              break
+
+            case 'complete':
+              console.log('🎉 任務生成全部完成！')
+
+              // 儲存完整的預覽數據
+              previewData.value = eventData.final_data
+
+              // 提取任務列表
+              let allTasks = []
+              if (eventData.final_data.preview_mode) {
+                allTasks = [
+                  ...(eventData.final_data.main_tasks || []),
+                  ...(eventData.final_data.daily_tasks || []),
+                  ...(eventData.final_data.project_tasks || [])
+                ]
+                console.log('📊 main_tasks 數量:', eventData.final_data.main_tasks?.length || 0)
+                console.log('📊 daily_tasks 數量:', eventData.final_data.daily_tasks?.length || 0)
+                console.log('📊 project_tasks 數量:', eventData.final_data.project_tasks?.length || 0)
+              }
+
+              // ===== 🔥 整合 Perplexity 資源到每個任務 =====
+              const perplexityResources = eventData.final_data.resources?.resources || []
+              console.log('🔍 Perplexity 資源數量:', perplexityResources.length)
+
+              // 建立任務標題到資源的映射
+              const taskResourceMap = new Map()
+              perplexityResources.forEach(resourceGroup => {
+                if (resourceGroup.task_title && resourceGroup.recommendations) {
+                  taskResourceMap.set(resourceGroup.task_title, resourceGroup.recommendations)
+                }
+              })
+
+              console.log('📚 資源映射表大小:', taskResourceMap.size)
+              console.log('📚 映射的任務標題:', Array.from(taskResourceMap.keys()))
+
+              // 處理任務描述格式並整合資源
+              allTasks = allTasks.map(task => {
+                // 尋找匹配的資源 - 先嘗試精確匹配
+                let matchedResources = taskResourceMap.get(task.title)
+
+                // 如果精確匹配失敗，嘗試模糊匹配（去除括號內容後比對）
+                if (!matchedResources) {
+                  const taskTitleCore = task.title.replace(/（.*?）/g, '').trim()
+
+                  for (const [perplexityTitle, resources] of taskResourceMap.entries()) {
+                    const perplexityTitleCore = perplexityTitle.replace(/（.*?）/g, '').trim()
+
+                    // 如果核心標題相似度高（包含關係或編輯距離小）
+                    if (taskTitleCore.includes(perplexityTitleCore) ||
+                        perplexityTitleCore.includes(taskTitleCore) ||
+                        taskTitleCore === perplexityTitleCore) {
+                      matchedResources = resources
+                      console.log(`🔄 模糊匹配成功: 「${task.title}」 ➜ 「${perplexityTitle}」`)
+                      break
+                    }
+                  }
+                }
+
+                // 如果找到 Perplexity 資源，轉換為結構化格式
+                const finalResources = matchedResources
+                  ? matchedResources.map(r => ({
+                      title: r.title || '',
+                      url: r.url || null,
+                      platform: r.platform || null,
+                      price: r.price || null,
+                      description: r.description || null
+                    }))
+                  : (task.resources || []).map(r => {
+                      // 保留原有資源為純文字格式
+                      return typeof r === 'string' ? { title: r, url: null } : r
+                    })
+
+                console.log(`📖 任務「${task.title}」資源: ${matchedResources ? '✅ 使用 Perplexity' : '⚠️ 使用原有'}`)
+
+                return {
+                  ...task,
+                  description: task.description ? task.description.replace(/\\n/g, '\n') : '',
+                  resources: finalResources
+                }
+              })
+
+              generatedTasks.value = allTasks
+
+              // 進入預覽階段
+              currentStage.value = 'preview'
+              console.log('✅ 任務預覽生成成功')
+              console.log('📋 預覽任務數量:', generatedTasks.value.length)
+              break
+
+            case 'error':
+              console.error(`❌ 生成錯誤 [${eventData.stage}]:`, eventData.message)
+              throw new Error(`${eventData.stage} 階段失敗: ${eventData.message}`)
+          }
+        } catch (parseError) {
+          console.error('❌ 解析 SSE 事件失敗:', parseError, 'Event:', event)
+        }
+      }
     }
+
   } catch (error) {
-    console.error('❌ 任務生成失敗:', error)
+    console.error('❌ SSE 任務生成失敗:', error)
     alert(`任務生成失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
     currentStage.value = 'survey' // 回到問卷階段
   }
@@ -1230,6 +1378,12 @@ const generateTasks = async () => {
 // 接受並保存任務到資料庫
 const acceptTasks = async () => {
   console.log('✅ 用戶確認接受任務，開始保存到資料庫...')
+
+  // 防止重複點擊
+  if (loading.value) {
+    console.log('⚠️ 正在保存中，忽略重複請求')
+    return
+  }
 
   if (!previewData.value) {
     console.error('❌ 沒有預覽數據')
@@ -1258,9 +1412,10 @@ const acceptTasks = async () => {
     console.log('📋 保存任務響應數據:', data)
 
     if (data.success) {
-      // 保存成功，進入完成階段
-      currentStage.value = 'completed'
-      console.log('✅ 任務保存成功，進入完成階段')
+      // 保存成功，關閉 Modal 並導向主線任務頁面
+      console.log('✅ 任務保存成功，導向主線任務頁面')
+      showSurveyModal.value = false
+      router.push('/mission/main')
     } else {
       throw new Error(data.message || '保存任務失敗')
     }
@@ -1275,14 +1430,18 @@ const acceptTasks = async () => {
 const saveQuizResults = async () => {
   try {
     console.log('💾 開始保存測驗結果...')
+    console.log('📊 原始測驗結果:', props.results)
+
+    // 將 Proxy 物件轉換為純 JSON
     const payload = {
-      interests_results: props.results.interests,
-      talents_results: props.results.talents,
-      values_results: props.results['values-workstyle']?.values,
-      workstyle_results: props.results['values-workstyle']?.workstyle || {}
+      values_results: JSON.parse(JSON.stringify(props.results['values-workstyle'] || {})),
+      interests_results: JSON.parse(JSON.stringify(props.results.interests || {})),
+      talents_results: JSON.parse(JSON.stringify(props.results.talents || {})),
+      workstyle_results: JSON.parse(JSON.stringify(props.results['values-workstyle']?.workstyle || {}))
     }
 
     console.log('📤 保存測驗結果請求:', payload)
+    console.log('📤 JSON 字串:', JSON.stringify(payload))
 
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/quiz/save-results`, {
       method: 'POST',
@@ -1294,11 +1453,16 @@ const saveQuizResults = async () => {
 
     console.log('📥 保存測驗結果響應:', response.status, response.statusText)
 
+    // 先讀取響應文字
+    const responseText = await response.text()
+    console.log('📥 響應內容:', responseText)
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`)
     }
 
-    const data = await response.json()
+    // 解析 JSON
+    const data = JSON.parse(responseText)
     console.log('📋 保存測驗結果數據:', data)
 
     if (data.success) {
