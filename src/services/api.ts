@@ -362,8 +362,8 @@ export class ApiClient {
     skillLevelLabel?: string,
     learningDurationLabel?: string,
   }) {
-    return this.request<{ 
-      success: boolean, 
+    return this.request<{
+      success: boolean,
       data: {
         expert_match: {
           expert: {
@@ -376,9 +376,10 @@ export class ApiClient {
           ai_expert_name: string,
           ai_expert_description: string
         },
-        task_json: any
-      }, 
-      message: string 
+        task_json: any,
+        task_plan?: any  // 添加task_plan類型定義
+      },
+      message: string
     }>('/api/tasks/generate-with-expert', {
       method: 'POST',
       body: JSON.stringify({ 
@@ -467,6 +468,27 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({
         ...taskJson,
+        user_id: userId
+      }),
+    });
+  }
+
+  // 為已存在的任務生成子任務
+  async generateSubtasksForTask(parentTaskId: string, taskDescription: string, taskPlan?: any, expertMatch?: any, userId?: string) {
+    return this.request<{
+      success: boolean,
+      data: {
+        subtasks_created: any[],
+        total_count: number
+      },
+      message: string
+    }>('/api/tasks/generate-subtasks', {
+      method: 'POST',
+      body: JSON.stringify({
+        parent_task_id: parentTaskId,
+        task_description: taskDescription,
+        task_plan: taskPlan,
+        expert_match: expertMatch,
         user_id: userId
       }),
     });

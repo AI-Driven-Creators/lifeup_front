@@ -677,12 +677,6 @@ const generateTaskFromExpert = async () => {
 
       console.warn('任務驗證失敗細節:', validationPayload)
 
-      try {
-        await apiClient.sendMessageToChatGPT(`[任務模式] ${currentTaskDescription.value}`, currentUserId.value)
-      } catch (saveError) {
-        console.warn('保存任務模式對話失敗:', saveError)
-      }
-
       const errorCoachMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         role: 'coach',
@@ -697,7 +691,11 @@ const generateTaskFromExpert = async () => {
       return
     }
 
-    previewTaskJson.value = expertRes.data.task_json
+    // 將任務計劃包含在預覽數據中，這樣前端可以傳給子任務生成API
+    previewTaskJson.value = {
+      ...expertRes.data.task_json,
+      task_plan: expertRes.data.task_plan // 包含子任務計劃
+    }
     taskPreviewText.value = validationPayload.task_preview || ''
     validationErrors.value = []
     showTaskPreview.value = true
@@ -718,13 +716,6 @@ const generateTaskFromExpert = async () => {
   } catch (error) {
     console.error('生成任務失敗:', error)
     const errorResponse = '抱歉，生成任務時發生了錯誤。請稍後再試，或者換一種方式描述你的任務。'
-    
-    // 保存對話到數據庫
-    try {
-      await apiClient.sendMessageToChatGPT(`[任務模式] ${currentTaskDescription.value}`, currentUserId.value)
-    } catch (saveError) {
-      console.warn('保存任務模式對話失敗:', saveError)
-    }
     
     // 添加錯誤回應到對話記錄
     const errorMessage: ChatMessageType = {
@@ -912,32 +903,95 @@ const generateTaskFromText = async (taskDescription: string, skillLevel?: string
   await matchExpert(taskDescription, skillLevel, learningDuration)
 }
 
-// 確認創建任務
-const confirmCreateTask = async () => {
+// 確認創建任務（支援選擇是否生成子任務）
+const confirmCreateTask = async (includeSubtasks: boolean = false) => {
+  console.log('confirmCreateTask 被調用，includeSubtasks =', includeSubtasks)
   loading.value = true
   isCreatingTask.value = true
   try {
-    // 先保存任務標題，因為稍後會清空 previewTaskJson
+    // 先保存任務標題、描述、計劃和專家信息，因為稍後會清空 previewTaskJson
     const taskTitle = previewTaskJson.value?.title || '新任務'
+    const taskDescription = previewTaskJson.value?.description || taskTitle
+    const taskPlan = previewTaskJson.value?.task_plan // 保存任務計劃（包含子任務信息）
+    const expertMatch = matchedExpert.value // 保存專家信息
 
+    // 創建主任務
     const res = await apiClient.createTaskFromJson(previewTaskJson.value, currentUserId.value)
-    
+
+    console.log('主任務創建響應:', res)
+
     if (res.success) {
-      showToast && showToast('任務創建成功！')
-      
-      // 在對話中添加確認訊息（在清空 previewTaskJson 之前）
+      // 修正：從 res.data.task.id 獲取任務 ID
+      const createdTaskId = res.data?.task?.id || res.data?.id
+      let subtasksCreated = 0
+
+      console.log('檢查是否需要生成子任務:')
+      console.log('- includeSubtasks:', includeSubtasks)
+      console.log('- createdTaskId:', createdTaskId)
+      console.log('- 條件結果:', includeSubtasks && createdTaskId)
+
+      // 如果用戶選擇包含子任務，則生成子任務
+      if (includeSubtasks && createdTaskId) {
+        try {
+          // 調試：輸出要傳送的數據
+          console.log('準備生成子任務，參數如下：')
+          console.log('- createdTaskId:', createdTaskId)
+          console.log('- taskDescription:', taskDescription)
+          console.log('- taskPlan:', taskPlan)
+          console.log('- expertMatch:', expertMatch)
+          console.log('- userId:', currentUserId.value)
+
+          // 檢查必要參數是否存在
+          if (!createdTaskId) {
+            console.error('缺少 createdTaskId')
+            throw new Error('缺少任務 ID')
+          }
+
+          // 使用任務計劃中的子任務信息，避免重新生成
+          const subtasksRes = await apiClient.generateSubtasksForTask(
+            createdTaskId,
+            taskDescription, // 使用保存的描述
+            taskPlan, // 傳遞任務計劃，其中包含子任務
+            expertMatch, // 傳遞專家信息
+            currentUserId.value
+          )
+
+          console.log('子任務生成 API 響應：', subtasksRes)
+
+          if (subtasksRes.success && subtasksRes.data) {
+            subtasksCreated = subtasksRes.data.total_count
+            showToast && showToast(`任務創建成功，並生成了 ${subtasksCreated} 個子任務！`)
+          } else {
+            console.error('子任務生成失敗，API 返回:', subtasksRes)
+            const errorMessage = subtasksRes.message || '子任務生成失敗'
+            showToast && showToast(`任務創建成功，但 ${errorMessage}`)
+          }
+        } catch (subtaskError) {
+          console.error('生成子任務失敗 - 詳細錯誤:', subtaskError)
+          console.error('錯誤堆疊:', subtaskError.stack)
+          showToast && showToast('任務創建成功，但子任務生成失敗')
+        }
+      } else {
+        showToast && showToast('任務創建成功！')
+      }
+
+      // 在對話中添加確認訊息
+      const successMessage = subtasksCreated > 0
+        ? `太好了！我已經幫你創建了任務「${taskTitle}」，並生成了 ${subtasksCreated} 個子任務。加油完成它們！💪`
+        : `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`
+
       messages.value.push({
         id: Date.now().toString(),
         role: 'coach',
-        content: `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`,
+        content: successMessage,
         timestamp: new Date(),
         ephemeral: true
       })
-      
+
       // 清空預覽狀態
       showTaskPreview.value = false
       previewTaskJson.value = null
-      
+
       // 滾動到底部以顯示新訊息
       await nextTick()
       scrollToBottom()

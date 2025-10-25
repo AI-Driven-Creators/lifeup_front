@@ -75,8 +75,28 @@
             </div>
           </div>
         </div>
+
+        <!-- 包含子任務的選項 -->
+        <div class="bg-blue-50 rounded-lg p-4">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              v-model="includeSubtasks"
+              type="checkbox"
+              class="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
+            />
+            <div>
+              <span class="text-base font-medium text-gray-700">包含子任務</span>
+              <p class="text-sm text-gray-500">
+                自動生成並創建相關的子任務，讓任務更具體易執行
+              </p>
+              <p v-if="taskJson?.task_plan?.subtasks?.length" class="text-xs text-blue-600 mt-1">
+                將生成 {{ taskJson.task_plan.subtasks.length }} 個子任務
+              </p>
+            </div>
+          </label>
+        </div>
       </div>
-      
+
       <!-- 操作按鈕 -->
       <div class="flex justify-end gap-3 p-6 bg-gray-50 border-t border-gray-200">
         <button
@@ -94,12 +114,12 @@
           編輯任務
         </button>
         <button
-          @click="$emit('confirm')"
+          @click="handleConfirm"
           class="px-6 py-2 text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           :disabled="validationErrors.length > 0 || isConfirming"
         >
           <span v-if="isConfirming" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <span>{{ isConfirming ? '創建中...' : '確認創建' }}</span>
+          <span>{{ getConfirmButtonText() }}</span>
         </button>
       </div>
 
@@ -112,6 +132,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+
 interface Props {
   taskJson: any
   taskPreview: string
@@ -119,10 +141,34 @@ interface Props {
   isConfirming?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   isConfirming: false
 })
-defineEmits(['confirm', 'cancel', 'edit'])
+
+const emit = defineEmits(['confirm', 'cancel', 'edit'])
+
+// 是否包含子任務
+const includeSubtasks = ref(false)
+
+// 監聽複選框變化
+watch(includeSubtasks, (newValue) => {
+  console.log('[TaskPreviewDialog] includeSubtasks 變更為:', newValue)
+})
+
+// 處理確認
+const handleConfirm = () => {
+  console.log('[TaskPreviewDialog] handleConfirm 被調用')
+  console.log('[TaskPreviewDialog] includeSubtasks.value =', includeSubtasks.value)
+  emit('confirm', includeSubtasks.value)
+}
+
+// 獲取確認按鈕文字
+const getConfirmButtonText = () => {
+  if (props.isConfirming) {
+    return includeSubtasks.value ? '創建任務並生成子任務中...' : '創建任務中...'
+  }
+  return includeSubtasks.value ? '創建並生成子任務' : '確認創建'
+}
 
 // 格式化日期
 const formatDate = (dateStr: string) => {
