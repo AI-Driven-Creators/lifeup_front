@@ -960,15 +960,23 @@ const confirmCreateTask = async (includeSubtasks: boolean = false) => {
 
           if (subtasksRes.success && subtasksRes.data) {
             subtasksCreated = subtasksRes.data.total_count
-            showToast && showToast(`任務創建成功，並生成了 ${subtasksCreated} 個子任務！`)
+
+            // 檢查是否為背景生成模式
+            if (subtasksCreated === 0 && subtasksRes.message && subtasksRes.message.includes('後台生成')) {
+              showToast && showToast('任務創建成功！子任務正在背景生成中，約30秒後會自動完成')
+            } else if (subtasksCreated > 0) {
+              showToast && showToast(`任務創建成功，並生成了 ${subtasksCreated} 個子任務！`)
+            } else {
+              showToast && showToast('任務創建成功！')
+            }
           } else {
             console.error('子任務生成失敗，API 返回:', subtasksRes)
             const errorMessage = subtasksRes.message || '子任務生成失敗'
             showToast && showToast(`任務創建成功，但 ${errorMessage}`)
           }
-        } catch (subtaskError) {
+        } catch (subtaskError: any) {
           console.error('生成子任務失敗 - 詳細錯誤:', subtaskError)
-          console.error('錯誤堆疊:', subtaskError.stack)
+          console.error('錯誤堆疊:', subtaskError?.stack)
           showToast && showToast('任務創建成功，但子任務生成失敗')
         }
       } else {
@@ -976,9 +984,17 @@ const confirmCreateTask = async (includeSubtasks: boolean = false) => {
       }
 
       // 在對話中添加確認訊息
-      const successMessage = subtasksCreated > 0
-        ? `太好了！我已經幫你創建了任務「${taskTitle}」，並生成了 ${subtasksCreated} 個子任務。加油完成它們！💪`
-        : `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`
+      let successMessage = ''
+      if (includeSubtasks && subtasksCreated === 0) {
+        // 背景生成模式
+        successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」。子任務正在背景生成中，約30秒後會自動完成，你可以稍後到任務列表查看。加油！💪`
+      } else if (subtasksCreated > 0) {
+        // 已經生成了子任務
+        successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」，並生成了 ${subtasksCreated} 個子任務。加油完成它們！💪`
+      } else {
+        // 沒有子任務的情況
+        successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`
+      }
 
       messages.value.push({
         id: Date.now().toString(),

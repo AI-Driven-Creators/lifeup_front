@@ -372,7 +372,6 @@ export class ApiClient {
             expertise_areas: string[],
             emoji: string
           },
-          confidence: number,
           ai_expert_name: string,
           ai_expert_description: string
         },
@@ -409,8 +408,7 @@ export class ApiClient {
             description: string,
             expertise_areas: string[],
             emoji: string
-          },
-          confidence: number
+          }
         }
       }, 
       message: string 
