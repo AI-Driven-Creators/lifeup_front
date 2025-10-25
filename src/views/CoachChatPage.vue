@@ -50,6 +50,8 @@
               @generateTask="generateTaskFromExpert"
               @expertOption="handleExpertOption"
               @directionSelect="handleDirectionSelect"
+              @goalSelect="handleGoalSelect"
+              @resourceSelect="handleResourceSelect"
             />
       <div v-if="loading" class="text-gray-400 text-sm">教練正在輸入...</div>
     </div>
@@ -262,8 +264,22 @@ type DirectionOption = {
   description: string
 }
 
+type GoalOption = {
+  title: string
+  description: string
+}
+
+type ResourceOption = {
+  title: string
+  description: string
+}
+
 const availableDirections = ref<DirectionOption[]>([])
 const selectedDirections = ref<DirectionOption[]>([])
+const availableGoals = ref<GoalOption[]>([])
+const selectedGoals = ref<GoalOption[]>([])
+const availableResources = ref<ResourceOption[]>([])
+const selectedResources = ref<ResourceOption[]>([])
 const expertOptionOutputs = ref<Record<string, string>>({})
 const isAnalyzing = ref(false)
 
@@ -298,6 +314,24 @@ const formatDirections = (directions: DirectionOption[]): string => {
   }
   return directions
     .map((direction, index) => `${index + 1}. ${direction.title} - ${direction.description}`)
+    .join('\n')
+}
+
+const formatGoals = (goals: GoalOption[]): string => {
+  if (!goals || goals.length === 0) {
+    return ''
+  }
+  return goals
+    .map((goal, index) => `${index + 1}. ${goal.title} - ${goal.description}`)
+    .join('\n')
+}
+
+const formatResources = (resources: ResourceOption[]): string => {
+  if (!resources || resources.length === 0) {
+    return ''
+  }
+  return resources
+    .map((resource, index) => `${index + 1}. ${resource.title} - ${resource.description}`)
     .join('\n')
 }
 
@@ -524,6 +558,10 @@ const matchExpert = async (taskDescription: string, skillLevel?: string, learnin
   expertOptionOutputs.value = {}
   availableDirections.value = []
   selectedDirections.value = []
+  availableGoals.value = []
+  selectedGoals.value = []
+  availableResources.value = []
+  selectedResources.value = []
   
   // 構建包含技能水平信息的完整描述
   let fullDescription = taskDescription
@@ -629,6 +667,13 @@ const generateTaskFromExpert = async () => {
 
     if (selectedAnalyzeDirections.length > 0) {
       fullDescription += `\n\n具體的加強方向：\n${formatDirections(selectedAnalyzeDirections)}`
+    }
+
+    const selectedAnalyzeGoals = selectedGoals.value
+      .filter(goal => goal && goal.title)
+
+    if (selectedAnalyzeGoals.length > 0) {
+      fullDescription += `\n\n選定的明確目標：\n${formatGoals(selectedAnalyzeGoals)}`
     }
 
     const expertOutputs = Object.values(expertOptionOutputs.value)
@@ -786,7 +831,7 @@ const handleExpertOption = async (option: string) => {
           }
           
           if (option === 'analyze' && analysisRes.data.directions) {
-        availableDirections.value = analysisRes.data.directions
+            availableDirections.value = analysisRes.data.directions
             // 顯示可勾選的加強方向選項
             const directionsMessage: ChatMessageType = {
               id: (Date.now() + Math.random()).toString(),
@@ -798,7 +843,35 @@ const handleExpertOption = async (option: string) => {
               directions: analysisRes.data.directions
             }
             messages.value.push(directionsMessage)
-        expertOptionOutputs.value[option] = formatDirections(analysisRes.data.directions)
+            expertOptionOutputs.value[option] = formatDirections(analysisRes.data.directions)
+          } else if (option === 'goals' && analysisRes.data.goals) {
+            availableGoals.value = analysisRes.data.goals
+            // 顯示可勾選的目標選項
+            const goalsMessage: ChatMessageType = {
+              id: (Date.now() + Math.random()).toString(),
+              role: 'coach',
+              content: '我為你生成了以下明確目標，請選擇你想要達成的：',
+              timestamp: new Date(),
+              ephemeral: true,
+              showGoals: true,
+              goals: analysisRes.data.goals
+            }
+            messages.value.push(goalsMessage)
+            expertOptionOutputs.value[option] = formatGoals(analysisRes.data.goals)
+          } else if (option === 'resources' && analysisRes.data.resources) {
+            availableResources.value = analysisRes.data.resources
+            // 顯示可勾選的資源選項
+            const resourcesMessage: ChatMessageType = {
+              id: (Date.now() + Math.random()).toString(),
+              role: 'coach',
+              content: '根據你的需求，我推薦以下學習資源，請選擇你感興趣的：',
+              timestamp: new Date(),
+              ephemeral: true,
+              showResources: true,
+              resources: analysisRes.data.resources
+            }
+            messages.value.push(resourcesMessage)
+            expertOptionOutputs.value[option] = formatResources(analysisRes.data.resources)
           } else {
             // 其他分析類型顯示文字結果
             const analysisMessage: ChatMessageType = {
@@ -809,7 +882,7 @@ const handleExpertOption = async (option: string) => {
               ephemeral: true
             }
             messages.value.push(analysisMessage)
-        expertOptionOutputs.value[option] = analysisRes.data.analysis_result
+            expertOptionOutputs.value[option] = analysisRes.data.analysis_result
           }
         }
       } catch (error) {
@@ -856,7 +929,7 @@ const handleExpertOption = async (option: string) => {
 const handleDirectionSelect = (title: string) => {
   const index = selectedDirections.value.findIndex(direction => direction.title === title)
   let wasSelected = index > -1
-  
+
   if (wasSelected) {
     // 如果之前已選中，則取消選擇
     selectedDirections.value.splice(index, 1)
@@ -866,11 +939,11 @@ const handleDirectionSelect = (title: string) => {
       selectedDirections.value.push(direction)
     }
   }
-  
+
   // 確認選擇狀態並添加確認訊息
   const isNowSelected = selectedDirections.value.some(direction => direction.title === title)
   const action = isNowSelected ? '已選擇' : '已取消選擇'
-  
+
   const confirmMessage: ChatMessageType = {
     id: (Date.now() + Math.random()).toString(),
     role: 'coach',
@@ -879,7 +952,7 @@ const handleDirectionSelect = (title: string) => {
     ephemeral: true
   }
   //messages.value.push(confirmMessage)
-  
+
   // 如果有選擇的方向，顯示總計
   if (selectedDirections.value.length > 0) {
     const summaryMessage: ChatMessageType = {
@@ -891,10 +964,54 @@ const handleDirectionSelect = (title: string) => {
     }
     //messages.value.push(summaryMessage)
   }
-  
+
   expertOptionOutputs.value['analyze'] = formatDirections(selectedDirections.value)
-  
+
   console.log('選中的方向:', selectedDirections.value)
+  nextTick(() => scrollToBottom())
+}
+
+// 處理目標選擇
+const handleGoalSelect = (title: string) => {
+  const index = selectedGoals.value.findIndex(goal => goal.title === title)
+  let wasSelected = index > -1
+
+  if (wasSelected) {
+    // 如果之前已選中，則取消選擇
+    selectedGoals.value.splice(index, 1)
+  } else {
+    const goal = availableGoals.value.find(item => item.title === title)
+    if (goal) {
+      selectedGoals.value.push(goal)
+    }
+  }
+
+  // 更新輸出
+  expertOptionOutputs.value['goals'] = formatGoals(selectedGoals.value)
+
+  console.log('選中的目標:', selectedGoals.value)
+  nextTick(() => scrollToBottom())
+}
+
+// 處理資源選擇
+const handleResourceSelect = (title: string) => {
+  const index = selectedResources.value.findIndex(resource => resource.title === title)
+  let wasSelected = index > -1
+
+  if (wasSelected) {
+    // 如果之前已選中，則取消選擇
+    selectedResources.value.splice(index, 1)
+  } else {
+    const resource = availableResources.value.find(item => item.title === title)
+    if (resource) {
+      selectedResources.value.push(resource)
+    }
+  }
+
+  // 更新輸出
+  expertOptionOutputs.value['resources'] = formatResources(selectedResources.value)
+
+  console.log('選中的資源:', selectedResources.value)
   nextTick(() => scrollToBottom())
 }
 

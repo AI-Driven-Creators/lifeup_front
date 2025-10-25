@@ -100,6 +100,52 @@
           </div>
         </div>
       </div>
+
+      <!-- 目標選項 -->
+      <div v-if="message.showGoals && message.goals" class="mt-3 space-y-2">
+        <div class="space-y-2">
+          <div
+            v-for="(goal, index) in message.goals"
+            :key="index"
+            class="flex items-start space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+            @click="handleGoalSelect(goal.title)"
+          >
+            <input
+              type="checkbox"
+              :id="`goal-${index}`"
+              class="mt-1"
+              :checked="isGoalSelected(goal.title)"
+            >
+            <label :for="`goal-${index}`" class="flex-1 cursor-pointer">
+              <div class="font-medium text-gray-900">{{ goal.title }}</div>
+              <div class="text-sm text-gray-600">{{ goal.description }}</div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 資源選項 -->
+      <div v-if="message.showResources && message.resources" class="mt-3 space-y-2">
+        <div class="space-y-2">
+          <div
+            v-for="(resource, index) in message.resources"
+            :key="index"
+            class="flex items-start space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+            @click="handleResourceSelect(resource.title)"
+          >
+            <input
+              type="checkbox"
+              :id="`resource-${index}`"
+              class="mt-1"
+              :checked="isResourceSelected(resource.title)"
+            >
+            <label :for="`resource-${index}`" class="flex-1 cursor-pointer">
+              <div class="font-medium text-gray-900">{{ resource.title }}</div>
+              <div class="text-sm text-gray-600">{{ resource.description }}</div>
+            </label>
+          </div>
+        </div>
+      </div>
       
       <!-- 生成任務按鈕 -->
       <div v-if="message.showGenerateButton" class="mt-2">
@@ -138,6 +184,8 @@ const emit = defineEmits<{
   (e: 'generateTask'): void
   (e: 'expertOption', option: string): void
   (e: 'directionSelect', title: string): void
+  (e: 'goalSelect', title: string): void
+  (e: 'resourceSelect', title: string): void
 }>()
 
 const isVisible = ref(true)
@@ -163,18 +211,68 @@ const handleDirectionSelect = (title: string) => {
   emit('directionSelect', title)
 }
 
+// 添加本地狀態來追蹤選中的方向、目標和資源
+const localSelectedDirections = ref<string[]>([])
+const localSelectedGoals = ref<string[]>([])
+const localSelectedResources = ref<string[]>([])
+
 const isDirectionSelected = (title: string) => {
   return localSelectedDirections.value.includes(title)
 }
 
-// 添加本地狀態來追蹤選中的方向
-const localSelectedDirections = ref<string[]>([])
+const isGoalSelected = (title: string) => {
+  return localSelectedGoals.value.includes(title)
+}
+
+const isResourceSelected = (title: string) => {
+  return localSelectedResources.value.includes(title)
+}
+
+const handleGoalSelect = (title: string) => {
+  // 先更新本地狀態
+  const index = localSelectedGoals.value.indexOf(title)
+  if (index > -1) {
+    localSelectedGoals.value.splice(index, 1)
+  } else {
+    localSelectedGoals.value.push(title)
+  }
+
+  // 然後發送事件給父組件
+  emit('goalSelect', title)
+}
+
+const handleResourceSelect = (title: string) => {
+  // 先更新本地狀態
+  const index = localSelectedResources.value.indexOf(title)
+  if (index > -1) {
+    localSelectedResources.value.splice(index, 1)
+  } else {
+    localSelectedResources.value.push(title)
+  }
+
+  // 然後發送事件給父組件
+  emit('resourceSelect', title)
+}
 
 // 監聽父組件傳入的選中狀態
 watch(() => props.message.directions, (newDirections) => {
   if (newDirections) {
     // 重置本地狀態
     localSelectedDirections.value = []
+  }
+}, { immediate: true })
+
+watch(() => props.message.goals, (newGoals) => {
+  if (newGoals) {
+    // 重置本地狀態
+    localSelectedGoals.value = []
+  }
+}, { immediate: true })
+
+watch(() => props.message.resources, (newResources) => {
+  if (newResources) {
+    // 重置本地狀態
+    localSelectedResources.value = []
   }
 }, { immediate: true })
 

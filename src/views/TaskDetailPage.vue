@@ -258,12 +258,20 @@
         <div class="text-center py-8">
           <div class="text-gray-400 text-4xl mb-3">📝</div>
           <p class="text-gray-600 text-sm mb-4">還沒有子任務</p>
-          <button
-            @click="showCreateSubtaskDialog = true"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            創建子任務
-          </button>
+          <div class="flex gap-3 justify-center">
+            <button
+              @click="showCreateSubtaskDialog = true"
+              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              手動創建子任務
+            </button>
+            <button
+              @click="generateSubtasksWithAI"
+              class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              AI 生成子任務
+            </button>
+          </div>
         </div>
       </div>
 
@@ -768,6 +776,68 @@ const getStatusBorderClass = (status: string) => {
     case 'paused': return 'border-gray-400'
     case 'cancelled': return 'border-red-400'
     default: return 'border-gray-200'
+  }
+}
+
+// AI生成子任務
+const generateSubtasksWithAI = async () => {
+  if (!task.value) return
+
+  isLoading.value = true
+  try {
+    console.log('🤖 開始 AI 生成子任務:', task.value.id)
+
+    // 調用 API 生成子任務
+    const response = await apiClient.generateSubtasksForTask(
+      task.value.id,
+      task.value.description || task.value.title,
+      undefined, // task_plan
+      undefined, // expert_match
+      userStore.user.id
+    )
+
+    if (response.success) {
+      console.log('✅ 子任務生成請求已發送')
+      // 顯示成功提示
+      const messageDiv = document.createElement('div')
+      messageDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50'
+      messageDiv.textContent = '子任務正在後台生成中，請稍後刷新查看'
+      document.body.appendChild(messageDiv)
+
+      // 3秒後移除提示
+      setTimeout(() => {
+        messageDiv.remove()
+      }, 3000)
+
+      // 5秒後重新加載任務詳情
+      setTimeout(async () => {
+        await loadTaskDetail()
+      }, 5000)
+    } else {
+      console.error('❌ 生成子任務失敗:', response.message)
+      // 顯示錯誤提示
+      const errorDiv = document.createElement('div')
+      errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50'
+      errorDiv.textContent = '生成子任務失敗：' + (response.message || '未知錯誤')
+      document.body.appendChild(errorDiv)
+
+      setTimeout(() => {
+        errorDiv.remove()
+      }, 3000)
+    }
+  } catch (error) {
+    console.error('❌ AI 生成子任務出錯:', error)
+    // 顯示錯誤提示
+    const errorDiv = document.createElement('div')
+    errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50'
+    errorDiv.textContent = '生成子任務失敗，請稍後重試'
+    document.body.appendChild(errorDiv)
+
+    setTimeout(() => {
+      errorDiv.remove()
+    }, 3000)
+  } finally {
+    isLoading.value = false
   }
 }
 

@@ -110,6 +110,20 @@ export interface ChatMessage {
     title: string;
     description: string;
   }>;
+  // 是否顯示目標選項
+  showGoals?: boolean;
+  // 目標選項數據
+  goals?: Array<{
+    title: string;
+    description: string;
+  }>;
+  // 是否顯示資源選項
+  showResources?: boolean;
+  // 資源選項數據
+  resources?: Array<{
+    title: string;
+    description: string;
+  }>;
 }
 
 export interface CoachStyle {

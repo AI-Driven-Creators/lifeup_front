@@ -423,16 +423,24 @@ export class ApiClient {
 
   // 專家分析 API
   async expertAnalysis(description: string, expertName: string, expertDescription: string, analysisType: string, userId?: string) {
-    return this.request<{ 
-      success: boolean, 
+    return this.request<{
+      success: boolean,
       data: {
         analysis_result: string,
         directions?: Array<{
           title: string,
           description: string
+        }>,
+        goals?: Array<{
+          title: string,
+          description: string
+        }>,
+        resources?: Array<{
+          title: string,
+          description: string
         }>
-      }, 
-      message: string 
+      },
+      message: string
     }>('/api/tasks/expert-analysis', {
       method: 'POST',
       body: JSON.stringify({ 
