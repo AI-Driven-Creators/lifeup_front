@@ -32,13 +32,18 @@
     <div v-else class="pb-4">
       <!-- 心理測驗按鈕 -->
       <div class="px-4 pt-4 pb-2">
-        <button 
+        <button
           @click="$router.push('/personality-test')"
-          class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl py-4 px-6 shadow-sm hover:shadow-md transition-all duration-300"
+          :class="[
+            'w-full rounded-xl py-4 px-6 transition-all duration-300',
+            hasCareerMainline
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 shadow-sm hover:shadow-md'
+              : 'bg-gradient-to-br from-amber-50 to-yellow-100 hover:from-amber-100 hover:to-yellow-200 text-amber-900 border-2 border-amber-300 shadow-md hover:shadow-lg transform hover:scale-[1.02] py-5'
+          ]"
         >
           <div class="text-center">
-            <div class="font-semibold text-lg">找到你的理想職業</div>
-            <div class="text-sm text-slate-600">5分鐘測驗，獲得專屬職涯建議</div>
+            <div :class="hasCareerMainline ? 'font-semibold text-lg' : 'font-bold text-lg mb-1'">找到你的理想職業</div>
+            <div :class="hasCareerMainline ? 'text-sm text-slate-600' : 'text-sm text-amber-700 font-medium'">5分鐘測驗，獲得專屬職涯建議</div>
           </div>
         </button>
       </div>
@@ -126,6 +131,24 @@ const activeTasks = computed(() => {
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+// 檢查是否有職業主線任務
+const hasCareerMainline = ref(false)
+
+// 檢查用戶是否已有職業主線任務
+const checkCareerMainline = async () => {
+  try {
+    const response = await apiClient.getTasks(userStore.user.id)
+    if (response.success) {
+      hasCareerMainline.value = response.data.some(task =>
+        task.task_category === 'career_mainline'
+      )
+      console.log('檢查職業主線任務結果:', hasCareerMainline.value)
+    }
+  } catch (err) {
+    console.error('Failed to check career mainline:', err)
+  }
+}
 
 // 計算完成的任務數量
 const completedTasksCount = computed(() => {
@@ -226,12 +249,18 @@ const loadHomepageTasks = async () => {
 
 // 頁面載入時獲取任務
 onMounted(async () => {
-  await loadHomepageTasks()
+  await Promise.all([
+    loadHomepageTasks(),
+    checkCareerMainline()
+  ])
 })
 
 // 重新載入任務
-const refreshTasks = () => {
-  loadHomepageTasks()
+const refreshTasks = async () => {
+  await Promise.all([
+    loadHomepageTasks(),
+    checkCareerMainline()
+  ])
 }
 
 </script>

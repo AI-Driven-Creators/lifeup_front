@@ -5,7 +5,8 @@
     <span
       v-for="skillTag in displayedSkills"
       :key="skillTag.id"
-      class="skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors cursor-pointer"
+      class="skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer"
+      style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); color: #78716c; border: 1px solid #fde68a;"
       :title="skillTag.name"
       @click.stop="handleSkillClick(skillTag)"
     >

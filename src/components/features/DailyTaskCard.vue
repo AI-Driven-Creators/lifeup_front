@@ -31,11 +31,11 @@
       <div class="exp-text">+{{ task.experience }}</div>
 
       <!-- 右側：狀態控制 -->
-      <div v-if="!isCompleted" 
+      <div v-if="!isCompleted"
         class="status-circle"
         @click.stop="handleToggle">
       </div>
-      
+
       <!-- 已完成任務的回復按鈕 -->
       <button v-else
         class="undo-btn"
@@ -45,13 +45,22 @@
       </button>
     </div>
   </div>
+
+  <!-- 子任務詳情 Modal -->
+  <SubtaskDetailModal
+    v-model:visible="showSubtaskModal"
+    :task="task"
+    @close="showSubtaskModal = false"
+    @updated="handleTaskUpdated"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { RotateCcw } from 'lucide-vue-next'
 import type { Task, UserAttributes } from '@/types'
+import SubtaskDetailModal from './SubtaskDetailModal.vue'
 
 interface Props {
   task: Task
@@ -65,19 +74,43 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const router = useRouter()
 
+// Modal 控制
+const showSubtaskModal = ref(false)
+
 // 是否已完成
 const isCompleted = computed(() =>
   props.task.status === 'completed' || props.task.status === 'daily_completed'
 )
 
-// 處理卡片點擊，跳轉到任務詳情頁面
+// 判斷是否為子任務（有 parent_task_id 的任務）
+const isSubtask = computed(() => {
+  return !!props.task.parent_task_id
+})
+
+// 處理卡片點擊
 const handleCardClick = () => {
-  router.push(`/task/${props.task.id}`)
+  // 如果是子任務，顯示 Modal
+  if (isSubtask.value) {
+    showSubtaskModal.value = true
+  } else {
+    // 單獨任務，導航到詳情頁面
+    router.push(`/task/${props.task.id}`)
+  }
 }
 
 // 處理任務切換
 const handleToggle = () => {
   emit('toggle', props.task.id)
+}
+
+// 處理任務更新（當 Modal 中的任務狀態改變時）
+const handleTaskUpdated = () => {
+  // 觸發父組件重新載入任務列表
+  emit('toggle', props.task.id)
+  // 關閉 Modal 讓用戶看到更新後的卡片狀態
+  setTimeout(() => {
+    showSubtaskModal.value = false
+  }, 500)
 }
 
 // 獲取顯示的技能標籤陣列

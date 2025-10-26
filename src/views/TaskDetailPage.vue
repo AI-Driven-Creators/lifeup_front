@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-primary-50">
+  <div class="min-h-screen bg-primary-50 pb-20">
     <!-- 頂部導航區域 -->
     <div class="bg-gray-100 px-4 py-4 flex items-center">
       <!-- 返回按鈕 -->
@@ -465,16 +465,30 @@ const sortedSubtasks = computed(() => {
 
 // 獲取任務的技能對象
 const getSkillObjectsForTask = (task: Task) => {
+  console.log('🏷️ getSkillObjectsForTask 調用:', {
+    taskTitle: task.title,
+    skillTags: task.skillTags,
+    hasSkillTags: !!task.skillTags,
+    skillTagsLength: task.skillTags?.length,
+    skillStoreLength: skillStore.skills.length
+  })
+
   if (!task.skillTags || task.skillTags.length === 0) {
+    console.log('❌ 沒有技能標籤或長度為0')
     return []
   }
   if (!skillStore.skills.length) {
     // 技能列表還在載入中，返回 undefined 表示載入中狀態
+    console.log('⏳ 技能列表載入中')
     return undefined
   }
-  return task.skillTags
+
+  const result = task.skillTags
     .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
     .filter(skill => !!skill) as { id: string; name: string }[]
+
+  console.log('✅ 技能對象結果:', result)
+  return result
 }
 
 // 任務進度數據
@@ -594,6 +608,11 @@ const loadTaskDetail = async () => {
         console.log('📋 子任務API回應:', subtaskResponse)
 
         if (subtaskResponse.success) {
+          console.log('📋 原始 API 回應:', subtaskResponse.data.map(t => ({
+            title: t.title,
+            skill_tags: t.skill_tags
+          })))
+
           subtasks.value = subtaskResponse.data
             .map(taskStore.transformBackendTask)
             .map(subtask => ({
@@ -601,7 +620,12 @@ const loadTaskDetail = async () => {
               description: subtask.description ? subtask.description.replace(/\\n/g, '\n') : ''
             }))
             .sort((a, b) => (a.task_order || 0) - (b.task_order || 0))
+
           console.log('📋 已載入子任務:', subtasks.value.length, '個')
+          console.log('📋 轉換後的子任務:', subtasks.value.map(t => ({
+            title: t.title,
+            skillTags: t.skillTags
+          })))
         }
       }
     } else {

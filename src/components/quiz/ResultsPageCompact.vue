@@ -450,9 +450,23 @@
           <h3 class="text-sm font-medium text-gray-700 mb-3">
             你的主要學習動機是？
           </h3>
+
+          <!-- 快速選項按鈕 -->
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button
+              v-for="option in motivationOptions"
+              :key="option"
+              type="button"
+              @click="selectMotivationOption(option)"
+              class="px-3 py-1.5 text-sm border border-blue-300 text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
+            >
+              {{ option }}
+            </button>
+          </div>
+
           <textarea
             v-model="surveyAnswers.motivation"
-            placeholder="例如：轉換職業跑道、提升工作技能、追求個人興趣..."
+            placeholder="點擊上方快速選項或自行輸入..."
             class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
             rows="4"
           ></textarea>
@@ -781,6 +795,17 @@ const surveyAnswers = ref({
   motivation: '',
   special_requirements: ''
 })
+
+// 學習動機快速選項
+const motivationOptions = ref([
+  '轉換職業跑道',
+  '追求個人興趣',
+  '提升工作技能',
+  '增加職場競爭力',
+  '探索新領域',
+  '實現人生夢想'
+])
+
 const generatedTasks = ref([])
 const previewData = ref(null) // 儲存預覽數據
 const loading = ref(false)
@@ -1150,6 +1175,16 @@ const toggleLearningStyle = (style: string) => {
     surveyAnswers.value.learning_styles.splice(index, 1)
   } else {
     surveyAnswers.value.learning_styles.push(style)
+  }
+}
+
+// 選擇學習動機快速選項
+const selectMotivationOption = (option: string) => {
+  // 如果 textarea 已經有內容，添加分號分隔；否則直接設置
+  if (surveyAnswers.value.motivation.trim()) {
+    surveyAnswers.value.motivation += '；' + option
+  } else {
+    surveyAnswers.value.motivation = option
   }
 }
 
