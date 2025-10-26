@@ -41,7 +41,9 @@
         class="undo-btn"
         @click.stop="handleToggle"
         title="回復為未完成">
-        <RotateCcw class="w-4 h-4" />
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -58,7 +60,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { RotateCcw } from 'lucide-vue-next'
 import type { Task, UserAttributes } from '@/types'
 import SubtaskDetailModal from './SubtaskDetailModal.vue'
 
@@ -230,7 +231,7 @@ const getAttributeLabel = (attr: keyof UserAttributes): string => {
   width: 24px;
   height: 24px;
   border: 2px solid #b3996b;
-  border-radius: 50%;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
@@ -251,7 +252,7 @@ const getAttributeLabel = (attr: keyof UserAttributes): string => {
   color: #6b7280;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 50%;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
