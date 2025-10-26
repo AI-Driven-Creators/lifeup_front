@@ -139,6 +139,7 @@ import TaskStatusFilter from '@/components/features/TaskStatusFilter.vue'
 import MissionTaskCard from '@/components/features/MissionTaskCard.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
+import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 
 const route = useRoute()
@@ -148,6 +149,7 @@ const userStore = useUserStore()
 
 // 響應式數據
 const tasks = ref<Task[]>([])
+const subtasks = ref<Task[]>([]) // 儲存子任務
 const loading = ref(true)
 const error = ref<string | null>(null)
 const activeStatusFilters = ref<string[]>([])
@@ -183,26 +185,35 @@ const taskTypeConfigs = {
   }
 }
 
-const taskTypeConfig = computed(() => 
+const taskTypeConfig = computed(() =>
   taskTypeConfigs[taskType.value as keyof typeof taskTypeConfigs] || taskTypeConfigs.main
 )
 
-// 計算統計數據
-const pendingCount = computed(() => 
-  filteredTasks.value.filter(task => task.status === 'pending').length
+// 所有任務(包含子任務)
+const allTasksIncludingSubtasks = computed(() => [
+  ...tasks.value,
+  ...subtasks.value
+])
+
+// 計算統計數據(包含子任務)
+const pendingCount = computed(() =>
+  allTasksIncludingSubtasks.value.filter(task => task.status === 'pending').length
 )
 
-const inProgressCount = computed(() => 
-  filteredTasks.value.filter(task => ['in_progress', 'daily_in_progress'].includes(task.status)).length
+const inProgressCount = computed(() =>
+  allTasksIncludingSubtasks.value.filter(task => ['in_progress', 'daily_in_progress'].includes(task.status)).length
 )
 
-const completedCount = computed(() => 
-  filteredTasks.value.filter(task => ['completed', 'daily_completed'].includes(task.status)).length
+const completedCount = computed(() =>
+  allTasksIncludingSubtasks.value.filter(task => ['completed', 'daily_completed'].includes(task.status)).length
 )
 
 const completionRate = computed(() => {
-  if (filteredTasks.value.length === 0) return 0
-  return Math.round((completedCount.value / filteredTasks.value.length) * 100)
+  if (allTasksIncludingSubtasks.value.length === 0) return 0
+  const completed = allTasksIncludingSubtasks.value.filter(task =>
+    ['completed', 'daily_completed'].includes(task.status)
+  ).length
+  return Math.round((completed / allTasksIncludingSubtasks.value.length) * 100)
 })
 
 // 篩選後的任務
@@ -217,15 +228,38 @@ const filteredTasks = computed(() => {
 const loadTasks = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
     const taskList = await taskStore.fetchTasksByType(taskType.value)
     tasks.value = taskList
+
+    // 載入所有子任務
+    await loadSubtasks()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入任務失敗'
     console.error('Failed to load tasks:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// 載入子任務
+const loadSubtasks = async () => {
+  try {
+    const subtaskPromises = tasks.value
+      .filter(task => task.is_parent_task)
+      .map(task => apiClient.getSubtasks(task.id))
+
+    const subtaskResponses = await Promise.all(subtaskPromises)
+
+    // 合併所有子任務
+    subtasks.value = subtaskResponses
+      .filter(response => response.success)
+      .flatMap(response => response.data.map((task: any) => taskStore.transformBackendTask(task)))
+
+    console.log(`載入 ${taskType.value} 類型的子任務數量:`, subtasks.value.length)
+  } catch (err) {
+    console.error('載入子任務失敗:', err)
   }
 }
 

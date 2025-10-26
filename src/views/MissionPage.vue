@@ -120,6 +120,7 @@ import TaskTypeCard from '@/components/features/TaskTypeCard.vue'
 import CreateTaskDialog from '@/components/features/CreateTaskDialog.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
+import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 
 const router = useRouter()
@@ -135,6 +136,7 @@ const dailyTasks = ref<Task[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const editTaskData = ref<any>(null)
+const allSubtasks = ref<Task[]>([]) // 儲存所有子任務
 
 // 所有任務的計算屬性
 const allTasks = computed(() => [
@@ -142,6 +144,12 @@ const allTasks = computed(() => [
   ...sideTasks.value,
   ...challengeTasks.value,
   ...dailyTasks.value
+])
+
+// 所有任務(包含子任務)的計算屬性
+const allTasksIncludingSubtasks = computed(() => [
+  ...allTasks.value,
+  ...allSubtasks.value
 ])
 
 // 載入不同類型的任務
@@ -161,7 +169,10 @@ const loadTasksByType = async () => {
     sideTasks.value = side
     challengeTasks.value = challenge
     dailyTasks.value = daily
-    
+
+    // 載入所有子任務
+    await loadAllSubtasks()
+
     // 調試：檢查技能標籤
     console.log('主線任務技能標籤:', main.map(t => ({ title: t.title, skillTags: t.skillTags })))
     console.log('支線任務技能標籤:', side.map(t => ({ title: t.title, skillTags: t.skillTags })))
@@ -172,6 +183,26 @@ const loadTasksByType = async () => {
     console.error('Failed to load tasks by type:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// 載入所有子任務
+const loadAllSubtasks = async () => {
+  try {
+    const subtaskPromises = allTasks.value
+      .filter(task => task.is_parent_task)
+      .map(task => apiClient.getSubtasks(task.id))
+
+    const subtaskResponses = await Promise.all(subtaskPromises)
+
+    // 合併所有子任務
+    allSubtasks.value = subtaskResponses
+      .filter(response => response.success)
+      .flatMap(response => response.data.map((task: any) => taskStore.transformBackendTask(task)))
+
+    console.log('載入子任務數量:', allSubtasks.value.length)
+  } catch (err) {
+    console.error('載入子任務失敗:', err)
   }
 }
 
@@ -239,25 +270,26 @@ const handleTaskUpdate = (updatedTask: Task) => {
 
 // 計算統計數據
 const totalActiveTasks = computed(() => {
-  return allTasks.value.filter(task => 
+  return allTasksIncludingSubtasks.value.filter(task =>
     ['pending', 'in_progress', 'daily_in_progress'].includes(task.status)
   ).length
 })
 
 const todayCompletedTasks = computed(() => {
-  // 這裡可以根據實際的任務完成時間來判斷，目前簡化處理
-  return allTasks.value.filter(task => {
+  // 這裡可以根據實際的任務完成時間來判斷,目前簡化處理
+  return allTasksIncludingSubtasks.value.filter(task => {
     const isCompleted = ['completed', 'daily_completed'].includes(task.status)
     return isCompleted
   }).length
 })
 
 const overallCompletionRate = computed(() => {
-  if (allTasks.value.length === 0) return 0
-  const completed = allTasks.value.filter(task => 
+  // 計算所有任務(包含子任務)的完成率
+  if (allTasksIncludingSubtasks.value.length === 0) return 0
+  const completed = allTasksIncludingSubtasks.value.filter(task =>
     ['completed', 'daily_completed'].includes(task.status)
   ).length
-  return Math.round((completed / allTasks.value.length) * 100)
+  return Math.round((completed / allTasksIncludingSubtasks.value.length) * 100)
 })
 
 // 導航到特定任務類型頁面
