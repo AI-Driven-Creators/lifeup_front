@@ -603,6 +603,22 @@ export class ApiClient {
       body: JSON.stringify(payload),
     });
   }
+
+  // 保存單條聊天訊息
+  async saveChatMessage(userId: string, role: string, content: string) {
+    return this.request<{
+      success: boolean,
+      data: any,
+      message: string
+    }>('/api/chat/save-message', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId,
+        role: role,
+        content: content
+      }),
+    });
+  }
 }
 
 // 創建全局 API 實例，使用懶加載方式確保配置正確載入

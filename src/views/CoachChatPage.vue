@@ -402,22 +402,6 @@ const downloadHistory = async () => {
   }
 }
 
-// 頁面載入時獲取歷史記錄
-onMounted(() => {
-  loadChatHistory()
-})
-
-// const sendMessage = async (content: string) => {
-//   const userMessage: ChatMessageType = {
-//     id: Date.now().toString(),
-//     role: 'user',
-//     content,
-//     timestamp: new Date()
-//   }
-//   messages.value.push(userMessage)
-//   quickReplies.value = []
-//   loading.value = true
-
 // 獲取個性介紹訊息
 const getPersonalityIntroMessage = (personalityType: string): string => {
   switch (personalityType) {
@@ -456,18 +440,8 @@ onMounted(async () => {
     }
   }
 
-  // 等待一個週期確保數據載入完成
-  setTimeout(() => {
-    // 添加歡迎訊息
-    const welcomeMessage: ChatMessageType = {
-      id: '1',
-      role: 'coach',
-      content: '你好！我是你的小教練，專門幫助你創建任務。請描述你想要創建的任務，我會為你生成詳細的任務內容！',
-      timestamp: new Date(),
-      ephemeral: true
-    }
-    messages.value.push(welcomeMessage)
-  }, 100)
+  // 載入歷史對話記錄 (loadChatHistory 內部會處理沒有歷史記錄時的歡迎訊息)
+  await loadChatHistory()
 })
 
 // 發送訊息
@@ -601,11 +575,21 @@ const matchExpert = async (taskDescription: string, skillLevel?: string, learnin
         role: 'coach',
         content: `${expertRes.data.expert_match.expert.name}\n\n${expertRes.data.expert_match.expert.description}`,
         timestamp: new Date(),
-        ephemeral: true,
         showExpertOptions: true
       }
       messages.value.push(expertMessage)
-      
+
+      // 保存專家匹配結果到資料庫
+      try {
+        await apiClient.saveChatMessage(
+          currentUserId.value,
+          'coach',
+          expertMessage.content
+        )
+      } catch (error) {
+        console.error('保存專家匹配訊息失敗:', error)
+      }
+
       // 滾動到底部顯示專家訊息
       await nextTick()
       scrollToBottom()
@@ -751,10 +735,16 @@ const generateTaskFromExpert = async () => {
       id: (Date.now() + 1).toString(),
       role: 'coach',
       content: coachResponse,
-      timestamp: new Date(),
-      ephemeral: true
+      timestamp: new Date()
     }
     messages.value.push(coachMessage)
+
+    // 保存任務生成回應到資料庫
+    try {
+      await apiClient.saveChatMessage(currentUserId.value, 'coach', coachResponse)
+    } catch (error) {
+      console.error('保存任務生成回應失敗:', error)
+    }
 
     await nextTick()
     scrollToBottom()
@@ -794,10 +784,20 @@ const handleExpertOption = async (option: string) => {
       id: (Date.now() + Math.random()).toString(),
       role: 'coach',
       content: optionMessages[option as keyof typeof optionMessages],
-      timestamp: new Date(),
-      ephemeral: true
+      timestamp: new Date()
     }
     messages.value.push(optionMessage)
+
+    // 保存選項選擇訊息到資料庫
+    try {
+      await apiClient.saveChatMessage(
+        currentUserId.value,
+        'coach',
+        optionMessage.content
+      )
+    } catch (error) {
+      console.error('保存選項訊息失敗:', error)
+    }
     
     // 立即調用專家分析
     if (matchedExpert.value) {
@@ -838,12 +838,19 @@ const handleExpertOption = async (option: string) => {
               role: 'coach',
               content: '根據你的需求，我建議以下加強方向，請選擇你感興趣的：',
               timestamp: new Date(),
-              ephemeral: true,
               showDirections: true,
               directions: analysisRes.data.directions
             }
             messages.value.push(directionsMessage)
             expertOptionOutputs.value[option] = formatDirections(analysisRes.data.directions)
+
+            // 保存分析結果到資料庫
+            try {
+              const fullContent = directionsMessage.content + '\n' + formatDirections(analysisRes.data.directions)
+              await apiClient.saveChatMessage(currentUserId.value, 'coach', fullContent)
+            } catch (error) {
+              console.error('保存分析結果失敗:', error)
+            }
           } else if (option === 'goals' && analysisRes.data.goals) {
             availableGoals.value = analysisRes.data.goals
             // 顯示可勾選的目標選項
@@ -852,12 +859,19 @@ const handleExpertOption = async (option: string) => {
               role: 'coach',
               content: '我為你生成了以下明確目標，請選擇你想要達成的：',
               timestamp: new Date(),
-              ephemeral: true,
               showGoals: true,
               goals: analysisRes.data.goals
             }
             messages.value.push(goalsMessage)
             expertOptionOutputs.value[option] = formatGoals(analysisRes.data.goals)
+
+            // 保存目標分析結果到資料庫
+            try {
+              const fullContent = goalsMessage.content + '\n' + formatGoals(analysisRes.data.goals)
+              await apiClient.saveChatMessage(currentUserId.value, 'coach', fullContent)
+            } catch (error) {
+              console.error('保存目標結果失敗:', error)
+            }
           } else if (option === 'resources' && analysisRes.data.resources) {
             availableResources.value = analysisRes.data.resources
             // 顯示可勾選的資源選項
@@ -866,23 +880,36 @@ const handleExpertOption = async (option: string) => {
               role: 'coach',
               content: '根據你的需求，我推薦以下學習資源，請選擇你感興趣的：',
               timestamp: new Date(),
-              ephemeral: true,
               showResources: true,
               resources: analysisRes.data.resources
             }
             messages.value.push(resourcesMessage)
             expertOptionOutputs.value[option] = formatResources(analysisRes.data.resources)
+
+            // 保存資源推薦結果到資料庫
+            try {
+              const fullContent = resourcesMessage.content + '\n' + formatResources(analysisRes.data.resources)
+              await apiClient.saveChatMessage(currentUserId.value, 'coach', fullContent)
+            } catch (error) {
+              console.error('保存資源結果失敗:', error)
+            }
           } else {
             // 其他分析類型顯示文字結果
             const analysisMessage: ChatMessageType = {
               id: (Date.now() + Math.random()).toString(),
               role: 'coach',
               content: analysisRes.data.analysis_result,
-              timestamp: new Date(),
-              ephemeral: true
+              timestamp: new Date()
             }
             messages.value.push(analysisMessage)
             expertOptionOutputs.value[option] = analysisRes.data.analysis_result
+
+            // 保存其他分析結果到資料庫
+            try {
+              await apiClient.saveChatMessage(currentUserId.value, 'coach', analysisMessage.content)
+            } catch (error) {
+              console.error('保存分析結果失敗:', error)
+            }
           }
         }
       } catch (error) {
@@ -915,10 +942,16 @@ const handleExpertOption = async (option: string) => {
         role: 'coach',
         content: '選項已選擇完成，點擊下方按鈕生成任務：',
         timestamp: new Date(),
-        ephemeral: true,
         showGenerateButton: true
       }
       messages.value.push(generateButtonMessage)
+
+      // 保存生成按鈕提示到資料庫
+      try {
+        await apiClient.saveChatMessage(currentUserId.value, 'coach', generateButtonMessage.content)
+      } catch (error) {
+        console.error('保存生成按鈕提示失敗:', error)
+      }
     }
     
     nextTick(() => scrollToBottom())
@@ -1117,9 +1150,15 @@ const confirmCreateTask = async (includeSubtasks: boolean = false) => {
         id: Date.now().toString(),
         role: 'coach',
         content: successMessage,
-        timestamp: new Date(),
-        ephemeral: true
+        timestamp: new Date()
       })
+
+      // 保存任務創建確認訊息到資料庫
+      try {
+        await apiClient.saveChatMessage(currentUserId.value, 'coach', successMessage)
+      } catch (error) {
+        console.error('保存任務創建確認訊息失敗:', error)
+      }
 
       // 清空預覽狀態
       showTaskPreview.value = false
