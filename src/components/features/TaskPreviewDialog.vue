@@ -16,9 +16,9 @@
           </ul>
         </div>
         
-        <!-- AI 生成的任務介紹 -->
+        <!-- 任務預覽（支援 Markdown） -->
         <div v-if="taskPreview" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-blue-800 whitespace-pre-wrap">{{ taskPreview }}</p>
+          <div class="text-blue-800 prose prose-sm max-w-none markdown-preview" v-html="renderedPreview"></div>
         </div>
         
         <!-- 任務詳細資訊 -->
@@ -33,7 +33,7 @@
             
             <div v-if="taskJson?.description" class="md:col-span-2">
               <span class="text-gray-500 block mb-1">描述：</span>
-              <p class="font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{{ taskJson.description }}</p>
+              <div class="font-medium text-gray-700 prose prose-sm max-w-none task-description-markdown" v-html="renderedDescription"></div>
             </div>
             
             <div>
@@ -132,7 +132,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { marked } from 'marked'
 
 interface Props {
   taskJson: any
@@ -146,6 +147,18 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits(['confirm', 'cancel', 'edit'])
+
+// 渲染 Markdown 格式的預覽文字
+const renderedPreview = computed(() => {
+  if (!props.taskPreview) return ''
+  return marked(props.taskPreview) as string
+})
+
+// 渲染任務描述的 Markdown
+const renderedDescription = computed(() => {
+  if (!props.taskJson?.description) return ''
+  return marked(props.taskJson.description) as string
+})
 
 // 是否包含子任務
 const includeSubtasks = ref(false)
@@ -242,5 +255,143 @@ const getRecurrenceLabel = (pattern: string) => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Markdown 預覽樣式 */
+.markdown-preview :deep(h2) {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #1e40af;
+}
+
+.markdown-preview :deep(h3) {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #1e40af;
+}
+
+.markdown-preview :deep(p) {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.markdown-preview :deep(ul) {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  list-style-type: none;
+}
+
+.markdown-preview :deep(li) {
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+}
+
+.markdown-preview :deep(strong) {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.markdown-preview :deep(em) {
+  font-style: italic;
+}
+
+.markdown-preview :deep(code) {
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: monospace;
+}
+
+/* 任務描述 Markdown 樣式 */
+.task-description-markdown :deep(h1),
+.task-description-markdown :deep(h2),
+.task-description-markdown :deep(h3),
+.task-description-markdown :deep(h4) {
+  font-weight: 600;
+  margin: 0.5em 0 0.3em 0;
+  line-height: 1.3;
+  color: #374151;
+}
+
+.task-description-markdown :deep(h1) {
+  font-size: 1.2em;
+}
+
+.task-description-markdown :deep(h2) {
+  font-size: 1.1em;
+}
+
+.task-description-markdown :deep(h3) {
+  font-size: 1em;
+}
+
+.task-description-markdown :deep(h4) {
+  font-size: 0.95em;
+}
+
+.task-description-markdown :deep(p) {
+  margin: 0.4em 0;
+  line-height: 1.6;
+}
+
+.task-description-markdown :deep(ul),
+.task-description-markdown :deep(ol) {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.task-description-markdown :deep(li) {
+  margin: 0.2em 0;
+  line-height: 1.6;
+}
+
+.task-description-markdown :deep(strong) {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.task-description-markdown :deep(em) {
+  font-style: italic;
+}
+
+.task-description-markdown :deep(code) {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  font-family: 'Courier New', monospace;
+  color: #1f2937;
+}
+
+.task-description-markdown :deep(pre) {
+  background-color: #f3f4f6;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.task-description-markdown :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.task-description-markdown :deep(blockquote) {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: #6b7280;
+}
+
+.task-description-markdown :deep(hr) {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1em 0;
 }
 </style>

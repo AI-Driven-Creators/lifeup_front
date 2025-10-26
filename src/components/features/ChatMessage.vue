@@ -170,6 +170,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { marked } from 'marked'
 import type { ChatMessage } from '@/types'
 
 interface Props {
@@ -287,45 +288,47 @@ const formatTime = (timestamp: Date) => {
   })
 }
 
-// 簡單的 Markdown 格式化
+// 使用 marked 進行 Markdown 格式化
 const formattedContent = computed(() => {
-  let content = props.message.content || ''
-
-  // 轉義 HTML 特殊字符
-  content = content
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
-  // 粗體 **text** 或 __text__
-  content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  content = content.replace(/__(.+?)__/g, '<strong>$1</strong>')
-
-  // 斜體 *text* 或 _text_
-  content = content.replace(/\*(.+?)\*/g, '<em>$1</em>')
-  content = content.replace(/_(.+?)_/g, '<em>$1</em>')
-
-  // 行內代碼 `code`
-  content = content.replace(/`(.+?)`/g, '<code class="inline-code">$1</code>')
-
-  // 代碼塊 ```code```
-  content = content.replace(/```([\s\S]+?)```/g, '<pre class="code-block"><code>$1</code></pre>')
-
-  // 換行
-  content = content.replace(/\n/g, '<br>')
-
-  // 列表項 - item
-  content = content.replace(/^- (.+)$/gm, '<li>$1</li>')
-  content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-
-  // 數字列表 1. item
-  content = content.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-
-  return content
+  if (!props.message.content) return ''
+  return marked(props.message.content) as string
 })
 </script>
 
 <style scoped>
+/* Markdown 標題樣式 */
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4) {
+  font-weight: 600;
+  margin: 0.5em 0 0.3em 0;
+  line-height: 1.3;
+}
+
+.markdown-content :deep(h1) {
+  font-size: 1.3em;
+}
+
+.markdown-content :deep(h2) {
+  font-size: 1.15em;
+}
+
+.markdown-content :deep(h3) {
+  font-size: 1.05em;
+}
+
+.markdown-content :deep(h4) {
+  font-size: 1em;
+}
+
+/* 段落樣式 */
+.markdown-content :deep(p) {
+  margin: 0.5em 0;
+  line-height: 1.5;
+}
+
+/* 粗體和斜體 */
 .markdown-content :deep(strong) {
   font-weight: 600;
 }
@@ -334,7 +337,20 @@ const formattedContent = computed(() => {
   font-style: italic;
 }
 
-.markdown-content :deep(.inline-code) {
+/* 列表樣式 */
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.markdown-content :deep(li) {
+  margin: 0.25em 0;
+  line-height: 1.5;
+}
+
+/* 行內代碼 */
+.markdown-content :deep(code) {
   background-color: rgba(0, 0, 0, 0.1);
   padding: 2px 4px;
   border-radius: 3px;
@@ -342,7 +358,8 @@ const formattedContent = computed(() => {
   font-size: 0.9em;
 }
 
-.markdown-content :deep(.code-block) {
+/* 代碼塊 */
+.markdown-content :deep(pre) {
   background-color: rgba(0, 0, 0, 0.1);
   padding: 8px;
   border-radius: 4px;
@@ -350,24 +367,41 @@ const formattedContent = computed(() => {
   overflow-x: auto;
 }
 
-.markdown-content :deep(.code-block code) {
+.markdown-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
   font-family: 'Courier New', monospace;
   font-size: 0.9em;
   white-space: pre;
 }
 
-.markdown-content :deep(ul) {
-  margin: 8px 0;
-  padding-left: 20px;
+/* 引用塊 */
+.markdown-content :deep(blockquote) {
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: rgba(0, 0, 0, 0.7);
 }
 
-.markdown-content :deep(li) {
-  margin: 4px 0;
+/* 水平線 */
+.markdown-content :deep(hr) {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 1em 0;
 }
 
-/* 為白色背景（用戶消息）調整代碼塊顏色 */
-.bg-primary-600 .markdown-content :deep(.inline-code),
-.bg-primary-600 .markdown-content :deep(.code-block) {
+/* 為白色背景（用戶消息）調整顏色 */
+.bg-primary-600 .markdown-content :deep(code),
+.bg-primary-600 .markdown-content :deep(pre) {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+.bg-primary-600 .markdown-content :deep(blockquote) {
+  border-left-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bg-primary-600 .markdown-content :deep(hr) {
+  border-top-color: rgba(255, 255, 255, 0.2);
 }
 </style>
