@@ -22,6 +22,27 @@
             v-else-if="task.dailyTaskSubtype === 'simple'"
             class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
           >今日行動</span>
+
+          <!-- 編輯和刪除圖標 -->
+          <div class="ml-auto flex items-center space-x-2">
+            <!-- 編輯按鈕 -->
+            <button
+              @click.stop="showEditDialog = true"
+              class="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="編輯任務"
+            >
+              ✏️
+            </button>
+
+            <!-- 刪除按鈕 -->
+            <button
+              @click.stop="showDeleteDialog = true"
+              class="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded-full transition-colors"
+              title="刪除任務"
+            >
+              🗑️
+            </button>
+          </div>
         </div>
         
         <div class="flex items-center space-x-4 text-sm text-primary-700 mb-2">
@@ -178,6 +199,25 @@
     cancelText="返回"
     @confirm="handleRestartTask"
   />
+
+  <!-- 編輯任務對話框 -->
+  <EditTaskDialog
+    :show="showEditDialog"
+    :task="task"
+    @close="showEditDialog = false"
+    @updated="handleTaskEdited"
+  />
+
+  <!-- 刪除任務確認對話框 -->
+  <ConfirmDialog
+    v-model:visible="showDeleteDialog"
+    title="⚠️ 刪除任務"
+    :message="`確定要永久刪除「${task.title}」嗎？\n\n此操作將會：\n• 刪除此任務的所有子任務\n• 無法復原\n• 不會影響已獲得的經驗值`"
+    confirmText="確認刪除"
+    cancelText="取消"
+    @confirm="handleDeleteTask"
+    danger
+  />
 </template>
 
 <script setup lang="ts">
@@ -187,7 +227,9 @@ import type { Task } from '@/types'
 import { apiClient } from '@/services/api'
 import SkillTags from '@/components/common/SkillTags.vue'
 import { useSkillStore } from '@/stores/skill'
+import { useTaskStore } from '@/stores/task'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
 
 interface Props {
   task: Task
@@ -202,6 +244,11 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const router = useRouter()
 const skillStore = useSkillStore()
+const taskStore = useTaskStore()
+
+// 對話框狀態
+const showEditDialog = ref(false)
+const showDeleteDialog = ref(false)
 
 onMounted(() => {
   if (skillStore.skills.length === 0 && !skillStore.loading) {
@@ -374,5 +421,40 @@ const getTypeStyle = (type: Task['type']) => {
     subtask: 'bg-gray-100 text-gray-800'
   }
   return styles[type]
+}
+
+// 處理任務編輯
+const handleTaskEdited = async (updatedTask: Task) => {
+  // 關閉編輯對話框
+  showEditDialog.value = false
+
+  // 通知父組件任務已更新
+  emit('taskUpdated', updatedTask)
+
+  // 顯示成功提示
+  showToast && showToast('任務已更新', 2000)
+}
+
+// 處理任務刪除
+const handleDeleteTask = async () => {
+  isLoading.value = true
+  try {
+    // 調用 taskStore 的刪除方法
+    await taskStore.deleteTask(props.task.id)
+
+    // 關閉刪除確認對話框
+    showDeleteDialog.value = false
+
+    // 通知父組件任務已刪除（傳遞一個標記為已刪除的任務）
+    emit('taskUpdated', { ...props.task, status: 'deleted' as any })
+
+    // 顯示成功提示
+    showToast && showToast('任務已刪除', 2000)
+  } catch (error) {
+    console.error('Failed to delete task:', error)
+    showToast && showToast('刪除任務失敗')
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
