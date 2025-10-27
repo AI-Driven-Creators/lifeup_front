@@ -5,7 +5,6 @@
     <PageHeader
       title="小教練"
       class="border-b border-gray-200"
-      :showProfileIcon="false"
     >
       <template #title>
         <div class="flex flex-col gap-1">
