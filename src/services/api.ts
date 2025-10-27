@@ -399,8 +399,8 @@ export class ApiClient {
 
   // 只匹配專家 API（不生成任務）
   async matchExpertOnly(description: string, userId?: string) {
-    return this.request<{ 
-      success: boolean, 
+    return this.request<{
+      success: boolean,
       data: {
         expert_match: {
           expert: {
@@ -410,14 +410,31 @@ export class ApiClient {
             emoji: string
           }
         }
-      }, 
-      message: string 
+      },
+      message: string
     }>('/api/tasks/match-expert', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         description: description,
-        user_id: userId 
+        user_id: userId
       }),
+    });
+  }
+
+  // 分類用戶意圖 API
+  async classifyUserIntent(description: string) {
+    return this.request<{
+      success: boolean,
+      data: {
+        intent_type: 'detailed_task' | 'vague_goal',
+        confidence: number,
+        suggested_task_type: string | null,
+        reasoning: string
+      },
+      message: string
+    }>('/api/tasks/classify-intent', {
+      method: 'POST',
+      body: JSON.stringify({ description }),
     });
   }
 

@@ -77,6 +77,18 @@
       class="shrink-0"
     />
     
+    <!-- 意圖確認對話框 -->
+    <IntentConfirmDialog
+      v-if="showIntentConfirm && classifiedIntent"
+      :intentType="classifiedIntent.intent_type"
+      :confidence="classifiedIntent.confidence"
+      :reasoning="classifiedIntent.reasoning"
+      :suggestedTaskType="classifiedIntent.suggested_task_type"
+      @direct-generate="handleDirectGenerate"
+      @expert-analyze="handleExpertAnalyze"
+      @cancel="handleIntentCancel"
+    />
+
     <!-- 任務預覽對話框 -->
     <TaskPreviewDialog
       v-if="showTaskPreview"
@@ -88,10 +100,10 @@
       @cancel="cancelTaskCreation"
       @edit="editTask"
     />
-    
+
     <!-- 全頁面 Loading 遮罩（在生成/提交期間顯示，避免與預覽對話框重疊） -->
     <div
-      v-if="(isMatchingExpert || isGeneratingTaskFromExpert || isCreatingTask) && !showTaskPreview"
+      v-if="(isClassifyingIntent || isMatchingExpert || isGeneratingTaskFromExpert || isCreatingTask) && !showTaskPreview && !showIntentConfirm"
       class="fixed inset-0 z-40 bg-black/40 flex items-center justify-center"
       aria-live="polite"
       aria-busy="true"
@@ -99,8 +111,9 @@
       <div class="bg-white rounded-xl shadow-xl px-6 py-5 flex flex-col items-center gap-3">
         <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
         <div class="text-gray-700 font-medium">
-          {{ isCreatingTask ? '正在創建任務，請稍候…' : 
-             isMatchingExpert ? '正在匹配專家，請稍候…' : 
+          {{ isCreatingTask ? '正在創建任務，請稍候…' :
+             isClassifyingIntent ? '正在分析您的意圖，請稍候…' :
+             isMatchingExpert ? '正在匹配專家，請稍候…' :
              '正在生成任務，請稍候…' }}
         </div>
       </div>
@@ -116,6 +129,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import ChatMessage from '@/components/features/ChatMessage.vue'
 import ChatInput from '@/components/features/ChatInput.vue'
 import TaskPreviewDialog from '@/components/features/TaskPreviewDialog.vue'
+import IntentConfirmDialog from '@/components/features/IntentConfirmDialog.vue'
 import type { ChatMessage as ChatMessageType } from '@/types'
 
 // 基本狀態
@@ -245,6 +259,16 @@ const previewTaskJson = ref<any>(null)
 const taskPreviewText = ref('')
 const validationErrors = ref<string[]>([])
 const isTaskModeActive = ref(false)
+
+// 意圖分類相關狀態
+const showIntentConfirm = ref(false)
+const isClassifyingIntent = ref(false)
+const classifiedIntent = ref<{
+  intent_type: 'detailed_task' | 'vague_goal'
+  confidence: number
+  suggested_task_type: string | null
+  reasoning: string
+} | null>(null)
 
 // 兩階段任務生成流程狀態
 const isMatchingExpert = ref(false)
@@ -1044,9 +1068,251 @@ const handleResourceSelect = (title: string) => {
   nextTick(() => scrollToBottom())
 }
 
-// 從文本直接生成任務（現在調用第一階段）
+// 從文本直接生成任務（新邏輯:先分類意圖）
 const generateTaskFromText = async (taskDescription: string, skillLevel?: string, learningDuration?: string) => {
-  await matchExpert(taskDescription, skillLevel, learningDuration)
+  // 保存任務描述和技能水平信息
+  currentTaskDescription.value = taskDescription
+  currentSkillLevel.value = skillLevel || 'beginner'
+  currentLearningDuration.value = learningDuration || '0'
+  currentSkillLevelLabel.value = skillLevelLabelMap[currentSkillLevel.value] || '初學者'
+  currentLearningDurationLabel.value = learningDurationLabelMap[currentLearningDuration.value] || '0個月'
+
+  // 先將用戶的任務描述添加到對話記錄
+  let fullDescription = taskDescription
+  if (skillLevel && learningDuration) {
+    const skillLevelText = skillLevelLabelMap[skillLevel] || '初學者'
+    const durationText = learningDurationLabelMap[learningDuration] || '0個月'
+    fullDescription = `${taskDescription}（我的熟悉程度：${skillLevelText}，已學習時長：${durationText}）`
+  }
+
+  const userMessage: ChatMessageType = {
+    id: Date.now().toString(),
+    role: 'user',
+    content: fullDescription,
+    timestamp: new Date()
+  }
+  messages.value.push(userMessage)
+
+  // 滾動到底部
+  await nextTick()
+  scrollToBottom()
+
+  // 第一步:調用 AI 分類意圖
+  isClassifyingIntent.value = true
+
+  try {
+    const classifyRes = await apiClient.classifyUserIntent(taskDescription)
+
+    if (classifyRes.success && classifyRes.data) {
+      classifiedIntent.value = classifyRes.data
+      isClassifyingIntent.value = false
+
+      // 保存AI分類結果到對話記錄
+      try {
+        await apiClient.saveChatMessage(
+          currentUserId.value,
+          'user',
+          fullDescription
+        )
+      } catch (error) {
+        console.error('保存用戶訊息失敗:', error)
+      }
+
+      // 顯示意圖確認對話框
+      showIntentConfirm.value = true
+    } else {
+      throw new Error('意圖分類失敗')
+    }
+  } catch (error) {
+    console.error('意圖分類失敗:', error)
+    isClassifyingIntent.value = false
+
+    // 如果分類失敗,則直接走專家匹配流程
+    const errorMessage: ChatMessageType = {
+      id: (Date.now() + 1).toString(),
+      role: 'coach',
+      content: '意圖分析出現問題,讓我直接為您匹配專家吧！',
+      timestamp: new Date(),
+      ephemeral: true
+    }
+    messages.value.push(errorMessage)
+    await nextTick()
+    scrollToBottom()
+
+    // 直接進入專家匹配
+    await matchExpert(taskDescription, skillLevel, learningDuration)
+  }
+}
+
+// 處理直接生成任務
+const handleDirectGenerate = async () => {
+  showIntentConfirm.value = false
+
+  // 添加教練回覆
+  const coachMessage: ChatMessageType = {
+    id: (Date.now() + 1).toString(),
+    role: 'coach',
+    content: '好的!我現在就為您生成任務!',
+    timestamp: new Date()
+  }
+  messages.value.push(coachMessage)
+  await nextTick()
+  scrollToBottom()
+
+  // 保存教練回覆
+  try {
+    await apiClient.saveChatMessage(currentUserId.value, 'coach', coachMessage.content)
+  } catch (error) {
+    console.error('保存教練訊息失敗:', error)
+  }
+
+  // 直接調用專家生成任務(跳過專家選項)
+  isGeneratingTaskFromExpert.value = true
+
+  try {
+    // 首先匹配專家
+    const expertRes = await apiClient.matchExpertOnly(currentTaskDescription.value, currentUserId.value)
+
+    if (expertRes.success && expertRes.data) {
+      matchedExpert.value = expertRes.data.expert_match
+
+      // 直接生成任務,不顯示專家信息和選項
+      const fullDescription = currentTaskDescription.value
+
+      const taskRes = await apiClient.generateTaskWithExpert({
+        description: fullDescription,
+        promptDescription: currentTaskDescription.value,
+        userId: currentUserId.value,
+        expertMatch: matchedExpert.value,
+        expertName: matchedExpert.value.expert.name,
+        expertDescription: matchedExpert.value.expert.description,
+        selectedOptions: [],
+        selectedDirections: [],
+        expertOutputs: {},
+        skillLevelLabel: currentSkillLevelLabel.value,
+        learningDurationLabel: currentLearningDurationLabel.value
+      })
+
+      if (!taskRes.success || !taskRes.data) {
+        throw new Error(taskRes.message || '任務生成失敗')
+      }
+
+      // 驗證並生成預覽
+      const validateRes = await apiClient.validateAndPreviewTask(taskRes.data.task_json)
+
+      if (!validateRes.success || !validateRes.data) {
+        throw new Error(validateRes.message || '任務驗證失敗')
+      }
+
+      const validationPayload = validateRes.data
+
+      if (!validationPayload.is_valid) {
+        validationErrors.value = validationPayload.validation_errors || []
+        const errorMessage = validationErrors.value.length > 0
+          ? `任務生成失敗，請檢查以下問題：\n${validationErrors.value.join('\n')}`
+          : '任務生成失敗，請查看輸入內容是否完整。'
+
+        const errorCoachMessage: ChatMessageType = {
+          id: (Date.now() + 1).toString(),
+          role: 'coach',
+          content: errorMessage,
+          timestamp: new Date(),
+          ephemeral: true
+        }
+        messages.value.push(errorCoachMessage)
+        await nextTick()
+        scrollToBottom()
+        return
+      }
+
+      // 將任務計劃包含在預覽數據中
+      previewTaskJson.value = {
+        ...taskRes.data.task_json,
+        task_plan: taskRes.data.task_plan
+      }
+      taskPreviewText.value = validationPayload.task_preview || ''
+      validationErrors.value = []
+      showTaskPreview.value = true
+
+      const responseMessage = `我為您生成了任務：「${taskRes.data.task_json?.title}」。請查看預覽並確認是否要創建這個任務。`
+
+      const responseCoachMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'coach',
+        content: responseMessage,
+        timestamp: new Date()
+      }
+      messages.value.push(responseCoachMessage)
+
+      // 保存任務生成回應
+      try {
+        await apiClient.saveChatMessage(currentUserId.value, 'coach', responseMessage)
+      } catch (error) {
+        console.error('保存任務生成回應失敗:', error)
+      }
+
+      await nextTick()
+      scrollToBottom()
+    }
+  } catch (error) {
+    console.error('直接生成任務失敗:', error)
+    const errorResponse = '抱歉，生成任務時發生了錯誤。請稍後再試。'
+
+    const errorMessage: ChatMessageType = {
+      id: (Date.now() + 1).toString(),
+      role: 'coach',
+      content: errorResponse,
+      timestamp: new Date(),
+      ephemeral: true
+    }
+    messages.value.push(errorMessage)
+    await nextTick()
+    scrollToBottom()
+  } finally {
+    isGeneratingTaskFromExpert.value = false
+  }
+}
+
+// 處理專家分析
+const handleExpertAnalyze = async () => {
+  showIntentConfirm.value = false
+
+  // 添加教練回覆
+  const coachMessage: ChatMessageType = {
+    id: (Date.now() + 1).toString(),
+    role: 'coach',
+    content: '好的!讓我為您匹配專家,進行詳細分析!',
+    timestamp: new Date()
+  }
+  messages.value.push(coachMessage)
+  await nextTick()
+  scrollToBottom()
+
+  // 保存教練回覆
+  try {
+    await apiClient.saveChatMessage(currentUserId.value, 'coach', coachMessage.content)
+  } catch (error) {
+    console.error('保存教練訊息失敗:', error)
+  }
+
+  // 進入專家匹配流程
+  await matchExpert(currentTaskDescription.value, currentSkillLevel.value, currentLearningDuration.value)
+}
+
+// 處理取消意圖確認
+const handleIntentCancel = () => {
+  showIntentConfirm.value = false
+  classifiedIntent.value = null
+
+  const cancelMessage: ChatMessageType = {
+    id: Date.now().toString(),
+    role: 'coach',
+    content: '沒問題!如果需要創建任務,隨時告訴我!',
+    timestamp: new Date(),
+    ephemeral: true
+  }
+  messages.value.push(cancelMessage)
+  nextTick(() => scrollToBottom())
 }
 
 // 確認創建任務（支援選擇是否生成子任務和是否生成為每日任務）
