@@ -41,6 +41,7 @@ export interface Task {
   title: string;
   description?: string;
   type: 'main' | 'side' | 'challenge' | 'daily' | 'subtask';
+  priority?: 1 | 2 | 3;
   difficulty: 1 | 2 | 3 | 4 | 5;
   experience: number;
   estimatedTime?: string;

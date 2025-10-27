@@ -18,7 +18,7 @@
       </h1>
 
       <!-- 操作菜單 -->
-      <div v-if="task?.is_parent_task" class="flex items-center space-x-2">
+      <div v-if="task?.is_parent_task || task?.type === 'daily'" class="flex items-center space-x-2">
         <!-- 編輯按鈕 -->
         <button
           @click="showEditDialog = true"

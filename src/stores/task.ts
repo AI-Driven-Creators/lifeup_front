@@ -52,6 +52,7 @@ export const useTaskStore = defineStore('task', {
       title: string;
       description?: string;
       type: Task['type'];
+      priority?: Task['priority'];
       difficulty: Task['difficulty'];
       skillTags?: string[];
     }) {
@@ -64,7 +65,7 @@ export const useTaskStore = defineStore('task', {
         const backendTaskData = {
           title: taskData.title,
           description: taskData.description,
-          priority: taskData.difficulty,
+          priority: taskData.priority ?? 1,
           task_type: taskData.type,
           difficulty: taskData.difficulty,
           experience: this.calculateExperience(taskData.difficulty),
@@ -273,6 +274,7 @@ export const useTaskStore = defineStore('task', {
         title: backendTask.title || '',
         description: backendTask.description,
         type: (backendTask.task_type as Task['type']) || this.mapPriorityToType(backendTask.priority),
+        priority: backendTask.priority ? Math.min(3, Math.max(1, backendTask.priority)) as Task['priority'] : undefined,
         difficulty: Math.min(5, Math.max(1, backendTask.difficulty || backendTask.priority || 1)) as Task['difficulty'],
         experience: backendTask.experience !== null && backendTask.experience !== undefined
           ? backendTask.experience
