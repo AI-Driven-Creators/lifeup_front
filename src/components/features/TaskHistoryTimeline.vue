@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card h-[50vh] flex flex-col">
     <h3 class="text-lg font-bold text-primary-900 mb-4">任務完成編年史</h3>
 
     <!-- 類型篩選按鈕 -->
@@ -32,22 +32,33 @@
     </div>
 
     <!-- 時間軸 -->
-    <div v-else class="relative">
+    <div v-else ref="timelineContainer" @scroll="handleScroll" class="relative flex-1 overflow-y-auto">
       <!-- 時間軸線條 -->
       <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
 
+      <!-- 已載入全部提示 - 在頂端 -->
+      <div v-if="!hasMore && tasks.length > 0" class="text-center py-3 text-gray-400 text-sm">
+        已載入全部歷史記錄
+      </div>
+
+      <!-- 載入中提示 - 在頂端 -->
+      <div v-if="loading && tasks.length > 0" class="text-center py-3">
+        <div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+        <p class="text-xs text-gray-500 mt-1">載入更多...</p>
+      </div>
+
       <!-- 任務項目 -->
-      <div v-for="(task, index) in tasks" :key="task.id" class="relative pl-12 pb-8 last:pb-0">
+      <div v-for="(task, index) in tasks" :key="task.id" class="relative pl-12 pb-3 last:pb-0">
         <!-- 時間軸圓點 -->
         <div class="absolute left-2.5 top-1 w-3 h-3 rounded-full bg-primary-600 border-2 border-white shadow"></div>
 
         <!-- 任務卡片 -->
-        <div class="bg-white border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+        <div class="bg-white border border-green-200 rounded-lg p-2.5 hover:shadow-md transition-shadow">
           <!-- 任務標題 -->
-          <h4 class="font-semibold text-gray-900 mb-2">{{ task.title }}</h4>
+          <h4 class="font-semibold text-gray-900 mb-1">{{ task.title }}</h4>
 
           <!-- 任務資訊 -->
-          <div class="flex flex-wrap gap-3 text-sm">
+          <div class="flex flex-wrap gap-2 text-sm">
             <!-- 完成時間 -->
             <div class="flex items-center text-gray-600">
               <span class="mr-1">📅</span>
@@ -69,29 +80,12 @@
           </div>
         </div>
       </div>
-
-      <!-- 載入更多按鈕 -->
-      <div v-if="hasMore" class="text-center pt-4">
-        <button
-          @click="loadMore"
-          :disabled="loading"
-          class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <span v-if="loading">載入中...</span>
-          <span v-else>載入更多</span>
-        </button>
-      </div>
-
-      <!-- 已載入全部 -->
-      <div v-else-if="tasks.length > 0" class="text-center pt-4 text-gray-400 text-sm">
-        已載入全部歷史記錄
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 interface TaskHistoryItem {
   id: string
@@ -129,19 +123,56 @@ const loading = ref(false)
 const hasMore = ref(false)
 const offset = ref(0)
 const limit = 5
+const timelineContainer = ref<HTMLElement | null>(null)
+const isLoadingMore = ref(false)
 
 // 選擇類型
-const selectType = (type: string) => {
+const selectType = async (type: string) => {
   selectedType.value = type
   offset.value = 0
   tasks.value = []
-  fetchTaskHistory()
+  await fetchTaskHistory()
+  scrollToBottom()
 }
 
-// 載入更多
-const loadMore = () => {
+// 滾動事件處理器 - 滾動到頂部時載入更舊的任務
+const handleScroll = () => {
+  if (!timelineContainer.value || isLoadingMore.value || !hasMore.value) return
+
+  const { scrollTop } = timelineContainer.value
+
+  // 當滾動到頂部附近時（距離頂部小於 50px），載入更多舊任務
+  if (scrollTop < 50) {
+    loadMoreOldTasks()
+  }
+}
+
+// 載入更多舊任務（往前翻頁）
+const loadMoreOldTasks = async () => {
+  if (isLoadingMore.value || !hasMore.value) return
+
+  isLoadingMore.value = true
+  const previousScrollHeight = timelineContainer.value?.scrollHeight || 0
+
   offset.value += limit
-  fetchTaskHistory(true)
+  await fetchTaskHistory(true)
+
+  // 保持滾動位置，避免跳動
+  await nextTick()
+  if (timelineContainer.value) {
+    const newScrollHeight = timelineContainer.value.scrollHeight
+    timelineContainer.value.scrollTop = newScrollHeight - previousScrollHeight
+  }
+
+  isLoadingMore.value = false
+}
+
+// 滾動到底部（最新任務）
+const scrollToBottom = async () => {
+  await nextTick()
+  if (timelineContainer.value) {
+    timelineContainer.value.scrollTop = timelineContainer.value.scrollHeight
+  }
 }
 
 // 獲取任務歷史
@@ -166,7 +197,8 @@ const fetchTaskHistory = async (append = false) => {
     const data: TaskHistoryResponse = result.data
 
     if (append) {
-      tasks.value = [...tasks.value, ...data.tasks]
+      // 載入更多舊任務時，將新任務加到陣列開頭（因為這些是更舊的任務）
+      tasks.value = [...data.tasks, ...tasks.value]
     } else {
       tasks.value = data.tasks
     }
@@ -217,8 +249,9 @@ const getTypeClass = (type: string) => {
 }
 
 // 初始載入
-onMounted(() => {
-  fetchTaskHistory()
+onMounted(async () => {
+  await fetchTaskHistory()
+  scrollToBottom()
 })
 </script>
 
