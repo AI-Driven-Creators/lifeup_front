@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TaskStatusFilter from '@/components/features/TaskStatusFilter.vue'
 import MissionTaskCard from '@/components/features/MissionTaskCard.vue'
@@ -153,6 +153,7 @@ const subtasks = ref<Task[]>([]) // 儲存子任務
 const loading = ref(true)
 const error = ref<string | null>(null)
 const activeStatusFilters = ref<string[]>([])
+const pollingTimer = ref<number | null>(null) // 輪詢定時器
 
 // 獲取任務類型
 const taskType = computed(() => route.params.type as string)
@@ -325,8 +326,54 @@ const goBack = () => {
   router.back()
 }
 
+// 檢查是否有任務正在生成子任務
+const hasGeneratingTasks = computed(() => {
+  return tasks.value.some(task =>
+    task.task_category === 'coach_generating_subtasks' && task.is_parent_task
+  )
+})
+
+// 啟動輪詢檢查子任務生成狀態
+const startPollingForSubtasks = () => {
+  // 先清除已有的定時器
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+  }
+
+  // 每3秒檢查一次
+  pollingTimer.value = window.setInterval(async () => {
+    // 只在有任務正在生成子任務時進行輪詢
+    if (hasGeneratingTasks.value) {
+      console.log('[TaskTypeDetailPage] 輪詢檢查子任務生成狀態...')
+
+      try {
+        // 重新載入任務列表
+        await loadTasks()
+      } catch (err) {
+        console.error('[TaskTypeDetailPage] 輪詢檢查失敗:', err)
+      }
+    }
+  }, 3000) // 3秒一次
+}
+
+// 停止輪詢
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
+    console.log('[TaskTypeDetailPage] 輪詢已停止')
+  }
+}
+
 // 頁面載入時獲取任務
 onMounted(() => {
   loadTasks()
+  // 啟動輪詢
+  startPollingForSubtasks()
+})
+
+// 頁面卸載時清理定時器
+onUnmounted(() => {
+  stopPolling()
 })
 </script>

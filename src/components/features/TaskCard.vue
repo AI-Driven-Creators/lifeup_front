@@ -61,7 +61,13 @@
           </div>
           <span class="text-sm text-primary-600 font-medium">+{{ task.experience }} XP</span>
         </div>
-        
+
+        <!-- 子任務生成中提示 -->
+        <div v-if="isGeneratingSubtasks" class="flex items-center gap-2 mt-2 px-2 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+          <span class="text-xs text-blue-600 font-medium">子任務生成中...</span>
+        </div>
+
         <!-- 技能標籤 -->
         <SkillTags
           :skill-tags="skillObjects"
@@ -123,6 +129,22 @@ const skillObjects = computed(() => {
   return props.task.skillTags
     .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
     .filter(skill => !!skill) as { id: string; name: string }[]
+})
+
+// 判斷是否正在生成子任務
+const isGeneratingSubtasks = computed(() => {
+  const isGenerating = props.task.task_category === 'coach_generating_subtasks' &&
+         props.task.is_parent_task
+
+  // 調試日誌
+  if (props.task.is_parent_task) {
+    console.log('[TaskCard] 主任務:', props.task.title)
+    console.log('[TaskCard] task_category:', props.task.task_category)
+    console.log('[TaskCard] is_parent_task:', props.task.is_parent_task)
+    console.log('[TaskCard] isGenerating:', isGenerating)
+  }
+
+  return isGenerating
 })
 
 const handleToggle = () => {

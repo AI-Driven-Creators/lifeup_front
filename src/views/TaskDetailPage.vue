@@ -95,6 +95,12 @@
           <span v-else-if="task.dailyTaskSubtype === 'simple'" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">今日行動</span>
         </div>
 
+        <!-- 子任務生成中提示 -->
+        <div v-if="isGeneratingSubtasks" class="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+          <span class="text-sm text-blue-600 font-medium">子任務生成中，請稍候...</span>
+        </div>
+
         <!-- 任務進度條（非每日任務顯示） -->
         <div v-if="!isDailyTask && (task.progress || task.is_parent_task)" class="mt-4">
           <TaskProgressBar
@@ -339,7 +345,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import { useSkillStore } from '@/stores/skill'
@@ -368,6 +374,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isDailyTask = ref(false)
+const pollingTimer = ref<number | null>(null) // 輪詢定時器
 
 // 對話框狀態
 const showCreateSubtaskDialog = ref(false)
@@ -490,6 +497,22 @@ const getSkillObjectsForTask = (task: Task) => {
   console.log('✅ 技能對象結果:', result)
   return result
 }
+
+// 判斷是否正在生成子任務
+const isGeneratingSubtasks = computed(() => {
+  const isGenerating = task.value?.task_category === 'coach_generating_subtasks' &&
+         task.value?.is_parent_task
+
+  // 調試日誌
+  if (task.value) {
+    console.log('[TaskDetailPage] 任務:', task.value.title)
+    console.log('[TaskDetailPage] task_category:', task.value.task_category)
+    console.log('[TaskDetailPage] is_parent_task:', task.value.is_parent_task)
+    console.log('[TaskDetailPage] isGenerating:', isGenerating)
+  }
+
+  return isGenerating
+})
 
 // 任務進度數據
 const taskProgress = computed(() => {
@@ -1061,6 +1084,59 @@ const handleDeleteTask = async () => {
   }
 }
 
+// 啟動輪詢檢查子任務生成狀態
+const startPollingForSubtasks = () => {
+  // 先清除已有的定時器
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+  }
+
+  // 每3秒檢查一次
+  pollingTimer.value = window.setInterval(async () => {
+    // 只在正在生成子任務時進行輪詢
+    if (isGeneratingSubtasks.value) {
+      console.log('[TaskDetailPage] 輪詢檢查子任務生成狀態...')
+
+      try {
+        const taskId = route.params.id as string
+        const taskResponse = await apiClient.getTask(taskId)
+
+        if (taskResponse.success) {
+          const updatedTask = taskStore.transformBackendTask(taskResponse.data)
+          const newCategory = updatedTask?.task_category
+
+          console.log('[TaskDetailPage] 當前 task_category:', newCategory)
+
+          // 如果不再是生成中狀態，說明完成了
+          if (newCategory !== 'coach_generating_subtasks') {
+            console.log('[TaskDetailPage] 子任務生成完成！重新載入頁面數據...')
+
+            // 停止輪詢
+            if (pollingTimer.value) {
+              clearInterval(pollingTimer.value)
+              pollingTimer.value = null
+            }
+
+            // 重新載入完整的任務詳情（包括子任務）
+            await loadTaskDetail()
+          }
+        }
+      } catch (err) {
+        console.error('[TaskDetailPage] 輪詢檢查失敗:', err)
+      }
+    }
+  }, 3000) // 3秒一次
+}
+
+// 停止輪詢
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
+    console.log('[TaskDetailPage] 輪詢已停止')
+  }
+}
+
 // 頁面載入時獲取任務詳情
 onMounted(() => {
   loadTaskDetail()
@@ -1068,5 +1144,12 @@ onMounted(() => {
   if (skillStore.skills.length === 0 && !skillStore.loading) {
     skillStore.fetchSkills()
   }
+  // 啟動輪詢
+  startPollingForSubtasks()
+})
+
+// 頁面卸載時清理定時器
+onUnmounted(() => {
+  stopPolling()
 })
 </script>

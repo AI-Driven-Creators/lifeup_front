@@ -57,6 +57,12 @@
           </span>
         </div>
         
+        <!-- 子任務生成中提示 -->
+        <div v-if="isGeneratingSubtasks" class="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+          <span class="text-sm text-blue-600 font-medium">正在生成子任務中...</span>
+        </div>
+
         <!-- 任務描述 -->
         <div v-if="task.description" class="text-sm mb-3 space-y-2">
           <p class="text-primary-700">{{ parsedDescription.main }}</p>
@@ -263,6 +269,11 @@ const skillObjects = computed(() => {
   return props.task.skillTags
     .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
     .filter(skill => !!skill) as { id: string; name: string }[]
+})
+
+// 判斷是否正在生成子任務
+const isGeneratingSubtasks = computed(() => {
+  return props.task.task_category === 'coach_generating_subtasks' && props.task.is_parent_task
 })
 
 // 解析任務描述，分離主描述、個性化說明、推薦資源
