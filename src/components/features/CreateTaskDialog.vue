@@ -752,7 +752,7 @@ const createRecurringTask = async () => {
 
   try {
     // 構建請求数據
-    const taskData = {
+    const taskData: any = {
       title: formData.value.title,
       description: formData.value.description || undefined,
       task_type: 'daily',
@@ -765,6 +765,11 @@ const createRecurringTask = async () => {
       end_date: `${recurringData.value.endDate}T23:59:59Z`,
       completion_target: recurringData.value.target,
       user_id: userStore.user.id
+    }
+
+    // 添加技能標籤
+    if (form.value.skill_tags && form.value.skill_tags.length > 0) {
+      taskData.skill_tags = form.value.skill_tags
     }
 
     // 調用後端 API
