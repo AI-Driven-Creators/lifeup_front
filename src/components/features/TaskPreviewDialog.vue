@@ -95,6 +95,23 @@
             </div>
           </label>
         </div>
+
+        <!-- 生成為每日任務的選項 -->
+        <div class="bg-amber-50 rounded-lg p-4">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              v-model="includeDailyTask"
+              type="checkbox"
+              class="w-5 h-5 text-amber-600 bg-gray-100 border-gray-300 rounded focus:ring-amber-500 focus:ring-2"
+            />
+            <div>
+              <span class="text-base font-medium text-gray-700">生成為每日任務</span>
+              <p class="text-sm text-gray-500">
+                將此任務轉換為每日習慣任務，適合每天重複執行
+              </p>
+            </div>
+          </label>
+        </div>
       </div>
 
       <!-- 操作按鈕 -->
@@ -162,25 +179,47 @@ const renderedDescription = computed(() => {
 
 // 是否包含子任務
 const includeSubtasks = ref(false)
+// 是否生成為每日任務
+const includeDailyTask = ref(false)
 
 // 監聽複選框變化
 watch(includeSubtasks, (newValue) => {
   console.log('[TaskPreviewDialog] includeSubtasks 變更為:', newValue)
 })
 
+watch(includeDailyTask, (newValue) => {
+  console.log('[TaskPreviewDialog] includeDailyTask 變更為:', newValue)
+})
+
 // 處理確認
 const handleConfirm = () => {
   console.log('[TaskPreviewDialog] handleConfirm 被調用')
   console.log('[TaskPreviewDialog] includeSubtasks.value =', includeSubtasks.value)
-  emit('confirm', includeSubtasks.value)
+  console.log('[TaskPreviewDialog] includeDailyTask.value =', includeDailyTask.value)
+  emit('confirm', includeSubtasks.value, includeDailyTask.value)
 }
 
 // 獲取確認按鈕文字
 const getConfirmButtonText = () => {
   if (props.isConfirming) {
-    return includeSubtasks.value ? '創建任務並生成子任務中...' : '創建任務中...'
+    if (includeSubtasks.value && includeDailyTask.value) {
+      return '創建每日任務並生成子任務中...'
+    } else if (includeDailyTask.value) {
+      return '創建每日任務中...'
+    } else if (includeSubtasks.value) {
+      return '創建任務並生成子任務中...'
+    }
+    return '創建任務中...'
   }
-  return includeSubtasks.value ? '創建並生成子任務' : '確認創建'
+
+  if (includeSubtasks.value && includeDailyTask.value) {
+    return '創建每日任務並生成子任務'
+  } else if (includeDailyTask.value) {
+    return '創建每日任務'
+  } else if (includeSubtasks.value) {
+    return '創建並生成子任務'
+  }
+  return '確認創建'
 }
 
 // 格式化日期

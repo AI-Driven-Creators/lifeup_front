@@ -479,6 +479,21 @@ export class ApiClient {
     });
   }
 
+  // 生成每日任務 JSON（使用專門針對每日任務優化的 AI 提示詞）
+  async generateDailyTaskJson(description: string, userId?: string) {
+    return this.request<{
+      success: boolean,
+      data: { task_json: any },
+      message: string
+    }>('/api/tasks/generate-daily-task-json', {
+      method: 'POST',
+      body: JSON.stringify({
+        description,
+        user_id: userId
+      })
+    });
+  }
+
   // 為已存在的任務生成子任務
   async generateSubtasksForTask(parentTaskId: string, taskDescription: string, taskPlan?: any, expertMatch?: any, userId?: string) {
     return this.request<{

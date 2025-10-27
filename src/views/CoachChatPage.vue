@@ -933,27 +933,24 @@ const handleExpertOption = async (option: string) => {
         isAnalyzing.value = false
       }
     }
-    
-    // 添加生成任務按鈕（如果還沒有）
-    const hasGenerateButton = messages.value.some(msg => msg.showGenerateButton)
-    if (!hasGenerateButton) {
-      const generateButtonMessage: ChatMessageType = {
-        id: (Date.now() + Math.random()).toString(),
-        role: 'coach',
-        content: '選項已選擇完成，點擊下方按鈕生成任務：',
-        timestamp: new Date(),
-        showGenerateButton: true
-      }
-      messages.value.push(generateButtonMessage)
 
-      // 保存生成按鈕提示到資料庫
-      try {
-        await apiClient.saveChatMessage(currentUserId.value, 'coach', generateButtonMessage.content)
-      } catch (error) {
-        console.error('保存生成按鈕提示失敗:', error)
-      }
+    // 添加生成任務按鈕（每次都重新添加，確保按鈕在最新位置）
+    const generateButtonMessage: ChatMessageType = {
+      id: (Date.now() + Math.random()).toString(),
+      role: 'coach',
+      content: '選項已選擇完成，點擊下方按鈕生成任務：',
+      timestamp: new Date(),
+      showGenerateButton: true
     }
-    
+    messages.value.push(generateButtonMessage)
+
+    // 保存生成按鈕提示到資料庫
+    try {
+      await apiClient.saveChatMessage(currentUserId.value, 'coach', generateButtonMessage.content)
+    } catch (error) {
+      console.error('保存生成按鈕提示失敗:', error)
+    }
+
     nextTick(() => scrollToBottom())
   }
 }
@@ -1053,123 +1050,156 @@ const generateTaskFromText = async (taskDescription: string, skillLevel?: string
   await matchExpert(taskDescription, skillLevel, learningDuration)
 }
 
-// 確認創建任務（支援選擇是否生成子任務）
-const confirmCreateTask = async (includeSubtasks: boolean = false) => {
-  console.log('confirmCreateTask 被調用，includeSubtasks =', includeSubtasks)
+// 確認創建任務（支援選擇是否生成子任務和是否生成為每日任務）
+const confirmCreateTask = async (includeSubtasks: boolean = false, includeDailyTask: boolean = false) => {
+  console.log('confirmCreateTask 被調用，includeSubtasks =', includeSubtasks, 'includeDailyTask =', includeDailyTask)
   loading.value = true
   isCreatingTask.value = true
   try {
-    // 先保存任務標題、描述、計劃和專家信息，因為稍後會清空 previewTaskJson
-    const taskTitle = previewTaskJson.value?.title || '新任務'
-    const taskDescription = previewTaskJson.value?.description || taskTitle
-    const taskPlan = previewTaskJson.value?.task_plan // 保存任務計劃（包含子任務信息）
+    // 保存原始任務資訊，用於後續處理
+    const mainTaskJson = previewTaskJson.value
+    const taskTitle = mainTaskJson?.title || '新任務'
+    const taskDescription = mainTaskJson?.description || taskTitle
+    const taskPlan = mainTaskJson?.task_plan // 保存任務計劃（包含子任務信息）
     const expertMatch = matchedExpert.value // 保存專家信息
 
-    // 創建主任務
-    const res = await apiClient.createTaskFromJson(previewTaskJson.value, currentUserId.value)
-
+    // ==================== 第一步：創建主任務 ====================
+    console.log('創建主任務...')
+    const res = await apiClient.createTaskFromJson(mainTaskJson, currentUserId.value)
     console.log('主任務創建響應:', res)
 
-    if (res.success) {
-      // 修正：從 res.data.task.id 獲取任務 ID
-      const createdTaskId = res.data?.task?.id || res.data?.id
-      let subtasksCreated = 0
+    if (!res.success) {
+      showToast && showToast('任務創建失敗：' + res.message)
+      return
+    }
 
-      console.log('檢查是否需要生成子任務:')
-      console.log('- includeSubtasks:', includeSubtasks)
-      console.log('- createdTaskId:', createdTaskId)
-      console.log('- 條件結果:', includeSubtasks && createdTaskId)
+    // 獲取創建的主任務 ID
+    const createdTaskId = res.data?.task?.id || res.data?.id
+    let subtasksCreated = 0
+    let dailyTaskCreated = false
 
-      // 如果用戶選擇包含子任務，則生成子任務
-      if (includeSubtasks && createdTaskId) {
-        try {
-          // 調試：輸出要傳送的數據
-          console.log('準備生成子任務，參數如下：')
-          console.log('- createdTaskId:', createdTaskId)
-          console.log('- taskDescription:', taskDescription)
-          console.log('- taskPlan:', taskPlan)
-          console.log('- expertMatch:', expertMatch)
-          console.log('- userId:', currentUserId.value)
+    // ==================== 第二步：如果需要，為主任務生成子任務 ====================
+    if (includeSubtasks && createdTaskId) {
+      try {
+        console.log('準備為主任務生成子任務，參數如下：')
+        console.log('- createdTaskId:', createdTaskId)
+        console.log('- taskDescription:', taskDescription)
+        console.log('- taskPlan:', taskPlan)
+        console.log('- expertMatch:', expertMatch)
+        console.log('- userId:', currentUserId.value)
 
-          // 檢查必要參數是否存在
-          if (!createdTaskId) {
-            console.error('缺少 createdTaskId')
-            throw new Error('缺少任務 ID')
+        if (!createdTaskId) {
+          console.error('缺少 createdTaskId')
+          throw new Error('缺少任務 ID')
+        }
+
+        // 使用任務計劃中的子任務信息，避免重新生成
+        const subtasksRes = await apiClient.generateSubtasksForTask(
+          createdTaskId,
+          taskDescription,
+          taskPlan,
+          expertMatch,
+          currentUserId.value
+        )
+
+        console.log('子任務生成 API 響應：', subtasksRes)
+
+        if (subtasksRes.success && subtasksRes.data) {
+          subtasksCreated = subtasksRes.data.total_count
+
+          // 檢查是否為背景生成模式
+          if (subtasksCreated === 0 && subtasksRes.message && subtasksRes.message.includes('後台生成')) {
+            console.log('子任務正在背景生成中')
+          } else if (subtasksCreated > 0) {
+            console.log(`成功生成了 ${subtasksCreated} 個子任務`)
           }
+        } else {
+          console.error('子任務生成失敗，API 返回:', subtasksRes)
+        }
+      } catch (subtaskError: any) {
+        console.error('生成子任務失敗 - 詳細錯誤:', subtaskError)
+        console.error('錯誤堆疊:', subtaskError?.stack)
+      }
+    }
 
-          // 使用任務計劃中的子任務信息，避免重新生成
-          const subtasksRes = await apiClient.generateSubtasksForTask(
-            createdTaskId,
-            taskDescription, // 使用保存的描述
-            taskPlan, // 傳遞任務計劃，其中包含子任務
-            expertMatch, // 傳遞專家信息
+    // ==================== 第三步：如果需要，額外創建每日任務 ====================
+    if (includeDailyTask) {
+      try {
+        console.log('生成並創建每日任務...')
+        const dailyTaskRes = await apiClient.generateDailyTaskJson(
+          currentTaskDescription.value,
+          currentUserId.value
+        )
+
+        if (dailyTaskRes.success && dailyTaskRes.data) {
+          console.log('每日任務 JSON 生成成功:', dailyTaskRes.data.task_json)
+
+          // 創建每日任務
+          const dailyTaskCreateRes = await apiClient.createTaskFromJson(
+            dailyTaskRes.data.task_json,
             currentUserId.value
           )
 
-          console.log('子任務生成 API 響應：', subtasksRes)
-
-          if (subtasksRes.success && subtasksRes.data) {
-            subtasksCreated = subtasksRes.data.total_count
-
-            // 檢查是否為背景生成模式
-            if (subtasksCreated === 0 && subtasksRes.message && subtasksRes.message.includes('後台生成')) {
-              showToast && showToast('任務創建成功！子任務正在背景生成中，約30秒後會自動完成')
-            } else if (subtasksCreated > 0) {
-              showToast && showToast(`任務創建成功，並生成了 ${subtasksCreated} 個子任務！`)
-            } else {
-              showToast && showToast('任務創建成功！')
-            }
+          if (dailyTaskCreateRes.success) {
+            dailyTaskCreated = true
+            console.log('每日任務創建成功')
           } else {
-            console.error('子任務生成失敗，API 返回:', subtasksRes)
-            const errorMessage = subtasksRes.message || '子任務生成失敗'
-            showToast && showToast(`任務創建成功，但 ${errorMessage}`)
+            console.error('每日任務創建失敗:', dailyTaskCreateRes.message)
           }
-        } catch (subtaskError: any) {
-          console.error('生成子任務失敗 - 詳細錯誤:', subtaskError)
-          console.error('錯誤堆疊:', subtaskError?.stack)
-          showToast && showToast('任務創建成功，但子任務生成失敗')
+        } else {
+          console.error('每日任務 JSON 生成失敗:', dailyTaskRes.message)
         }
-      } else {
-        showToast && showToast('任務創建成功！')
+      } catch (dailyError) {
+        console.error('每日任務生成/創建失敗:', dailyError)
       }
-
-      // 在對話中添加確認訊息
-      let successMessage = ''
-      if (includeSubtasks && subtasksCreated === 0) {
-        // 背景生成模式
-        successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」。子任務正在背景生成中，約30秒後會自動完成，你可以稍後到任務列表查看。加油！💪`
-      } else if (subtasksCreated > 0) {
-        // 已經生成了子任務
-        successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」，並生成了 ${subtasksCreated} 個子任務。加油完成它們！💪`
-      } else {
-        // 沒有子任務的情況
-        successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`
-      }
-
-      messages.value.push({
-        id: Date.now().toString(),
-        role: 'coach',
-        content: successMessage,
-        timestamp: new Date()
-      })
-
-      // 保存任務創建確認訊息到資料庫
-      try {
-        await apiClient.saveChatMessage(currentUserId.value, 'coach', successMessage)
-      } catch (error) {
-        console.error('保存任務創建確認訊息失敗:', error)
-      }
-
-      // 清空預覽狀態
-      showTaskPreview.value = false
-      previewTaskJson.value = null
-
-      // 滾動到底部以顯示新訊息
-      await nextTick()
-      scrollToBottom()
-    } else {
-      showToast && showToast('任務創建失敗：' + res.message)
     }
+
+    // ==================== 第四步：顯示成功訊息 ====================
+    let successMessage = ''
+    if (includeDailyTask && dailyTaskCreated && includeSubtasks && subtasksCreated > 0) {
+      // 主任務 + 子任務 + 每日任務都成功
+      successMessage = `太好了！我已經為你創建了主任務「${taskTitle}」並生成了 ${subtasksCreated} 個子任務，同時也創建了對應的每日任務。加油完成它們！💪📅`
+    } else if (includeDailyTask && dailyTaskCreated && includeSubtasks && subtasksCreated === 0) {
+      // 主任務 + 每日任務 + 子任務背景生成
+      successMessage = `太好了！我已經為你創建了主任務「${taskTitle}」和對應的每日任務。子任務正在背景生成中，約30秒後會自動完成。💪📅`
+    } else if (includeDailyTask && dailyTaskCreated) {
+      // 主任務 + 每日任務
+      successMessage = `太好了！我已經為你創建了主任務「${taskTitle}」，同時也創建了對應的每日任務。養成好習慣，每天堅持！💪📅`
+    } else if (includeSubtasks && subtasksCreated === 0) {
+      // 主任務 + 子任務背景生成
+      successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」。子任務正在背景生成中，約30秒後會自動完成，你可以稍後到任務列表查看。加油！💪`
+    } else if (subtasksCreated > 0) {
+      // 主任務 + 子任務
+      successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」，並生成了 ${subtasksCreated} 個子任務。加油完成它們！💪`
+    } else {
+      // 只有主任務
+      successMessage = `太好了！我已經幫你創建了任務「${taskTitle}」。加油完成它！💪`
+    }
+
+    // 顯示提示
+    showToast && showToast(successMessage.split('。')[0] + '！')
+
+    messages.value.push({
+      id: Date.now().toString(),
+      role: 'coach',
+      content: successMessage,
+      timestamp: new Date()
+    })
+
+    // 保存任務創建確認訊息到資料庫
+    try {
+      await apiClient.saveChatMessage(currentUserId.value, 'coach', successMessage)
+    } catch (error) {
+      console.error('保存任務創建確認訊息失敗:', error)
+    }
+
+    // 清空預覽狀態
+    showTaskPreview.value = false
+    previewTaskJson.value = null
+
+    // 滾動到底部以顯示新訊息
+    await nextTick()
+    scrollToBottom()
   } catch (error) {
     console.error('創建任務失敗:', error)
     showToast && showToast('創建任務失敗，請稍後再試。')
