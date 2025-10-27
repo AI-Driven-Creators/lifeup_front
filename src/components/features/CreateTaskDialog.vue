@@ -182,8 +182,8 @@
 
 
 
-            <!-- 生成子任務選項 -->
-            <div class="border-t border-gray-200 pt-4">
+            <!-- 生成子任務選項 (每日任務不顯示) -->
+            <div v-if="form.task_type !== 'daily'" class="border-t border-gray-200 pt-4">
               <label class="flex items-center gap-3 cursor-pointer">
                 <input
                   v-model="form.generate_subtasks"
@@ -394,8 +394,8 @@ const form = ref({
   title: '',
   task_type: 'main',
   description: '',
-  priority: 2,
-  difficulty: 3,
+  priority: 1,
+  difficulty: 1,
   generate_subtasks: false,
   skill_tags: [] as string[]
 })
@@ -404,8 +404,8 @@ const form = ref({
 const formData = ref({
   title: '',
   description: '',
-  difficulty: 3,
-  priority: 2
+  difficulty: 1,
+  priority: 1
 })
 
 const recurringData = ref({
@@ -525,8 +525,8 @@ const resetForm = () => {
     title: '',
     task_type: 'main',
     description: '',
-    priority: 2,
-    difficulty: 3,
+    priority: 1,
+    difficulty: 1,
     generate_subtasks: false,
     skill_tags: []
   }
@@ -540,8 +540,8 @@ const resetForm = () => {
   formData.value = {
     title: '',
     description: '',
-    difficulty: 3,
-    priority: 2
+    difficulty: 1,
+    priority: 1
   }
   recurringData.value = {
     pattern: 'daily',
