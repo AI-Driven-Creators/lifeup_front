@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
 import { useUserStore } from './user'
-import { getSkillTemplate, getSkillTemplateByName } from '@/config/skillPool'
+import { DEFAULT_SKILL_ICON } from '@/config/skillPool'
 import type { Skill } from '@/types'
 
 export const useSkillStore = defineStore('skill', {
@@ -47,78 +47,6 @@ export const useSkillStore = defineStore('skill', {
       } finally {
         this.loading = false;
       }
-    },
-
-    // 解鎖技能（從技能池創建）
-    async unlockSkill(skillId: string) {
-      try {
-        const userStore = useUserStore();
-        const skillTemplate = getSkillTemplate(skillId);
-
-        if (!skillTemplate) {
-          throw new Error(`技能模板不存在: ${skillId}`);
-        }
-
-        // 檢查是否已解鎖（根據技能名稱判斷，因為同名技能應該是同一個技能）
-        const existingSkill = this.skills.find(s => s.name === skillTemplate.name);
-        if (existingSkill) {
-          console.log(`技能 ${skillTemplate.name} 已經解鎖，跳過重複創建`);
-          return existingSkill;
-        }
-
-        // 創建技能數據
-        const backendSkillData = {
-          name: skillTemplate.name,
-          description: skillTemplate.description,
-          category: skillTemplate.category,
-          attribute: skillTemplate.attribute,
-          level: 1,
-          user_id: userStore.user.id,
-        };
-
-        const response = await apiClient.createSkill(backendSkillData);
-        if (response.success) {
-          // 使用技能池模板構建前端技能對象
-          const newSkill: Skill = {
-            id: response.data.id || skillId,
-            name: skillTemplate.name,
-            category: skillTemplate.category,
-            attribute: skillTemplate.attribute,
-            level: 1,
-            experience: 0,
-            maxExperience: 100,
-            icon: skillTemplate.icon,
-            description: skillTemplate.description
-          };
-
-          this.skills.push(newSkill);
-          console.log(`✨ 解鎖新技能: ${skillTemplate.name}`);
-          return newSkill;
-        } else {
-          this.error = response.message;
-          throw new Error(response.message);
-        }
-      } catch (error) {
-        this.error = error instanceof Error ? error.message : '解鎖技能失敗';
-        console.error('Failed to unlock skill:', error);
-        throw error;
-      }
-    },
-
-    // 批量解鎖技能
-    async unlockSkills(skillIds: string[]) {
-      const unlockedSkills: Skill[] = [];
-      for (const skillId of skillIds) {
-        try {
-          const skill = await this.unlockSkill(skillId);
-          if (skill) {
-            unlockedSkills.push(skill);
-          }
-        } catch (error) {
-          console.error(`解鎖技能 ${skillId} 失敗:`, error);
-        }
-      }
-      return unlockedSkills;
     },
 
     async createSkill(skillData: {
@@ -210,19 +138,16 @@ export const useSkillStore = defineStore('skill', {
       const level = Math.min(5, Math.max(1, backendSkill.level || 1));
       const experience = backendSkill.experience || 0;
 
-      // 優先使用技能名稱從技能池匹配
-      const skillTemplate = getSkillTemplateByName(backendSkill.name);
-
       return {
         id: backendSkill.id || '',
         name: backendSkill.name || '',
-        category: skillTemplate?.category || this.inferCategory(backendSkill.name),
-        attribute: skillTemplate?.attribute || this.inferAttribute(backendSkill.name),
+        category: backendSkill.category || this.inferCategory(backendSkill.name),
+        attribute: backendSkill.attribute || this.inferAttribute(backendSkill.name),
         level: level,
         experience: experience,
         maxExperience: this.calculateMaxExperience(level),
-        icon: skillTemplate?.icon || this.getSkillIcon(backendSkill.name),
-        description: backendSkill.description || skillTemplate?.description,
+        icon: backendSkill.icon || DEFAULT_SKILL_ICON,
+        description: backendSkill.description,
       };
     },
 

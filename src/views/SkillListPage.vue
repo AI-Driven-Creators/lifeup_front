@@ -99,7 +99,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import SkillCard from '@/components/features/SkillCard.vue'
 import { apiClient } from '@/services/api'
 import { useUserStore } from '@/stores/user'
-import { ATTRIBUTES, getSkillTemplateByName } from '@/config/skillPool'
+import { ATTRIBUTES, DEFAULT_SKILL_ICON } from '@/config/skillPool'
 import type { Skill } from '@/types'
 
 const userStore = useUserStore()
@@ -140,9 +140,6 @@ const fetchSkills = async () => {
     if (response.success && response.data) {
       // 轉換後端數據格式以匹配前端類型
       allSkills.value = response.data.map((skill: any) => {
-        // 從技能池獲取技能模板以取得 icon
-        const skillTemplate = getSkillTemplateByName(skill.name)
-
         return {
           id: skill.id || '',
           name: skill.name || '',
@@ -151,7 +148,7 @@ const fetchSkills = async () => {
           level: skill.level || 1,
           experience: skill.experience || 0,
           maxExperience: skill.max_experience || 100,
-          icon: skillTemplate?.icon || '⭐', // 從技能池獲取 icon
+          icon: skill.icon || DEFAULT_SKILL_ICON,
           description: skill.description
         }
       })

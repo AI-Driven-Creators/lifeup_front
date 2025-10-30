@@ -246,6 +246,22 @@ export class ApiClient {
     });
   }
 
+  // AI 生成技能標籤
+  async generateSkillTags(taskTitle: string, taskDescription: string | undefined, userId: string) {
+    return this.request<{
+      success: boolean,
+      data: { skills: string[], reasoning?: string },
+      message: string
+    }>('/api/tasks/generate-skill-tags', {
+      method: 'POST',
+      body: JSON.stringify({
+        task_title: taskTitle,
+        task_description: taskDescription,
+        user_id: userId,
+      }),
+    });
+  }
+
   async updateUserExperience(userId: string, experience: number) {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/users/${userId}/experience`, {
       method: 'POST',

@@ -154,15 +154,15 @@
 
                   <div class="space-y-3 mb-6">
                     <div
-                      v-for="(skillId, index) in suggestedSkills"
-                      :key="skillId"
+                      v-for="(skillName, index) in suggestedSkills"
+                      :key="skillName"
                       class="skill-tag-animate flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg"
                       :style="{ animationDelay: `${index * 0.3}s` }"
                     >
-                      <span class="text-2xl">{{ getSkillTemplate(skillId)?.icon }}</span>
+                      <span class="text-2xl">⭐</span>
                       <div class="flex-1 text-left">
-                        <div class="font-medium text-gray-900">{{ getSkillTemplate(skillId)?.name }}</div>
-                        <div class="text-xs text-gray-500">{{ getSkillTemplate(skillId)?.description }}</div>
+                        <div class="font-medium text-gray-900">{{ skillName }}</div>
+                        <div class="text-xs text-gray-500">AI 為您匹配的技能</div>
                       </div>
                       <svg class="w-5 h-5 text-green-500 check-animate" fill="none" stroke="currentColor" viewBox="0 0 24 24" :style="{ animationDelay: `${index * 0.3 + 0.5}s` }">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -367,7 +367,6 @@ import { ref, computed, watch, inject, onMounted } from 'vue'
 import { apiClient } from '@/services/api'
 import { useSkillStore } from '@/stores/skill'
 import { useUserStore } from '@/stores/user'
-import { suggestSkillsForTask, getSkillTemplate, SKILL_POOL } from '@/config/skillPool'
 
 interface Props {
   show: boolean
@@ -597,6 +596,25 @@ const submitForm = async () => {
   errors.value = {}
 
   try {
+    // 先使用 AI 生成技能標籤
+    let aiGeneratedSkills: string[] = []
+    try {
+      const skillTagsResponse = await apiClient.generateSkillTags(
+        form.value.title,
+        form.value.description || undefined,
+        userStore.user.id
+      )
+
+      if (skillTagsResponse.success && skillTagsResponse.data?.skills) {
+        aiGeneratedSkills = skillTagsResponse.data.skills
+        suggestedSkills.value = aiGeneratedSkills
+        console.log('✨ AI 生成技能標籤:', aiGeneratedSkills)
+      }
+    } catch (aiError) {
+      console.warn('AI 生成技能標籤失敗，將繼續創建任務:', aiError)
+      // 如果 AI 失敗，不影響任務創建流程
+    }
+
     // 準備任務數據，只包含非空值
     const taskData: any = {
       title: form.value.title.trim(),
@@ -621,9 +639,9 @@ const submitForm = async () => {
       taskData.description = form.value.description.trim()
     }
 
-    // 添加技能標籤
-    if (form.value.skill_tags && form.value.skill_tags.length > 0) {
-      taskData.skill_tags = form.value.skill_tags
+    // 添加 AI 生成的技能標籤
+    if (aiGeneratedSkills.length > 0) {
+      taskData.skill_tags = aiGeneratedSkills
     }
 
     // 調用 API 創建任務
@@ -647,28 +665,35 @@ const submitForm = async () => {
 
       loading.value = false
 
-      // 自動解鎖相關技能並顯示動畫
-      if (form.value.skill_tags && form.value.skill_tags.length > 0) {
+      // 自動解鎖 AI 生成的技能並顯示動畫
+      if (aiGeneratedSkills.length > 0) {
         try {
-          // 找出對應的技能ID並解鎖
-          const skillIdsToUnlock = suggestedSkills.value.filter(skillId => {
-            const template = getSkillTemplate(skillId)
-            return template && form.value.skill_tags.includes(template.name)
-          })
+          // 直接使用技能名稱創建/解鎖技能
+          showSkillAnimation.value = true
 
-          if (skillIdsToUnlock.length > 0) {
-            // 顯示技能解鎖動畫
-            showSkillAnimation.value = true
-
-            await skillStore.unlockSkills(skillIdsToUnlock)
-            console.log('✨ 已解鎖技能:', skillIdsToUnlock)
-
-            // 發送創建事件（但不關閉對話框，讓用戶觀看動畫）
-            emit('created', finalTask)
-
-            // 動畫完成後由用戶點擊按鈕關閉，不自動關閉
-            return
+          // 為每個 AI 生成的技能創建或解鎖
+          for (const skillName of aiGeneratedSkills) {
+            try {
+              // 檢查技能是否已存在
+              const existingSkill = skillStore.skills.find(s => s.name === skillName)
+              if (!existingSkill) {
+                // 創建新技能
+                await skillStore.createSkill({
+                  name: skillName,
+                  category: 'soft', // 預設為軟技能
+                })
+                console.log('✨ 創建新技能:', skillName)
+              }
+            } catch (skillError) {
+              console.warn(`創建/解鎖技能 ${skillName} 失敗:`, skillError)
+            }
           }
+
+          // 發送創建事件（但不關閉對話框，讓用戶觀看動畫）
+          emit('created', finalTask)
+
+          // 動畫完成後由用戶點擊按鈕關閉，不自動關閉
+          return
         } catch (unlockError) {
           console.warn('解鎖技能失敗，但任務已創建:', unlockError)
           showSkillAnimation.value = false
@@ -801,36 +826,7 @@ watch(() => form.value.title, () => {
   if (errors.value.title) {
     validateForm()
   }
-  // 自動推薦技能標籤
-  updateSkillSuggestions()
 })
-
-// 當描述變化時也更新推薦
-watch(() => form.value.description, () => {
-  updateSkillSuggestions()
-})
-
-// 更新技能推薦
-const updateSkillSuggestions = () => {
-  if (!form.value.title.trim()) {
-    suggestedSkills.value = []
-    form.value.skill_tags = []
-    return
-  }
-
-  const skillIds = suggestSkillsForTask(form.value.title, form.value.description)
-  suggestedSkills.value = skillIds
-
-  // 自動將所有推薦的技能加入 skill_tags
-  if (skillIds.length > 0) {
-    const skillNames = skillIds
-      .map(id => getSkillTemplate(id)?.name)
-      .filter(name => name) as string[]
-    form.value.skill_tags = skillNames
-  } else {
-    form.value.skill_tags = []
-  }
-}
 
 // 組件掛載時載入技能數據
 onMounted(() => {
