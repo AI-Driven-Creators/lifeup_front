@@ -66,8 +66,18 @@ const router = createRouter({
     },
     {
       path: '/personality-test',
-      name: 'personality-test',
+      name: 'personality-test-selection',
+      component: () => import('@/views/QuizSelectionPage.vue')
+    },
+    {
+      path: '/personality-test/compact',
+      name: 'personality-test-compact',
       component: () => import('@/views/PersonalityTestPage.vue')
+    },
+    {
+      path: '/personality-test/full',
+      name: 'personality-test-full',
+      component: () => import('@/views/PersonalityTestFullPage.vue')
     }
   ]
 })

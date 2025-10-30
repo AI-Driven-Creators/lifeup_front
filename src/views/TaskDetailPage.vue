@@ -137,6 +137,19 @@
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-primary-900">完成任務</h3>
           <div class="flex items-center space-x-3">
+            <!-- 重新生成按鈕（僅職業主線任務顯示） -->
+            <button
+              v-if="task.task_category === 'career_mainline'"
+              @click="showRegenerateDialog = true"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="重新生成子任務"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>重新生成</span>
+            </button>
             <!-- 添加子任務按鈕 -->
             <button
               @click="showCreateSubtaskDialog = true"
@@ -341,6 +354,17 @@
       @confirm="handleDeleteTask"
       danger
     />
+
+    <!-- 重新生成子任務確認對話框 -->
+    <ConfirmDialog
+      v-model:visible="showRegenerateDialog"
+      title="🔄 重新生成子任務"
+      :message="`確定要重新生成「${task?.title}」的子任務嗎？\n\n此操作將會：\n• 刪除所有現有子任務\n• 使用 AI 重新生成新的子任務\n• 已完成的子任務進度將會遺失`"
+      confirmText="確認重新生成"
+      cancelText="取消"
+      @confirm="handleRegenerateSubtasks"
+      danger
+    />
   </div>
 </template>
 
@@ -381,6 +405,7 @@ const showCreateSubtaskDialog = ref(false)
 const showEditSubtaskDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
+const showRegenerateDialog = ref(false)
 const editingSubtask = ref<Task | null>(null)
 
 // 排序後的子任務
@@ -1081,6 +1106,63 @@ const handleDeleteTask = async () => {
     console.error('Failed to delete task:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// 處理重新生成子任務
+const handleRegenerateSubtasks = async () => {
+  if (!task.value) return
+
+  showRegenerateDialog.value = false
+  isLoading.value = true
+
+  try {
+    console.log('🔄 開始重新生成子任務:', task.value.id)
+
+    // 1. 刪除所有現有子任務
+    if (subtasks.value.length > 0) {
+      console.log('🗑️ 刪除現有子任務:', subtasks.value.length, '個')
+      await Promise.all(
+        subtasks.value.map(subtask => apiClient.deleteTask(subtask.id))
+      )
+      console.log('✅ 現有子任務已刪除')
+    }
+
+    // 2. 調用 AI 生成新的子任務
+    console.log('🤖 開始 AI 生成新子任務')
+    const response = await apiClient.generateSubtasksForTask(
+      task.value.id,
+      task.value.description || task.value.title,
+      undefined, // task_plan
+      undefined, // expert_match
+      userStore.user.id
+    )
+
+    if (response.success) {
+      console.log('✅ 子任務重新生成請求已發送')
+
+      // 顯示成功提示
+      const messageDiv = document.createElement('div')
+      messageDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50'
+      messageDiv.textContent = '子任務正在重新生成中，請稍候...'
+      document.body.appendChild(messageDiv)
+
+      // 3秒後移除提示
+      setTimeout(() => {
+        messageDiv.remove()
+      }, 3000)
+
+      // 立即重新載入任務詳情，顯示生成中狀態
+      await loadTaskDetail()
+    } else {
+      console.error('❌ 生成子任務失敗:', response.message)
+      error.value = '重新生成子任務失敗：' + (response.message || '未知錯誤')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '重新生成子任務失敗'
+    console.error('Failed to regenerate subtasks:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 

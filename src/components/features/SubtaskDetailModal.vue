@@ -18,6 +18,17 @@
         <!-- 頂部區域 -->
         <div class="bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 px-6 py-5 border-b-2 border-amber-200">
           <div class="flex items-start justify-between">
+            <!-- 返回按鈕 -->
+            <button
+              @click="handleClose"
+              class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-200 transition-colors mr-3"
+              title="返回"
+            >
+              <svg class="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+
             <div class="flex-1">
               <h2 class="text-xl font-bold mb-2 text-stone-800">{{ task.title }}</h2>
               <div class="flex items-center flex-wrap gap-2">

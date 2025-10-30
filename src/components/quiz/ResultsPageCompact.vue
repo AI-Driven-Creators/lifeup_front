@@ -338,317 +338,23 @@
     </div>
 
     <!-- Modal 職業主線問卷調查界面 -->
-    <div
-      v-if="showSurveyModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeSurveyModal"
-    >
-      <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div class="overflow-y-auto flex-1 p-6 lg:p-8">
-
-        <!-- 問卷階段 -->
-        <div v-if="currentStage === 'survey'">
-          <!-- Modal Header with Close Button -->
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center space-x-3">
-              <span class="text-blue-600 text-xl">💼</span>
-              <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
-            </div>
-            <button
-              @click="closeSurveyModal"
-              class="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div class="mb-8">
-            <p class="text-gray-600">
-              你已選擇：<strong class="text-blue-600">{{ selectedCareer }}</strong>
-            </p>
-            <p class="text-gray-500 text-sm mt-2">
-              請填寫以下問卷，AI 將根據你的測驗結果和個人需求為你生成專屬的學習任務。
-            </p>
-          </div>
-
-      <div class="space-y-8">
-        <!-- 當前水平 -->
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-3">
-            你在此領域的當前水平？
-          </h3>
-          <div class="space-y-2">
-            <label v-for="level in ['完全新手', '有基礎了解', '有一定經驗', '已具專業水準']" :key="level"
-                   class="flex items-center p-3 border rounded-lg cursor-pointer transition-colors w-full"
-                   :class="surveyAnswers.current_level === level ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'">
-              <input type="radio"
-                     v-model="surveyAnswers.current_level"
-                     :value="level"
-                     class="sr-only">
-              <span class="text-sm text-gray-700">{{ level }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 可用時間 -->
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-3">
-            每週可投入多少時間學習？
-          </h3>
-          <div class="space-y-2">
-            <label v-for="time in ['1-3小時', '4-7小時', '8-15小時', '16小時以上']" :key="time"
-                   class="flex items-center p-3 border rounded-lg cursor-pointer transition-colors w-full"
-                   :class="surveyAnswers.available_time === time ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'">
-              <input type="radio"
-                     v-model="surveyAnswers.available_time"
-                     :value="time"
-                     class="sr-only">
-              <span class="text-sm text-gray-700">{{ time }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 目標時程 -->
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-3">
-            你希望在多長時間內達到職業目標？
-          </h3>
-          <div class="space-y-2">
-            <label v-for="timeline in ['3-6個月', '6-12個月', '1-2年', '2年以上']" :key="timeline"
-                   class="flex items-center p-3 border rounded-lg cursor-pointer transition-colors w-full"
-                   :class="surveyAnswers.timeline === timeline ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'">
-              <input type="radio"
-                     v-model="surveyAnswers.timeline"
-                     :value="timeline"
-                     class="sr-only">
-              <span class="text-sm text-gray-700">{{ timeline }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 學習方式偏好 -->
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-3">
-            你偏好的學習方式？（可多選）
-          </h3>
-          <div class="space-y-2">
-            <label v-for="style in ['理論學習', '實作練習', '專案導向', '案例研究', '同儕討論', '導師指導']" :key="style"
-                   class="flex items-center p-3 border rounded-lg cursor-pointer transition-colors w-full"
-                   :class="surveyAnswers.learning_styles.includes(style) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'">
-              <input type="checkbox"
-                     :value="style"
-                     @change="toggleLearningStyle(style)"
-                     class="sr-only">
-              <span class="text-sm text-gray-700">{{ style }}</span>
-              <span v-if="surveyAnswers.learning_styles.includes(style)" class="ml-auto text-blue-500">✓</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 學習動機 -->
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-3">
-            你的主要學習動機是？
-          </h3>
-
-          <!-- 快速選項按鈕 -->
-          <div class="flex flex-wrap gap-2 mb-3">
-            <button
-              v-for="option in motivationOptions"
-              :key="option"
-              type="button"
-              @click="selectMotivationOption(option)"
-              class="px-3 py-1.5 text-sm border border-blue-300 text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
-            >
-              {{ option }}
-            </button>
-          </div>
-
-          <textarea
-            v-model="surveyAnswers.motivation"
-            placeholder="點擊上方快速選項或自行輸入..."
-            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-            rows="4"
-          ></textarea>
-        </div>
-
-          <!-- 操作按鈕 -->
-          <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-            <button
-              @click="closeSurveyModal"
-              class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              取消
-            </button>
-            <button
-              @click="generateTasks"
-              :disabled="!isFormValid || loading"
-              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-            >
-              <span class="mr-2">🚀</span>
-              <span v-if="loading">生成中...</span>
-              <span v-else>生成專屬主線任務</span>
-            </button>
-          </div>
-          </div>
-        </div>
-
-        <!-- 任務生成中階段 -->
-        <div v-if="currentStage === 'generating'" class="text-center py-12">
-          <!-- 簡潔轉圈動畫 -->
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mb-6"></div>
-
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">AI 正在為你量身打造學習路徑</h3>
-
-          <!-- 進度文字 -->
-          <p class="text-blue-600 font-medium mb-4">
-            {{ progressMessage }}
-          </p>
-
-          <!-- 進度條 -->
-          <div class="max-w-md mx-auto mb-4">
-            <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div
-                class="bg-blue-600 h-full transition-all duration-500 ease-out rounded-full"
-                :style="{ width: `${progressPercent}%` }"
-              ></div>
-            </div>
-            <p class="text-gray-500 text-sm mt-2">{{ progressPercent }}%</p>
-          </div>
-
-          <p class="text-gray-600 text-sm mt-6">
-            基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...<br/>
-            <span class="text-xs text-gray-500">這可能需要 1-2 分鐘，請耐心等候</span>
-          </p>
-        </div>
-
-        <!-- 任務生成完成階段 -->
-        <div v-if="currentStage === 'preview' || currentStage === 'completed'">
-          <div class="mb-8">
-            <div class="flex items-center space-x-3 mb-4">
-              <span class="text-green-600 text-xl">🎯</span>
-              <h2 class="text-xl font-semibold text-gray-900">
-                {{ currentStage === 'preview' ? '任務預覽' : '職業主線任務已生成' }}
-              </h2>
-            </div>
-            <p class="text-gray-600">
-              {{ currentStage === 'preview'
-                ? `AI 已根據你的 ${selectedCareer} 職業選擇和個人特質，生成了專屬的學習路徑。請確認後保存到你的任務列表。`
-                : `恭喜！你的 ${selectedCareer} 職業主線任務已成功保存。`
-              }}
-            </p>
-          </div>
-
-          <!-- 生成的任務列表 -->
-          <div v-if="generatedTasks.length > 0" class="space-y-4 mb-8">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">你的專屬任務清單：</h3>
-            <div
-              v-for="(task, index) in generatedTasks"
-              :key="index"
-              class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div class="flex items-start space-x-3">
-                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
-                  {{ index + 1 }}
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
-
-                  <!-- 任務描述 -->
-                  <div class="text-sm mt-2 space-y-2">
-                    <p class="text-gray-600 whitespace-pre-line">{{ task.description }}</p>
-
-                    <!-- 技能標籤 -->
-                    <div v-if="task.skill_tags && task.skill_tags.length > 0" class="flex flex-wrap gap-1.5 mt-2">
-                      <span
-                        v-for="(skill, sIdx) in task.skill_tags"
-                        :key="sIdx"
-                        class="text-xs px-2 py-1 rounded"
-                        :class="skill.category === 'technical' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'"
-                      >
-                        {{ skill.name }}
-                      </span>
-                    </div>
-
-                    <!-- 推薦資源 -->
-                    <div v-if="task.resources && task.resources.length > 0" class="mt-2">
-                      <p class="text-gray-600 font-medium text-xs">📚 推薦資源：</p>
-                      <ul class="text-gray-600 text-xs pl-4 mt-1 space-y-1">
-                        <li v-for="(resource, rIdx) in task.resources" :key="rIdx" class="flex items-start">
-                          <span class="mr-1">•</span>
-                          <div class="flex-1">
-                            <!-- 如果有 URL，顯示為連結 -->
-                            <a
-                              v-if="resource.url"
-                              :href="resource.url"
-                              target="_blank"
-                              class="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-                            >
-                              {{ resource.title }}
-                            </a>
-                            <!-- 如果沒有 URL，顯示為純文字 -->
-                            <span v-else class="text-gray-700">
-                              {{ typeof resource === 'string' ? resource : resource.title }}
-                            </span>
-
-                            <!-- 平台和價格資訊 -->
-                            <span v-if="resource.platform || resource.price" class="text-gray-500 ml-1">
-                              <span v-if="resource.platform">({{ resource.platform }})</span>
-                              <span v-if="resource.price" class="ml-1">| {{ resource.price }}</span>
-                            </span>
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center flex-wrap gap-2 mt-3">
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      難度: {{ task.difficulty }}顆星
-                    </span>
-                    <span v-if="task.estimated_hours" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      預估時數: {{ task.estimated_hours }}小時
-                    </span>
-                    <span v-if="task.experience" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      經驗值: {{ task.experience }}
-                    </span>
-                    <!-- 顯示屬性值 -->
-                    <template v-if="task.attributes && Object.keys(task.attributes).length > 0">
-                      <span
-                        v-for="(value, attr) in task.attributes"
-                        :key="attr"
-                        class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
-                      >
-                        {{ getAttributeName(attr) }}: +{{ value }}
-                      </span>
-                    </template>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 操作按鈕 -->
-          <div v-if="currentStage === 'preview'" class="flex items-center justify-between pt-6 border-t border-gray-200">
-            <button
-              @click="backToResults"
-              class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              重新選擇職業
-            </button>
-            <button
-              :disabled="loading"
-              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors"
-              @click="acceptTasks"
-            >
-              <span v-if="loading">保存中...</span>
-              <span v-else>創建任務</span>
-            </button>
-          </div>
-        </div>
-        </div>
-      </div>
-    </div>
+    <CareerSurveyModal
+      :show-modal="showSurveyModal"
+      :selected-career="selectedCareer"
+      :current-stage="currentStage"
+      v-model:survey-answers="surveyAnswers"
+      :loading="loading"
+      :progress-message="progressMessage"
+      :progress-percent="progressPercent"
+      :is-timeout="isTimeout"
+      :generated-tasks="generatedTasks"
+      :compact-mode="true"
+      @close="closeSurveyModal"
+      @generate="generateTasks"
+      @regenerate="handleRegenerate"
+      @accept="acceptTasks"
+      @go-to-tasks="goToTasks"
+    />
 
     <!-- 說明文字 (只在結果階段顯示) -->
     <div v-if="currentStage === 'results'" class="text-center text-sm text-gray-500 py-8 max-w-4xl mx-auto px-4">
@@ -662,6 +368,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { CAREER_DATABASE } from '../../data/careerDatabase.js'
+import CareerSurveyModal from './CareerSurveyModal.vue'
 
 // 簡化版職業資料庫
 const CAREER_DATABASE_SIMPLE = {
@@ -811,6 +518,11 @@ const previewData = ref(null) // 儲存預覽數據
 const loading = ref(false)
 const progressMessage = ref('初始化任務生成系統...')
 const progressPercent = ref(0)
+
+// 超時檢測相關狀態
+const generationStartTime = ref<number | null>(null)
+const isTimeout = ref(false)
+const TIMEOUT_DURATION = 5 * 60 * 1000 // 5 分鐘（毫秒）
 
 // 解析任務描述的輔助函數
 const parseTaskDescription = (description: string) => {
@@ -1214,6 +926,18 @@ const generateTasks = async () => {
   progressPercent.value = 0
   console.log('📝 當前狀態:', currentStage.value)
 
+  // 啟動超時檢測計時器
+  generationStartTime.value = Date.now()
+  isTimeout.value = false
+
+  const timeoutChecker = setInterval(() => {
+    if (generationStartTime.value && Date.now() - generationStartTime.value > TIMEOUT_DURATION) {
+      isTimeout.value = true
+      console.warn('⏰ 任務生成超時（超過 5 分鐘）')
+      clearInterval(timeoutChecker)
+    }
+  }, 1000) // 每秒檢查一次
+
   // 臨時存儲各階段數據
   let outlineData = null
   let tasksData = null
@@ -1392,7 +1116,11 @@ const generateTasks = async () => {
 
             case 'error':
               console.error(`❌ 生成錯誤 [${eventData.stage}]:`, eventData.message)
-              throw new Error(`${eventData.stage} 階段失敗: ${eventData.message}`)
+              // 設置超時狀態以顯示重新生成按鈕
+              isTimeout.value = true
+              progressMessage.value = `生成失敗: ${eventData.message}`
+              // 不拋出錯誤,保持在生成階段顯示重新生成按鈕
+              break
           }
         } catch (parseError) {
           console.error('❌ 解析 SSE 事件失敗:', parseError, 'Event:', event)
@@ -1406,8 +1134,29 @@ const generateTasks = async () => {
     currentStage.value = 'survey' // 回到問卷階段
   }
 
+  // 清理計時器
+  if (timeoutChecker) {
+    clearInterval(timeoutChecker)
+  }
+
   loading.value = false
   console.log('🏁 生成流程結束，loading:', loading.value)
+}
+
+// 重新生成函數
+const handleRegenerate = () => {
+  console.log('🔄 用戶請求重新生成任務')
+
+  // 重置狀態
+  generationStartTime.value = null
+  isTimeout.value = false
+  generatedTasks.value = []
+  previewData.value = null
+  progressMessage.value = '初始化任務生成系統...'
+  progressPercent.value = 0
+
+  // 重新調用生成函數
+  generateTasks()
 }
 
 // 接受並保存任務到資料庫

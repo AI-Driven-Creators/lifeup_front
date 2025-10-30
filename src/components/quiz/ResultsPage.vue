@@ -779,240 +779,33 @@
           </ul>
         </div>
       </div>
+    </div>
 
-      <!-- Modal 職業主線問卷調查界面 -->
-      <div
-        v-if="showSurveyModal"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-        @click.self="closeSurveyModal"
-      >
-        <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 lg:p-8">
-
-          <!-- 問卷階段 -->
-          <div v-if="currentStage === 'survey'">
-            <!-- Modal Header with Close Button -->
-            <div class="flex items-center justify-between mb-8">
-              <div class="flex items-center space-x-3">
-                <Briefcase class="h-6 w-6 text-blue-600" />
-                <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
-              </div>
-              <button
-                @click="closeSurveyModal"
-                class="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div class="mb-8">
-              <p class="text-gray-600">
-                你已選擇：<strong class="text-blue-600">{{ selectedCareer }}</strong>
-              </p>
-              <p class="text-gray-500 text-sm mt-2">
-                請填寫以下問卷，AI 將根據你的測驗結果和個人需求為你生成專屬的學習任務。
-              </p>
-            </div>
-
-            <div class="space-y-6">
-              <!-- 當前水平 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  你在此領域的當前水平？
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <label v-for="level in ['完全新手', '有基礎了解', '有一定經驗', '已具專業水準']" :key="level"
-                         class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                         :class="surveyAnswers.current_level === level ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
-                    <input type="radio"
-                           v-model="surveyAnswers.current_level"
-                           :value="level"
-                           class="sr-only">
-                    <span class="text-sm text-gray-700">{{ level }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- 可用時間 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  每週可投入多少時間學習？
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <label v-for="time in ['1-3小時', '4-7小時', '8-15小時', '16小時以上']" :key="time"
-                         class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                         :class="surveyAnswers.available_time === time ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
-                    <input type="radio"
-                           v-model="surveyAnswers.available_time"
-                           :value="time"
-                           class="sr-only">
-                    <span class="text-sm text-gray-700">{{ time }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- 目標時程 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  你希望在多長時間內達到職業目標？
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <label v-for="timeline in ['3-6個月', '6-12個月', '1-2年', '2年以上']" :key="timeline"
-                         class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                         :class="surveyAnswers.timeline === timeline ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
-                    <input type="radio"
-                           v-model="surveyAnswers.timeline"
-                           :value="timeline"
-                           class="sr-only">
-                    <span class="text-sm text-gray-700">{{ timeline }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- 學習方式偏好 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  你偏好的學習方式？（可多選）
-                </label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <label v-for="style in ['理論學習', '實作練習', '專案導向', '案例研究', '同儕討論', '導師指導']" :key="style"
-                         class="relative flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                         :class="surveyAnswers.learning_styles.includes(style) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
-                    <input type="checkbox"
-                           :value="style"
-                           @change="toggleLearningStyle(style)"
-                           class="sr-only">
-                    <span class="text-sm text-gray-700">{{ style }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- 學習動機 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  你的主要學習動機是？
-                </label>
-                <textarea
-                  v-model="surveyAnswers.motivation"
-                  placeholder="例如：轉換職業跑道、提升工作技能、追求個人興趣..."
-                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  rows="3"
-                ></textarea>
-              </div>
-
-              <!-- 特殊需求 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  你有任何特殊需求或限制嗎？（選填）
-                </label>
-                <textarea
-                  v-model="surveyAnswers.special_requirements"
-                  placeholder="例如：預算限制、時間彈性需求、特定技能偏好..."
-                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  rows="2"
-                ></textarea>
-              </div>
-            </div>
-
-            <!-- 操作按鈕 -->
-            <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-              <button
-                @click="closeSurveyModal"
-                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-              >
-                取消
-              </button>
-              <button
-                @click="generateTasks"
-                :disabled="!isFormValid || loading"
-                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
-              >
-                <Brain class="h-5 w-5" />
-                <span v-if="loading">生成中...</span>
-                <span v-else>生成專屬主線任務</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 任務生成中階段 -->
-          <div v-if="currentStage === 'generating'" class="text-center py-12">
-            <!-- 簡潔轉圈動畫 -->
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mb-6"></div>
-
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">AI 正在為你量身打造學習路徑</h3>
-            <p class="text-gray-600">
-              基於你的測驗結果和學習需求，正在生成專屬的職業主線任務...
-            </p>
-          </div>
-
-          <!-- 任務生成完成階段 -->
-          <div v-if="currentStage === 'completed'">
-            <div class="mb-8">
-              <div class="flex items-center space-x-3 mb-4">
-                <Target class="h-6 w-6 text-green-600" />
-                <h2 class="text-xl font-semibold text-gray-900">職業主線任務已生成</h2>
-              </div>
-              <p class="text-gray-600">
-                恭喜！AI 已根據你的<strong class="text-blue-600">{{ selectedCareer }}</strong>職業選擇和個人特質，為你生成了專屬的學習路徑。
-              </p>
-            </div>
-
-            <!-- 生成的任務列表 -->
-            <div v-if="generatedTasks.length > 0" class="space-y-4 mb-8">
-              <h3 class="text-lg font-semibold text-gray-800 mb-4">你的專屬任務清單：</h3>
-              <div
-                v-for="(task, index) in generatedTasks"
-                :key="index"
-                class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
-                    {{ index + 1 }}
-                  </div>
-                  <div class="flex-1">
-                    <h4 class="font-medium text-gray-900">{{ task.title }}</h4>
-                    <p class="text-gray-600 text-sm mt-1">{{ task.description }}</p>
-                    <div class="flex items-center space-x-4 mt-2">
-                      <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        難度: {{ task.difficulty }}/5
-                      </span>
-                      <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        經驗值: {{ task.experience }}
-                      </span>
-                      <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {{ task.task_type }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 操作按鈕 -->
-            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-              <button
-                @click="backToResults"
-                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-              >
-                重新選擇職業
-              </button>
-              <div class="space-x-3">
-                <button
-                  class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  @click="goToTasks"
-                >
-                  開始執行任務
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- Modal 職業主線問卷調查界面 -->
+    <CareerSurveyModal
+      :show-modal="showSurveyModal"
+      :selected-career="selectedCareer"
+      :current-stage="currentStage"
+      v-model:survey-answers="surveyAnswers"
+      :loading="loading"
+      :progress-message="progressMessage"
+      :progress-percent="progressPercent"
+      :is-timeout="isTimeout"
+      :generated-tasks="generatedTasks"
+      @close="closeSurveyModal"
+      @generate="generateTasks"
+      @regenerate="handleRegenerate"
+      @accept="acceptTasks"
+      @go-to-tasks="goToTasks"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import CareerSurveyModal from './CareerSurveyModal.vue'
 import { 
   Heart, 
   BookOpen, 
@@ -1061,6 +854,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
+const userStore = useUserStore()
 
 // Emits
 const emit = defineEmits<{
@@ -1089,8 +883,27 @@ const surveyAnswers = ref({
   motivation: '',
   special_requirements: ''
 })
+
+// 學習動機快速選項
+const motivationOptions = ref([
+  '轉換職業跑道',
+  '追求個人興趣',
+  '提升工作技能',
+  '增加職場競爭力',
+  '探索新領域',
+  '實現人生夢想'
+])
+
 const generatedTasks = ref([])
+const previewData = ref(null) // 儲存預覽數據
 const loading = ref(false)
+const progressMessage = ref('初始化任務生成系統...')
+const progressPercent = ref(0)
+
+// 超時檢測相關狀態
+const generationStartTime = ref<number | null>(null)
+const isTimeout = ref(false)
+const TIMEOUT_DURATION = 5 * 60 * 1000 // 5 分鐘（毫秒）
 
 // 職業匹配結果
 const perfectMatches = ref<any[]>([])
@@ -1747,44 +1560,216 @@ const selectCareer = (career: any) => {
 }
 
 const generateTasks = async () => {
+  console.log('🚀 開始生成任務...')
+
+  // 防止重複調用
+  if (loading.value) {
+    console.log('⚠️ 任務生成中，忽略重複請求')
+    return
+  }
+
   if (!quizResultId.value) {
-    console.error('❌ 缺少測驗結果ID')
+    console.log('⚠️ 沒有測驗結果ID，先保存測驗結果')
+    await saveQuizResults()
+  }
+
+  if (!quizResultId.value) {
+    console.error('❌ 保存測驗結果後仍然沒有ID')
+    alert('保存測驗結果失敗，請重試')
     return
   }
 
   loading.value = true
   currentStage.value = 'generating'
+  progressMessage.value = '初始化任務生成系統...'
+  progressPercent.value = 0
+  console.log('📝 當前狀態:', currentStage.value)
+
+  // 啟動超時檢測計時器
+  generationStartTime.value = Date.now()
+  isTimeout.value = false
+
+  const timeoutChecker = setInterval(() => {
+    if (generationStartTime.value && Date.now() - generationStartTime.value > TIMEOUT_DURATION) {
+      isTimeout.value = true
+      console.warn('⏰ 任務生成超時（超過 5 分鐘）')
+      clearInterval(timeoutChecker)
+    }
+  }, 1000) // 每秒檢查一次
+
+  // 臨時存儲各階段數據
+  let outlineData = null
+  let tasksData = null
+  let resourcesData = null
 
   try {
     const payload = {
       quiz_result_id: quizResultId.value,
       selected_career: selectedCareer.value,
-      survey_answers: surveyAnswers.value
+      survey_answers: surveyAnswers.value,
+      user_id: userStore.user.id
     }
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks`, {
+    console.log('📤 發送 SSE 漸進式生成請求:', payload)
+
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks-progressive`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
       },
       body: JSON.stringify(payload),
     })
 
-    const data = await response.json()
+    console.log('📥 收到 SSE 響應:', response.status, response.statusText)
 
-    if (data.success) {
-      generatedTasks.value = data.data.tasks || []
-      currentStage.value = 'completed'
-      console.log('✅ 任務生成成功:', data.data)
-    } else {
-      throw new Error(data.message)
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
     }
+
+    if (!response.body) {
+      throw new Error('Response body is null')
+    }
+
+    // 使用 ReadableStream 處理 SSE
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        console.log('✅ SSE 串流結束')
+        break
+      }
+
+      // 解碼數據塊
+      buffer += decoder.decode(value, { stream: true })
+
+      // 處理完整的 SSE 事件（以 \n\n 分隔）
+      const events = buffer.split('\n\n')
+      buffer = events.pop() || '' // 保留未完成的部分
+
+      for (const event of events) {
+        if (!event.trim() || !event.startsWith('data: ')) continue
+
+        try {
+          const jsonStr = event.replace(/^data: /, '').trim()
+          const eventData = JSON.parse(jsonStr)
+
+          console.log('📨 收到 SSE 事件:', eventData.type, eventData)
+
+          // 處理不同類型的事件
+          switch (eventData.type) {
+            case 'status':
+              console.log(`[${eventData.stage}] ${eventData.message} - ${eventData.progress}%`)
+              // 更新 UI 進度顯示
+              progressMessage.value = eventData.message
+              progressPercent.value = eventData.progress
+              break
+
+            case 'outline_complete':
+              console.log('✅ 大綱生成完成')
+              outlineData = eventData.content
+              break
+
+            case 'details_complete':
+              console.log('✅ 細節擴展完成')
+              tasksData = eventData.content
+              break
+
+            case 'resources_complete':
+              console.log('✅ 資源推薦完成')
+              resourcesData = eventData.content
+              break
+
+            case 'complete':
+              console.log('🎉 任務生成全部完成！')
+
+              // 儲存完整的預覽數據
+              previewData.value = eventData.final_data
+
+              // 提取任務列表
+              let allTasks = []
+              if (eventData.final_data.preview_mode) {
+                allTasks = [
+                  ...(eventData.final_data.main_tasks || []),
+                  ...(eventData.final_data.daily_tasks || []),
+                  ...(eventData.final_data.project_tasks || [])
+                ]
+              }
+
+              // ===== 🔥 整合 Perplexity 資源到每個任務 =====
+              const perplexityResources = eventData.final_data.resources?.resources || []
+
+              // 建立任務標題到資源的映射
+              const taskResourceMap = new Map()
+              perplexityResources.forEach(resourceGroup => {
+                if (resourceGroup.task_title && resourceGroup.recommendations) {
+                  taskResourceMap.set(resourceGroup.task_title, resourceGroup.recommendations)
+                }
+              })
+
+              // 處理任務描述格式並整合資源
+              allTasks = allTasks.map(task => {
+                // 尋找匹配的資源
+                let matchedResources = taskResourceMap.get(task.title)
+
+                // 如果找到 Perplexity 資源，轉換為結構化格式
+                const finalResources = matchedResources
+                  ? matchedResources.map(r => ({
+                      title: r.title || '',
+                      url: r.url || null,
+                      platform: r.platform || null,
+                      price: r.price || null,
+                      description: r.description || null
+                    }))
+                  : (task.resources || []).map(r => {
+                      return typeof r === 'string' ? { title: r, url: null } : r
+                    })
+
+                return {
+                  ...task,
+                  description: task.description ? task.description.replace(/\\n/g, '\n') : '',
+                  resources: finalResources
+                }
+              })
+
+              generatedTasks.value = allTasks
+
+              // 進入預覽階段
+              currentStage.value = 'preview'
+              console.log('✅ 任務預覽生成成功')
+              console.log('📋 預覽任務數量:', generatedTasks.value.length)
+              break
+
+            case 'error':
+              console.error(`❌ 生成錯誤 [${eventData.stage}]:`, eventData.message)
+              isTimeout.value = true
+              progressMessage.value = `生成失敗: ${eventData.message}`
+              break
+          }
+        } catch (parseError) {
+          console.error('❌ 解析 SSE 事件失敗:', parseError, 'Event:', event)
+        }
+      }
+    }
+
   } catch (error) {
-    console.error('❌ 任務生成失敗:', error)
+    console.error('❌ SSE 任務生成失敗:', error)
+    alert(`任務生成失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
     currentStage.value = 'survey' // 回到問卷階段
   }
 
+  // 清理計時器
+  if (timeoutChecker) {
+    clearInterval(timeoutChecker)
+  }
+
   loading.value = false
+  console.log('🏁 生成流程結束，loading:', loading.value)
 }
 
 // 關閉問卷 Modal
@@ -1830,6 +1815,77 @@ const toggleLearningStyle = (style: string) => {
   } else {
     surveyAnswers.value.learning_styles.push(style)
   }
+}
+
+// 選擇學習動機快速選項
+const selectMotivationOption = (option: string) => {
+  // 如果 textarea 已經有內容，添加分號分隔；否則直接設置
+  if (surveyAnswers.value.motivation.trim()) {
+    surveyAnswers.value.motivation += '；' + option
+  } else {
+    surveyAnswers.value.motivation = option
+  }
+}
+
+// 重新生成任務
+const handleRegenerate = () => {
+  currentStage.value = 'survey'
+  generatedTasks.value = []
+  progressMessage.value = ''
+  progressPercent.value = 0
+  isTimeout.value = false
+}
+
+// 接受並保存任務到資料庫
+const acceptTasks = async () => {
+  console.log('✅ 用戶確認接受任務，開始保存到資料庫...')
+
+  // 防止重複點擊
+  if (loading.value) {
+    console.log('⚠️ 正在保存中，忽略重複請求')
+    return
+  }
+
+  if (!previewData.value) {
+    console.error('❌ 沒有預覽數據')
+    alert('沒有可保存的任務數據')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/accept-tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(previewData.value),
+    })
+
+    console.log('📥 保存任務響應:', response.status, response.statusText)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('📋 保存任務響應數據:', data)
+
+    if (data.success) {
+      // 保存成功，關閉 Modal 並導向任務頁面
+      console.log('✅ 任務保存成功，導向任務頁面')
+      showSurveyModal.value = false
+      router.push('/mission')
+    } else {
+      throw new Error(data.message || '保存任務失敗')
+    }
+  } catch (error) {
+    console.error('❌ 保存任務失敗:', error)
+    alert(`保存任務失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+  }
+
+  loading.value = false
 }
 
 onMounted(() => {
