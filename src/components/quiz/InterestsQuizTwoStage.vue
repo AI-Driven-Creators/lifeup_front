@@ -121,8 +121,8 @@
  */
 import { ref, computed } from 'vue'
 import { Search, ArrowRight } from 'lucide-vue-next'
-import { interests } from '../../data/interests'
-import { generateInterestsScenarios } from '../../data/interestsScenarios'
+import interests from '../../data/interests'
+import generateInterestsScenarios from '../../data/interestsScenarios'
 
 // Props
 interface Props {
@@ -148,8 +148,8 @@ const interestScores = ref<Record<string, number>>({})
 
 // 計算屬性 - 篩選興趣領域
 const filteredInterests = computed(() => {
-  return interests.filter(interest => 
-    interest.name.includes(searchTerm.value) || 
+  return interests.filter((interest: any) =>
+    interest.name.includes(searchTerm.value) ||
     interest.description.includes(searchTerm.value)
   )
 })
@@ -192,8 +192,8 @@ const handleScenarioChoice = (choiceInterests: string[]) => {
   } else {
     // 完成排序
     const sortedInterests = selectedInterests.value
-      .map(interestId => {
-        const interest = interests.find(i => i.id === interestId)
+      .map((interestId: string) => {
+        const interest = interests.find((i: any) => i.id === interestId)
         return {
           id: interestId,
           name: interest?.name || '',
@@ -201,7 +201,7 @@ const handleScenarioChoice = (choiceInterests: string[]) => {
           score: newScores[interestId]
         }
       })
-      .sort((a, b) => b.score - a.score)
+      .sort((a: any, b: any) => b.score - a.score)
     
     emit('complete', sortedInterests)
   }
@@ -209,7 +209,7 @@ const handleScenarioChoice = (choiceInterests: string[]) => {
 
 // 獲取興趣領域名稱
 const getInterestName = (interestId: string) => {
-  return interests.find(i => i.id === interestId)?.name || interestId
+  return interests.find((i: any) => i.id === interestId)?.name || interestId
 }
 </script>
 

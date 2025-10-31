@@ -121,8 +121,8 @@
  */
 import { ref, computed } from 'vue'
 import { Search, ArrowRight } from 'lucide-vue-next'
-import { values } from '../../data/values'
-import { generateValuesScenarios } from '../../data/valuesScenarios'
+import values from '../../data/values'
+import generateValuesScenarios from '../../data/valuesScenarios'
 
 // Props
 interface Props {

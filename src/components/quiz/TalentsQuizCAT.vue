@@ -65,7 +65,9 @@
  * 參考Gallup StrengthsFinder的專業設計
  */
 import { ref, computed, onMounted } from 'vue'
-import { CATEngine, ACTUAL_QUESTIONS, talentItemBank } from '../../data/talentsCAT'
+import talentsCATData from '../../data/talentsCAT'
+
+const { CATEngine, ACTUAL_QUESTIONS, talentItemBank } = talentsCATData
 
 interface QuizItem {
   id: number

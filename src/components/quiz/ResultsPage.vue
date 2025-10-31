@@ -827,7 +827,9 @@ import {
 } from 'lucide-vue-next'
 import { Radar } from 'vue-chartjs'
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js'
-import { CAREER_DATABASE, detailedCareerWorkStyleProfiles, scenarioStyleTraits } from '../../data/careerDatabase.js'
+import careerDatabaseData from '../../data/careerDatabase.js'
+
+const { CAREER_DATABASE, detailedCareerWorkStyleProfiles, scenarioStyleTraits } = careerDatabaseData
 
 // Props
 interface Props {

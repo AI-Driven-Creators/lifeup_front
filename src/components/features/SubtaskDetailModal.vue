@@ -11,7 +11,7 @@
   <!-- Modal 卡片 -->
   <Transition name="modal-card">
     <div
-      v-if="visible"
+      v-if="visible && task"
       class="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-lg mx-auto"
     >
       <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-stone-200" @click.stop>

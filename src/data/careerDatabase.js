@@ -2622,3 +2622,4 @@ export const scenarioStyleTraits = {
   flexible_timing: { name: '彈性時間', category: 'TIME_MANAGEMENT' },
   structured_schedule: { name: '結構化時程', category: 'TIME_MANAGEMENT' }
 };
+export default { CAREER_DATABASE, careerWorkStyleProfiles, scenarioStyleTraits, detailedCareerWorkStyleProfiles: careerWorkStyleProfiles };

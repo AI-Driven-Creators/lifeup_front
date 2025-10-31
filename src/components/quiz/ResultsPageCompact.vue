@@ -370,7 +370,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { CAREER_DATABASE } from '../../data/careerDatabase.js'
+import careerDatabaseData from '../../data/careerDatabase.js'
+const { CAREER_DATABASE } = careerDatabaseData
 import CareerSurveyModal from './CareerSurveyModal.vue'
 import CareerSelectionGuide from '@/components/common/CareerSelectionGuide.vue'
 

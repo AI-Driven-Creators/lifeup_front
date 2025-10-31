@@ -87,10 +87,9 @@
  */
 import { ref, computed, watch, onMounted } from 'vue'
 import { ChevronRight, AlertCircle } from 'lucide-vue-next'
-import { 
-  scenarioWorkStyleQuestions, 
-  calculateScenarioWorkStyleResults
-} from '../../data/workstyleScenario'
+import workstyleScenarioData from '../../data/workstyleScenario'
+
+const { scenarioWorkStyleQuestions, calculateScenarioWorkStyleResults } = workstyleScenarioData
 
 // Props
 interface Props {

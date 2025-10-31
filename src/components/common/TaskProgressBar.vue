@@ -71,7 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 計算進度百分比
 const progressPercentage = computed(() => {
-  return props.progress.completion_rate * 100
+  return (props.progress?.completion_rate ?? 0) * 100
 })
 
 // 根據進度獲取進度條顏色

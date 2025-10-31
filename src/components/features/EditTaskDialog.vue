@@ -273,7 +273,7 @@ const taskTypes = [
 
 // 判斷是否為父任務
 const isParentTask = computed(() => {
-  return props.task?.is_parent_task === true || props.task?.is_parent_task === 1
+  return props.task?.is_parent_task === true
 })
 
 // 判斷是否為常駐目標
@@ -405,9 +405,9 @@ const initializeForm = (task: Task) => {
     experience: task.experience || calculatedExperience.value,
     due_date: task.deadline ? task.deadline.toISOString().split('T')[0] : '',
     recurrence_pattern: task.recurrence_pattern || 'daily',
-    start_date: task.start_date || '',
-    end_date: task.end_date || '',
-    target_completion_rate: task.target_completion_rate || 0.8
+    start_date: typeof task.start_date === 'string' ? task.start_date : (task.start_date instanceof Date ? task.start_date.toISOString().split('T')[0] : ''),
+    end_date: typeof task.end_date === 'string' ? task.end_date : (task.end_date instanceof Date ? task.end_date.toISOString().split('T')[0] : ''),
+    target_completion_rate: task.completion_target || 0.8
   }
 }
 

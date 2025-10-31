@@ -553,6 +553,7 @@ const taskProgress = computed(() => {
       total_days: totalSubtasks,
       completed_days: completedSubtasks,
       missed_days: 0,
+      consecutive_days: 0,
       completion_rate: totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) : 0,
       target_rate: 1.0,
       is_daily_completed: completedSubtasks === totalSubtasks,

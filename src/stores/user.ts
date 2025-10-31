@@ -31,7 +31,10 @@ export const useUserStore = defineStore('user', {
       completedTasks: 0,
       totalTasks: 0,
       experienceGained: 0,
-      attributeGains: {}
+      attributeGains: {
+        intelligence: 0,
+        endurance: 0
+      }
     }
   }),
 

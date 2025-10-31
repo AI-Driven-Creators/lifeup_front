@@ -281,7 +281,7 @@ const resetUserData = async (resetTypes: ResetType[]) => {
     }
   } catch (error) {
     console.error('重置失敗:', error)
-    alert(`重置失敗: ${error.message}`)
+    alert(`重置失敗: ${error instanceof Error ? error.message : String(error)}`)
   } finally {
     resetting.value = false
   }
@@ -356,7 +356,7 @@ const confirmFullReset = async () => {
     }
   } catch (error) {
     console.error('完全重置失敗:', error)
-    alert(`重置失敗: ${error.message}`)
+    alert(`重置失敗: ${error instanceof Error ? error.message : String(error)}`)
   } finally {
     resetting.value = false
   }

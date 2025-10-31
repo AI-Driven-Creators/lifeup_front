@@ -154,7 +154,7 @@
       
       <!-- 一般任務切換按鈕 -->
       <button
-        v-else-if="!task.is_parent_task && task.type !== 'daily'"
+        v-else-if="!task.is_parent_task"
         class="btn-primary ml-4"
         :class="{
           'bg-gray-400': task.status === 'completed' || task.status === 'daily_completed',

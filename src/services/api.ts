@@ -43,7 +43,6 @@ export class ApiClient {
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
-      // @ts-expect-error: 非 JSON 回應由呼叫端自行處理
       return (await response.text()) as T;
     } catch (error) {
       console.error('API Request Error:', error);
@@ -137,7 +136,8 @@ export class ApiClient {
     difficulty?: number,
     experience?: number,
     due_date?: string,
-    task_order?: number
+    task_order?: number,
+    skill_tags?: string[]
   }) {
     return this.request<{ success: boolean, data: any, message: string }>(`/api/tasks/${id}`, {
       method: 'PUT',

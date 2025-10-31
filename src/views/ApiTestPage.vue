@@ -263,7 +263,8 @@ async function testCreateUser() {
   try {
     const userData = {
       name: `測試用戶_${Date.now()}`,
-      email: `test_${Date.now()}@example.com`
+      email: `test_${Date.now()}@example.com`,
+      password: 'test123'
     }
     await userStore.createUser(userData)
     await testGetUsers() // 重新獲取用戶列表
