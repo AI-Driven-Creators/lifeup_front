@@ -690,3 +690,5 @@ export const getInterestsScenarioStats = () => {
     interestsCoverage: interestsCoverage
   };
 };
+
+export default generateInterestsScenarios;

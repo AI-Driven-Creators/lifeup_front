@@ -1949,3 +1949,10 @@ function calculateResponseConsistency(responsePatterns) {
     isConsistent: consistency > 0.3
   };
 }
+
+export default {
+  scenarioWorkStyleQuestions,
+  calculateScenarioWorkStyleResults,
+  scenarioWorkStyleDimensions,
+  scenarioStyleTraits
+};

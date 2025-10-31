@@ -531,3 +531,5 @@ export const getScenarioStats = () => {
     valuesCoverage: valuesCoverage
   };
 };
+
+export default generateValuesScenarios;

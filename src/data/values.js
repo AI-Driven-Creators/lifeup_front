@@ -24,3 +24,5 @@ export const values = [
   { id: 'justice', name: '公正', description: '維護公平正義，道德正直' },
   { id: 'spirituality', name: '精神成長', description: '追求心靈成長和內在智慧' }
 ];
+
+export default values;

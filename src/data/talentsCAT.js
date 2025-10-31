@@ -1832,3 +1832,5 @@ export const ACTUAL_QUESTIONS = {
 };
 
 // 題目統計已移除 console.log 以避免生產環境輸出
+
+export default { CATEngine, ACTUAL_QUESTIONS, talentItemBank, talents };

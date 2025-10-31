@@ -24,3 +24,5 @@ export const interests = [
   { id: 'fashion', name: '時尚美容', description: '時尚設計、美容、造型服飾' },
   { id: 'consulting', name: '顧問諮詢', description: '管理顧問、專業諮詢服務' }
 ];
+
+export default interests;
