@@ -1,5 +1,8 @@
 <template>
   <div>
+  <!-- 職業選擇引導 -->
+  <CareerSelectionGuide />
+
   <!-- 重新測驗按鈕 - 固定在頁面右上角 -->
   <div class="absolute top-6 right-6 z-10">
     <button
@@ -505,7 +508,7 @@
 
                     <!-- 職業選擇按鈕 - 只在結果階段顯示 -->
                     <div v-if="currentStage === 'results'" class="bg-white rounded-xl lg:rounded-2xl p-5 lg:p-6 border border-green-100 shadow-lg shadow-gray-200/50 text-center">
-                      <button 
+                      <button
                         @click="selectCareer(career)"
                         class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
                       >
@@ -806,6 +809,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import CareerSurveyModal from './CareerSurveyModal.vue'
+import CareerSelectionGuide from '@/components/common/CareerSelectionGuide.vue'
 import { 
   Heart, 
   BookOpen, 
@@ -1829,11 +1833,33 @@ const selectMotivationOption = (option: string) => {
 
 // 重新生成任務
 const handleRegenerate = () => {
-  currentStage.value = 'survey'
-  generatedTasks.value = []
-  progressMessage.value = ''
-  progressPercent.value = 0
+  console.log('🔄 用戶請求重新生成任務')
+  console.log('📊 當前狀態:', {
+    currentStage: currentStage.value,
+    loading: loading.value,
+    quizResultId: quizResultId.value,
+    selectedCareer: selectedCareer.value
+  })
+
+  // 重置狀態但保持問卷答案和 quizResultId
+  generationStartTime.value = null
   isTimeout.value = false
+  generatedTasks.value = []
+  previewData.value = null
+  progressMessage.value = '初始化任務生成系統...'
+  progressPercent.value = 0
+
+  // 確保 loading 是 false，否則 generateTasks 會提前返回
+  loading.value = false
+
+  // 立即設置為 generating 狀態
+  currentStage.value = 'generating'
+
+  // 延遲一點點調用，確保狀態更新後再執行
+  setTimeout(() => {
+    console.log('🚀 開始重新生成任務...')
+    generateTasks()
+  }, 100)
 }
 
 // 接受並保存任務到資料庫

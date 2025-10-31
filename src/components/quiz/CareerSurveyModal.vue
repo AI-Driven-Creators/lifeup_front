@@ -147,7 +147,7 @@
                 :disabled="!isFormValid || loading"
                 class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
               >
-                <span class="mr-2">🚀</span>
+                <PhSparkle :size="20" weight="fill" />
                 <span v-if="loading">生成中...</span>
                 <span v-else>生成專屬主線任務</span>
               </button>
@@ -196,8 +196,7 @@
         <!-- 任務預覽/完成階段 -->
         <div v-if="currentStage === 'preview' || currentStage === 'completed'">
           <div class="mb-8">
-            <div class="flex items-center space-x-3 mb-4">
-              <span class="text-green-600 text-xl">🎯</span>
+            <div class="mb-4">
               <h2 class="text-xl font-semibold text-gray-900">
                 {{ currentStage === 'preview' ? '任務預覽' : '職業主線任務已生成' }}
               </h2>
@@ -220,8 +219,7 @@
             <div
               v-for="(task, index) in generatedTasks"
               :key="index"
-              class="shadow-sm hover:shadow-md transition-all duration-200 bg-white"
-              :class="compactMode ? 'border border-gray-200 rounded-lg' : `border-l-4 rounded-r-lg ${getTaskBorderColor(task.type)}`"
+              class="shadow-sm hover:shadow-md transition-all duration-200 bg-white border border-gray-200 rounded-lg"
             >
               <div class="p-4">
                 <!-- 任務標題區 -->
@@ -314,7 +312,7 @@
           <!-- 操作按鈕 -->
           <div v-if="currentStage === 'preview'" class="flex items-center justify-between pt-6 border-t border-gray-200">
             <button
-              @click="$emit('regenerate')"
+              @click="console.log('🔘 重新生成按鈕被點擊', { loading, currentStage }); $emit('regenerate')"
               :disabled="loading"
               class="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
@@ -352,7 +350,8 @@ import {
   PhPalette,
   PhUsers,
   PhCrosshair,
-  PhArrowsClockwise
+  PhArrowsClockwise,
+  PhSparkle
 } from '@phosphor-icons/vue'
 
 // Props

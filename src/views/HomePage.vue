@@ -2,6 +2,9 @@
   <div class="min-h-screen bg-white">
     <!-- 頁面標題 -->
     <PageHeader title="每日任務" />
+
+    <!-- 新手引導 -->
+    <OnboardingGuide />
     
     <!-- 載入狀態 -->
     <div v-if="loading" class="px-4 py-8 text-center">
@@ -33,6 +36,7 @@
       <!-- 心理測驗按鈕 -->
       <div class="px-4 pt-4 pb-2">
         <button
+          id="personality-test-button"
           @click="$router.push('/personality-test')"
           :class="[
             'w-full rounded-xl py-4 px-6 transition-all duration-300',
@@ -85,6 +89,7 @@
 import { ref, onMounted, computed } from 'vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import DailyTaskCard from '@/components/features/DailyTaskCard.vue'
+import OnboardingGuide from '@/components/common/OnboardingGuide.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'

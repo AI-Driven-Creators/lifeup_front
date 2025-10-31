@@ -1,5 +1,8 @@
 <template>
   <div>
+    <!-- 職業選擇引導 -->
+    <CareerSelectionGuide />
+
     <!-- 重新測驗按鈕 - 固定在頁面右上角 -->
     <div class="absolute top-6 right-6 z-10">
       <button
@@ -369,6 +372,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { CAREER_DATABASE } from '../../data/careerDatabase.js'
 import CareerSurveyModal from './CareerSurveyModal.vue'
+import CareerSelectionGuide from '@/components/common/CareerSelectionGuide.vue'
 
 // 簡化版職業資料庫
 const CAREER_DATABASE_SIMPLE = {
@@ -1146,8 +1150,14 @@ const generateTasks = async () => {
 // 重新生成函數
 const handleRegenerate = () => {
   console.log('🔄 用戶請求重新生成任務')
+  console.log('📊 當前狀態:', {
+    currentStage: currentStage.value,
+    loading: loading.value,
+    quizResultId: quizResultId.value,
+    selectedCareer: selectedCareer.value
+  })
 
-  // 重置狀態
+  // 重置狀態但保持問卷答案和 quizResultId
   generationStartTime.value = null
   isTimeout.value = false
   generatedTasks.value = []
@@ -1155,8 +1165,17 @@ const handleRegenerate = () => {
   progressMessage.value = '初始化任務生成系統...'
   progressPercent.value = 0
 
-  // 重新調用生成函數
-  generateTasks()
+  // 確保 loading 是 false，否則 generateTasks 會提前返回
+  loading.value = false
+
+  // 立即設置為 generating 狀態
+  currentStage.value = 'generating'
+
+  // 延遲一點點調用，確保狀態更新後再執行
+  setTimeout(() => {
+    console.log('🚀 開始重新生成任務...')
+    generateTasks()
+  }, 100)
 }
 
 // 接受並保存任務到資料庫
