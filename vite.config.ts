@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 import fs from 'node:fs'
 
@@ -16,7 +17,38 @@ export default defineConfig(({ mode }) => {
   const useHTTPS = !isDevelopment && hasSSL
 
   return {
-    plugins: [vue()],
+    plugins: [
+      vue(),
+      VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'public',
+        filename: 'sw.js',
+        registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          globIgnores: ['**/node_modules/**/*']
+        },
+        manifest: {
+          name: '人生升級系統',
+          short_name: 'LifeUp',
+          description: 'AI驅動的遊戲化自我成長平台',
+          theme_color: '#4F46E5',
+          background_color: '#ffffff',
+          icons: [
+            {
+              src: '/icon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml'
+            }
+          ]
+        },
+        devOptions: {
+          enabled: true,
+          type: 'module'
+        }
+      })
+    ],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))

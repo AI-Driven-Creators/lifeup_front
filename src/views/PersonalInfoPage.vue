@@ -5,8 +5,8 @@
     
     <!-- 設定按鈕 -->
     <div class="px-4 py-2 flex justify-between items-center">
-      <!-- 數據重置按鈕區域 -->
-      <div class="flex items-center gap-2">
+      <!-- 數據重置按鈕區域 - 已隱藏 -->
+      <div class="flex items-center gap-2" style="display: none;">
         <button
           @click="showResetOptions = !showResetOptions"
           class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
@@ -16,13 +16,70 @@
         </button>
       </div>
 
+      <!-- API設定按鈕 - 已隱藏 -->
       <button
         @click="openApiSettings"
         class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+        style="display: none;"
       >
         <span>⚙️</span>
         <span>API 設定</span>
       </button>
+
+      <!-- 測試Web Push按鈕和訂閱狀態 -->
+      <div class="flex items-center gap-2">
+        <button
+          @click="testWebPush"
+          :disabled="pushTesting"
+          class="flex items-center gap-2 px-3 py-2 text-sm text-primary-600 border border-primary-300 rounded-lg hover:bg-primary-50 disabled:opacity-50"
+        >
+          <span>🔔</span>
+          <span>{{ pushTesting ? '推送已排程...' : '測試 Web Push' }}</span>
+        </button>
+
+        <button
+          @click="refreshSubscriptions"
+          :disabled="loadingSubscriptions"
+          class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+        >
+          <span>🔄</span>
+          <span>{{ loadingSubscriptions ? '載入中...' : '查看訂閱' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 推送訂閱狀態面板 -->
+    <div v-if="showSubscriptions" class="px-4 py-4 bg-blue-50 border-l-4 border-blue-400">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-blue-800">當前推送訂閱狀態</h3>
+        <button @click="showSubscriptions = false" class="text-blue-600 hover:text-blue-800">✕</button>
+      </div>
+
+      <div v-if="subscriptions.length === 0" class="text-blue-700">
+        ⚠️ 目前沒有任何推送訂閱！請先前往
+        <RouterLink to="/settings/notifications" class="underline font-semibold">推送通知設定頁面</RouterLink>
+        啟用推送通知。
+      </div>
+
+      <div v-else class="space-y-3">
+        <div class="text-sm text-blue-700 mb-2">
+          共有 <strong>{{ subscriptions.length }}</strong> 個訂閱
+        </div>
+        <div v-for="(sub, index) in subscriptions" :key="sub.id" class="bg-white rounded-lg p-3 border border-blue-200">
+          <div class="text-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold text-gray-700">訂閱 #{{ index + 1 }}</span>
+              <span class="text-xs text-gray-500">{{ formatDate(sub.created_at) }}</span>
+            </div>
+            <div class="text-xs text-gray-600 break-all">
+              <strong>Endpoint:</strong> {{ sub.endpoint?.substring(0, 60) }}...
+            </div>
+            <div v-if="sub.user_id" class="text-xs text-gray-600 mt-1">
+              <strong>User ID:</strong> {{ sub.user_id }}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 數據重置選項面板 -->
@@ -206,6 +263,12 @@ const resetResult = ref<{
   details: Record<string, number>
 } | null>(null)
 
+// Web Push 測試相關狀態
+const pushTesting = ref(false)
+const showSubscriptions = ref(false)
+const loadingSubscriptions = ref(false)
+const subscriptions = ref<any[]>([])
+
 // 重置類型定義
 type ResetType = 'tasks' | 'skills' | 'chat' | 'progress' | 'achievements' | 'profile' | 'all'
 
@@ -217,6 +280,96 @@ const openApiSettings = () => {
 const handleApiSettingsSaved = () => {
   // 設定保存後，可以重新載入數據或顯示通知
   console.log('API 設定已保存')
+}
+
+// 格式化日期
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return 'N/A'
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-TW')
+}
+
+// 刷新訂閱列表
+const refreshSubscriptions = async () => {
+  loadingSubscriptions.value = true
+  try {
+    const url = `${import.meta.env.VITE_API_BASE_URL}/api/push/subscriptions`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const result = await response.json()
+    if (result.success) {
+      subscriptions.value = result.data || []
+      showSubscriptions.value = true
+    } else {
+      alert(`獲取訂閱列表失敗：${result.message}`)
+    }
+  } catch (error) {
+    console.error('獲取訂閱列表失敗:', error)
+    alert(`獲取訂閱列表失敗: ${error instanceof Error ? error.message : String(error)}`)
+  } finally {
+    loadingSubscriptions.value = false
+  }
+}
+
+// Web Push 測試方法
+const testWebPush = async () => {
+  if (!userStore.user?.id) {
+    alert('無法獲取用戶ID')
+    return
+  }
+
+  pushTesting.value = true
+
+  try {
+    const url = `${import.meta.env.VITE_API_BASE_URL}/api/notifications/test-push`
+    console.log('發送測試推送請求到:', url)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userStore.user.id,
+        delay_seconds: 5 // 5秒後發送推送
+      })
+    })
+
+    if (!response.ok) {
+      const text = await response.text()
+      console.error('HTTP 錯誤響應:', text)
+      throw new Error(`HTTP ${response.status}: ${text}`)
+    }
+
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text()
+      console.error('非 JSON 響應:', text)
+      throw new Error(`預期 JSON 響應，但收到: ${contentType}`)
+    }
+
+    const result = await response.json()
+    console.log('測試推送結果:', result)
+
+    if (result.success) {
+      alert('測試推送已排程！您將在5秒後收到推送通知。')
+      // 5秒後重置按鈕狀態
+      setTimeout(() => {
+        pushTesting.value = false
+      }, 5000)
+    } else {
+      alert(`測試推送失敗：${result.message}`)
+      pushTesting.value = false
+    }
+  } catch (error) {
+    console.error('測試推送失敗:', error)
+    alert(`測試推送失敗: ${error instanceof Error ? error.message : String(error)}`)
+    pushTesting.value = false
+  }
 }
 
 // 數據重置相關方法

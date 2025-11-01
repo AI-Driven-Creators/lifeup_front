@@ -35,6 +35,8 @@
     "terser": "^5.44.0",
     "typescript": "~5.7.2",
     "vite": "^6.3.5",
-    "vue-tsc": "^2.2.0"
+    "vite-plugin-pwa": "^1.1.0",
+    "vue-tsc": "^2.2.0",
+    "workbox-window": "^7.3.0"
   }
 }

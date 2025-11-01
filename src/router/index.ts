@@ -78,6 +78,11 @@ const router = createRouter({
       path: '/personality-test/full',
       name: 'personality-test-full',
       component: () => import('@/views/PersonalityTestFullPage.vue')
+    },
+    {
+      path: '/settings/notifications',
+      name: 'notification-settings',
+      component: () => import('@/views/NotificationSettingsPage.vue')
     }
   ]
 })
