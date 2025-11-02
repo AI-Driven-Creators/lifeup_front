@@ -57,15 +57,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-
-// 簡化的圖標元件
-const HomeIcon = () => '🏠'
-const MissionIcon = () => '📋'
-const SkillIcon = () => '🌳'
-const CoachIcon = () => '🤖'
-const PersonalIcon = () => '👤'
+import { Home, ClipboardList, TreePine, User, Bot } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -74,10 +68,11 @@ const router = useRouter()
 const showSkillActions = ref(false)
 
 const navItems = [
-  { name: 'home', path: '/', label: '首頁', icon: HomeIcon },
-  { name: 'mission', path: '/mission', label: '任務', icon: MissionIcon },
-  { name: 'skills', path: '/skills', label: '技能', icon: SkillIcon },
-  { name: 'coach', path: '/coach', label: '小教練', icon: CoachIcon }
+  { name: 'home', path: '/', label: '首頁', icon: Home },
+  { name: 'mission', path: '/mission', label: '任務', icon: ClipboardList },
+  { name: 'skills', path: '/skills', label: '技能', icon: TreePine },
+  { name: 'personal', path: '/personal', label: '我的', icon: User },
+  { name: 'coach', path: '/coach', label: '小教練', icon: Bot }
 ]
 
 // 處理新增技能按鈕點擊

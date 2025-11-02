@@ -7,11 +7,12 @@
     ]"
   >
     <!-- 頭像 -->
-    <div 
+    <div
       class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
       :class="message.role === 'coach' ? 'bg-primary-100' : 'bg-gray-100'"
     >
-      <span class="text-sm">{{ message.role === 'coach' ? '🤖' : '👤' }}</span>
+      <Bot v-if="message.role === 'coach'" class="w-4 h-4 text-primary-700" />
+      <User v-else class="w-4 h-4 text-gray-700" />
     </div>
     
     <!-- 訊息內容 -->
@@ -172,6 +173,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { marked } from 'marked'
 import type { ChatMessage } from '@/types'
+import { Bot, User } from 'lucide-vue-next'
 
 interface Props {
   message: ChatMessage

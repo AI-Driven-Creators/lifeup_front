@@ -49,13 +49,13 @@
     <div v-else-if="error" class="px-4 py-4">
       <div class="bg-red-50 border border-red-200 rounded-lg p-4">
         <div class="flex items-center">
-          <div class="text-red-600 mr-3">⚠️</div>
+          <AlertTriangle class="w-5 h-5 text-red-600 mr-3" />
           <div>
             <h3 class="text-red-800 font-medium">載入失敗</h3>
             <p class="text-red-600 text-sm mt-1">{{ error }}</p>
           </div>
         </div>
-        <button 
+        <button
           @click="loadTaskDetail"
           class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
         >
@@ -76,8 +76,9 @@
         </p>
         
         <!-- 任務日期顯示 -->
-        <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1">
-          📅 {{ formatTaskDate((task as any).task_date) }}
+        <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1 flex items-center">
+          <Calendar class="w-4 h-4 mr-1" />
+          {{ formatTaskDate((task as any).task_date) }}
         </p>
         
         <!-- 任務描述 -->
@@ -136,30 +137,10 @@
       <div v-else-if="task.is_parent_task && subtasks.length > 0" class="bg-white px-4 py-5">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-primary-900">完成任務</h3>
-          <div class="flex items-center space-x-3">
-            <!-- 重新生成按鈕（僅職業主線任務顯示） -->
-            <button
-              v-if="task.task_category === 'career_mainline'"
-              @click="showRegenerateDialog = true"
-              :disabled="isLoading"
-              class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="重新生成子任務"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>重新生成</span>
-            </button>
-            <!-- 添加子任務按鈕 -->
-            <button
-              @click="showCreateSubtaskDialog = true"
-              class="inline-flex items-center gap-2 px-2 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-              title="添加子任務"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </button>
+          <!-- 每日任務提示 -->
+          <div v-if="isDailyTask" class="text-sm text-gray-600 bg-blue-50 px-3 py-1 rounded-full flex items-center">
+            <Calendar class="w-3 h-3 mr-1" />
+            顯示最近3天（包含今天）
           </div>
         </div>
         
@@ -187,8 +168,9 @@
                 <p v-if="subtask.description" class="text-gray-600 text-sm mt-1 whitespace-pre-line">{{ subtask.description }}</p>
                 
                 <!-- 任務日期顯示 -->
-                <p v-if="(subtask as any).task_date" class="text-xs text-gray-500 mt-1">
-                  📅 {{ formatTaskDate((subtask as any).task_date) }}
+                <p v-if="(subtask as any).task_date" class="text-xs text-gray-500 mt-1 flex items-center">
+                  <Calendar class="w-3 h-3 mr-1" />
+                  {{ formatTaskDate((subtask as any).task_date) }}
                 </p>
                 
                 <!-- 任務屬性 -->
@@ -377,13 +359,7 @@ import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
-import SkillTags from '@/components/common/SkillTags.vue'
-import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
-import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
-import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-import RecurringTaskDetail from '@/components/features/RecurringTaskDetail.vue'
-import SimpleDailyTaskDetail from '@/components/features/SimpleDailyTaskDetail.vue'
+import { AlertTriangle, Calendar } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()

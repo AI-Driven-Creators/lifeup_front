@@ -3,7 +3,7 @@
     <div class="flex items-center space-x-4">
       <!-- 用戶頭像 -->
       <div class="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center shadow-lg">
-        <span class="text-2xl text-white">👤</span>
+        <UserIcon class="w-8 h-8 text-white" :stroke-width="2" />
       </div>
       
       <div class="flex-1">
@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { User } from '@/types'
+import { User as UserIcon } from 'lucide-vue-next'
 
 interface Props {
   user: User | null

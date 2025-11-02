@@ -10,7 +10,7 @@
       :title="skillTag.name"
       @click.stop="handleSkillClick(skillTag)"
     >
-      <span class="skill-icon mr-1">🎯</span>
+      <Target class="w-3 h-3 mr-1" />
       {{ skillTag.name }}
     </span>
     <!-- 顯示剩餘技能數量 -->
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Target } from 'lucide-vue-next'
 
 interface Skill {
   id: number | string;

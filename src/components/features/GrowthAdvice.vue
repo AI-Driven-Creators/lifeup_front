@@ -3,18 +3,18 @@
     <!-- 平衡提醒 -->
     <div class="card bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
       <h3 class="text-lg font-bold text-yellow-900 mb-2 flex items-center">
-        <span class="mr-2">⚖️</span>
+        <Scale class="w-5 h-5 mr-2" />
         平衡提醒
       </h3>
       <p class="text-yellow-800 text-sm leading-relaxed">
         專注於發展所有屬性，以實現和諧發展。
       </p>
     </div>
-    
+
     <!-- 改進建議 -->
     <div class="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
       <h3 class="text-lg font-bold text-blue-900 mb-2 flex items-center">
-        <span class="mr-2">💡</span>
+        <Lightbulb class="w-5 h-5 mr-2" />
         改進建議
       </h3>
       <p class="text-blue-800 text-sm leading-relaxed">
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { UserAttributes } from '@/types'
+import { Scale, Lightbulb } from 'lucide-vue-next'
 
 interface Props {
   attributes: UserAttributes

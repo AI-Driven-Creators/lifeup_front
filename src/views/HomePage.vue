@@ -16,13 +16,13 @@
     <div v-else-if="error" class="px-4 py-4">
       <div class="bg-red-50 border border-red-200 rounded-lg p-4">
         <div class="flex items-center">
-          <div class="text-red-600 mr-3">⚠️</div>
+          <AlertTriangle class="w-5 h-5 text-red-600 mr-3" />
           <div>
             <h3 class="text-red-800 font-medium">載入失敗</h3>
             <p class="text-red-600 text-sm mt-1">{{ error }}</p>
           </div>
         </div>
-        <button 
+        <button
           @click="refreshTasks"
           class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
         >
@@ -61,10 +61,12 @@
       
       <!-- 空狀態 -->
       <div v-if="activeTasks.length === 0" class="text-center py-12 px-4">
-        <div class="text-6xl mb-4">📝</div>
+        <div class="flex justify-center mb-4">
+          <ClipboardList class="w-16 h-16 text-gray-400" :stroke-width="1.5" />
+        </div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">沒有進行中的任務</h3>
         <p class="text-gray-600 mb-4">首頁只顯示進行中的任務。開始一個任務來查看它！</p>
-        <button 
+        <button
           @click="$router.push('/mission')"
           class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
@@ -93,7 +95,7 @@ import OnboardingGuide from '@/components/common/OnboardingGuide.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
-import { RefreshCw } from 'lucide-vue-next'
+import { RefreshCw, ClipboardList, AlertTriangle } from 'lucide-vue-next'
 import type { Task } from '@/types'
 
 const taskStore = useTaskStore()
