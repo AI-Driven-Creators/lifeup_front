@@ -1,13 +1,22 @@
 /* 導入職涯測驗設計系統 */
 @import './jobs-design-system.css';
 
+/* 導入本地字體 */
+@font-face {
+  font-family: 'jf-openhuninn';
+  src: url('../fonts/jf-openhuninn-2.1.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply font-lexend bg-primary-50 text-primary-800;
+    @apply font-sans bg-primary-50 text-primary-800;
     color-scheme: light only;
   }
 

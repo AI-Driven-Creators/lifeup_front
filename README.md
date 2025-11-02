@@ -77,6 +77,10 @@ src/
 - **內在驅動型**: 溫暖綠色系 + 金色
 - **外在驅動型**: 深藍色 + 活力橙色
 
+### 字體
+- **中文字體**: jf-openhuninn (粉圓體) - [justfont 粉圓體](https://justfont.com/huninn/)
+  - 授權: SIL Open Font License 1.1
+
 ### 核心元件
 - 任務卡片 (TaskCard)
 - 技能卡片 (SkillCard)  

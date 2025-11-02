@@ -45,6 +45,7 @@ export default {
       },
       fontFamily: {
         'lexend': ['Lexend', 'sans-serif'],
+        'sans': ['jf-openhuninn', 'Lexend', 'system-ui', '-apple-system', 'sans-serif'],
       }
     },
   },
