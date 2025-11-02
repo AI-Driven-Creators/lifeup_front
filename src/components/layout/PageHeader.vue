@@ -14,17 +14,6 @@
         </slot>
       </div>
       
-      <div class="flex items-center">
-        <slot name="action" />
-        <!-- 預設右上角個人資料圖標 -->
-        <button 
-          v-if="showProfileIcon"
-          @click="$router.push('/personal-info')"
-          class="profile-icon hover:bg-gray-100 transition-colors"
-        >
-          <UserCircle class="w-10 h-10 text-gray-600" />
-        </button>
-      </div>
     </div>
   </header>
 </template>
