@@ -18,13 +18,13 @@
       <div v-else-if="error" class="px-4 py-4">
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
           <div class="flex items-center">
-            <div class="text-red-600 mr-3">⚠️</div>
+            <AlertTriangle class="w-5 h-5 text-red-600 mr-3" />
             <div>
               <h3 class="text-red-800 font-medium">載入失敗</h3>
               <p class="text-red-600 text-sm mt-1">{{ error }}</p>
             </div>
           </div>
-          <button 
+          <button
             @click="loadTasksByType"
             class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
           >
@@ -58,7 +58,6 @@
             type="daily"
             title="每日任務"
             subtitle="培養習慣，日日精進"
-            icon="📅"
             :tasks="dailyTasks"
             @click="navigateToTaskType"
           />
@@ -66,7 +65,6 @@
             type="main"
             title="主線任務"
             subtitle="核心目標，重點突破"
-            icon="🎯"
             :tasks="mainTasks"
             @click="navigateToTaskType"
           />
@@ -74,7 +72,6 @@
             type="side"
             title="支線任務"
             subtitle="輔助成長，拓展視野"
-            icon="🌟"
             :tasks="sideTasks"
             @click="navigateToTaskType"
           />
@@ -82,7 +79,6 @@
             type="challenge"
             title="挑戰任務"
             subtitle="挑戰自我，突破極限"
-            icon="🔥"
             :tasks="challengeTasks"
             @click="navigateToTaskType"
           />
@@ -122,6 +118,7 @@ import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
+import { AlertTriangle } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()

@@ -6,7 +6,9 @@
     <!-- 簡潔卡片內容 -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="text-2xl">{{ icon }}</div>
+        <div class="w-8 h-8 flex items-center justify-center">
+          <component :is="iconComponent" class="w-6 h-6 text-primary-600" :stroke-width="2" />
+        </div>
         <div>
           <h3 class="text-base font-bold text-gray-900">{{ title }}</h3>
           <p class="text-xs text-gray-500">{{ subtitle }}</p>
@@ -23,12 +25,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Task } from '@/types'
+import { Calendar, Target, Star, Flame } from 'lucide-vue-next'
 
 interface Props {
   type: string
   title: string
   subtitle: string
-  icon: string
+  icon?: string // 保留為可選，以便向後相容
   tasks: Task[]
 }
 
@@ -38,6 +41,22 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+// 根據任務類型返回對應的圖示元件
+const iconComponent = computed(() => {
+  switch (props.type) {
+    case 'daily':
+      return Calendar
+    case 'main':
+      return Target
+    case 'side':
+      return Star
+    case 'challenge':
+      return Flame
+    default:
+      return Target
+  }
+})
 
 // 計算統計數據
 const totalTasks = computed(() => props.tasks.length)
