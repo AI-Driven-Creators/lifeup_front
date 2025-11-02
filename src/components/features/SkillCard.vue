@@ -5,7 +5,9 @@
   >
     <div class="text-center space-y-3">
       <!-- 技能圖標 -->
-      <div class="text-2xl">{{ skill.icon }}</div>
+      <div class="w-full flex justify-center">
+        <component :is="skillIconComponent" class="w-8 h-8 text-primary-600" :stroke-width="2" />
+      </div>
 
       <!-- 技能名稱和等級 -->
       <div>
@@ -46,6 +48,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Skill } from '@/types'
+import { getIconComponent } from '@/utils/iconMapper'
 
 interface Props {
   skill: Skill
@@ -53,6 +56,11 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
+
+// 根據技能 icon 名稱獲取對應的 Lucide 圖示元件
+const skillIconComponent = computed(() => {
+  return getIconComponent(props.skill.icon)
+})
 
 const experienceProgress = computed(() => {
   return (props.skill.experience / props.skill.maxExperience) * 100

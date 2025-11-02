@@ -209,16 +209,16 @@ export const useSkillStore = defineStore('skill', {
       return 'intelligence';
     },
 
-    // 根據技能名稱獲取圖示
+    // 根據技能名稱獲取圖示（返回 Lucide 圖示名稱）
     getSkillIcon(skillName: string): string {
       const iconMap: Record<string, string> = {
-        'python': '🐍',
-        'javascript': '🟨',
-        '程式': '💻',
-        '設計': '🎨',
-        '溝通': '💬',
-        '時間管理': '⏰',
-        '領導': '👑',
+        'python': 'Code2',
+        'javascript': 'Code2',
+        '程式': 'Code2',
+        '設計': 'Palette',
+        '溝通': 'MessageSquare',
+        '時間管理': 'Clock',
+        '領導': 'Crown',
       };
 
       const name = skillName.toLowerCase();
@@ -228,7 +228,7 @@ export const useSkillStore = defineStore('skill', {
         }
       }
 
-      return '⭐'; // 預設圖示
+      return 'Star'; // 預設圖示
     },
 
     // 計算技能升級所需經驗值

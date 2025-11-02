@@ -31,7 +31,9 @@
         <!-- 提示資訊 - 當沒有任何技能時 -->
         <div v-if="allSkills.length === 0" class="text-center py-12">
           <div class="inline-block bg-white border border-primary-200 rounded-lg p-6 shadow-sm">
-            <div class="text-6xl mb-4">🎯</div>
+            <div class="w-full flex justify-center mb-4">
+              <Target class="w-16 h-16 text-primary-400" :stroke-width="1.5" />
+            </div>
             <p class="text-lg font-medium text-primary-900 mb-2">尚未解鎖任何技能</p>
             <p class="text-sm text-gray-600 mb-4">創建任務時，系統會自動推薦相關技能標籤</p>
             <p class="text-sm text-gray-600">選擇技能標籤後即可解鎖對應技能！</p>
@@ -47,7 +49,7 @@
             <!-- 屬性標題 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center space-x-2">
-                <span class="text-2xl">{{ attribute.icon }}</span>
+                <component :is="getAttributeIcon(attribute.icon)" class="w-6 h-6 text-primary-600" :stroke-width="2" />
                 <h2 class="text-lg font-bold text-primary-900">{{ attribute.label }}</h2>
                 <span class="text-sm text-gray-500">
                   ({{ getSkillsByAttribute(attribute.key).length }})
@@ -101,6 +103,8 @@ import { apiClient } from '@/services/api'
 import { useUserStore } from '@/stores/user'
 import { ATTRIBUTES, DEFAULT_SKILL_ICON } from '@/config/skillPool'
 import type { Skill } from '@/types'
+import { Target } from 'lucide-vue-next'
+import { getIconComponent } from '@/utils/iconMapper'
 
 const userStore = useUserStore()
 const loading = ref(true)
@@ -128,6 +132,11 @@ const toggleAttribute = (attributeKey: string) => {
 // 根據屬性篩選已解鎖的技能
 const getSkillsByAttribute = (attributeKey: string): Skill[] => {
   return allSkills.value.filter((skill: any) => skill.attribute === attributeKey)
+}
+
+// 根據圖示名稱獲取 Lucide 圖示元件
+const getAttributeIcon = (iconName: string) => {
+  return getIconComponent(iconName)
 }
 
 // 獲取技能數據
