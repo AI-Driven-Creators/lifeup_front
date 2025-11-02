@@ -26,16 +26,15 @@
         <span>API 設定</span>
       </button>
 
-      <!-- 測試Web Push按鈕和訂閱狀態 -->
-      <div class="flex items-center gap-2">
-        <button
-          @click="testWebPush"
-          :disabled="pushTesting"
-          class="flex items-center gap-2 px-3 py-2 text-sm text-primary-600 border border-primary-300 rounded-lg hover:bg-primary-50 disabled:opacity-50"
+      <!-- 推送通知相關按鈕 -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <RouterLink
+          to="/settings/notifications"
+          class="flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 bg-indigo-50 border border-indigo-300 rounded-lg hover:bg-indigo-100 transition-colors"
         >
-          <span>🔔</span>
-          <span>{{ pushTesting ? '推送已排程...' : '測試 Web Push' }}</span>
-        </button>
+          <span>⚙️</span>
+          <span>推送通知設定</span>
+        </RouterLink>
 
         <button
           @click="refreshSubscriptions"
@@ -62,8 +61,18 @@
       </div>
 
       <div v-else class="space-y-3">
-        <div class="text-sm text-blue-700 mb-2">
-          共有 <strong>{{ subscriptions.length }}</strong> 個訂閱
+        <div class="flex justify-between items-center mb-2">
+          <div class="text-sm text-blue-700">
+            共有 <strong>{{ subscriptions.length }}</strong> 個訂閱
+          </div>
+          <button
+            @click="clearAllSubscriptions"
+            :disabled="clearingSubscriptions"
+            class="flex items-center gap-1 px-3 py-1 text-xs text-red-600 bg-red-50 border border-red-300 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
+          >
+            <span>🗑️</span>
+            <span>{{ clearingSubscriptions ? '清除中...' : '清除所有訂閱' }}</span>
+          </button>
         </div>
         <div v-for="(sub, index) in subscriptions" :key="sub.id" class="bg-white rounded-lg p-3 border border-blue-200">
           <div class="text-sm">
@@ -230,11 +239,24 @@
     </div>
     
     <!-- API 設定對話框 -->
-    <ApiSettingsDialog 
-      :is-open="showApiSettings" 
+    <ApiSettingsDialog
+      :is-open="showApiSettings"
       @close="showApiSettings = false"
       @saved="handleApiSettingsSaved"
     />
+
+    <!-- 確認對話框 -->
+    <ConfirmDialog
+      v-model:visible="showConfirmDialog"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :danger="confirmDialog.danger"
+      :confirm-text="confirmDialog.confirmText"
+      @confirm="confirmDialog.onConfirm"
+    />
+
+    <!-- Toast 通知 -->
+    <Toast ref="toastRef" />
   </div>
 </template>
 
@@ -250,10 +272,26 @@ import AttributesRadar from '@/components/features/AttributesRadar.vue'
 import GrowthAdvice from '@/components/features/GrowthAdvice.vue'
 import ApiSettingsDialog from '@/components/settings/ApiSettingsDialog.vue'
 import TaskHistoryTimeline from '@/components/features/TaskHistoryTimeline.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import Toast from '@/components/common/Toast.vue'
 import { useUserStore } from '@/stores/user'
+import { notificationService } from '@/services/notification'
 
 const userStore = useUserStore()
 const showApiSettings = ref(false)
+
+// 確認對話框相關狀態
+const showConfirmDialog = ref(false)
+const confirmDialog = ref({
+  title: '確認',
+  message: '',
+  danger: false,
+  confirmText: '確定',
+  onConfirm: () => {}
+})
+
+// Toast 引用
+const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
 // 數據重置相關狀態
 const showResetOptions = ref(false)
@@ -263,11 +301,11 @@ const resetResult = ref<{
   details: Record<string, number>
 } | null>(null)
 
-// Web Push 測試相關狀態
-const pushTesting = ref(false)
+// Web Push 相關狀態
 const showSubscriptions = ref(false)
 const loadingSubscriptions = ref(false)
 const subscriptions = ref<any[]>([])
+const clearingSubscriptions = ref(false)
 
 // 重置類型定義
 type ResetType = 'tasks' | 'skills' | 'chat' | 'progress' | 'achievements' | 'profile' | 'all'
@@ -305,71 +343,60 @@ const refreshSubscriptions = async () => {
       subscriptions.value = result.data || []
       showSubscriptions.value = true
     } else {
-      alert(`獲取訂閱列表失敗：${result.message}`)
+      toastRef.value?.showToast(`獲取訂閱列表失敗：${result.message}`)
     }
   } catch (error) {
     console.error('獲取訂閱列表失敗:', error)
-    alert(`獲取訂閱列表失敗: ${error instanceof Error ? error.message : String(error)}`)
+    toastRef.value?.showToast(`獲取訂閱列表失敗: ${error instanceof Error ? error.message : String(error)}`)
   } finally {
     loadingSubscriptions.value = false
   }
 }
 
-// Web Push 測試方法
-const testWebPush = async () => {
-  if (!userStore.user?.id) {
-    alert('無法獲取用戶ID')
-    return
+// 清除所有訂閱
+const clearAllSubscriptions = () => {
+  confirmDialog.value = {
+    title: '確認清除所有訂閱',
+    message: '確定要清除所有推送訂閱嗎？此操作會移除所有裝置上的訂閱記錄，您需要重新訂閱才能接收推送通知。',
+    danger: true,
+    confirmText: '確定清除',
+    onConfirm: async () => {
+      clearingSubscriptions.value = true
+      try {
+        const url = `${import.meta.env.VITE_API_BASE_URL}/api/push/clear-all`
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: null // 清除所有訂閱，不限定用戶
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+
+        const result = await response.json()
+        if (result.success) {
+          // 同時取消瀏覽器的訂閱
+          await notificationService.removePushNotification()
+          toastRef.value?.showToast(`成功清除 ${result.data.deleted_count} 個訂閱`)
+          // 清空訂閱列表
+          subscriptions.value = []
+        } else {
+          toastRef.value?.showToast(`清除訂閱失敗：${result.message}`)
+        }
+      } catch (error) {
+        console.error('清除訂閱失敗:', error)
+        toastRef.value?.showToast(`清除訂閱失敗: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        clearingSubscriptions.value = false
+      }
+    }
   }
-
-  pushTesting.value = true
-
-  try {
-    const url = `${import.meta.env.VITE_API_BASE_URL}/api/notifications/test-push`
-    console.log('發送測試推送請求到:', url)
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        user_id: userStore.user.id,
-        delay_seconds: 5 // 5秒後發送推送
-      })
-    })
-
-    if (!response.ok) {
-      const text = await response.text()
-      console.error('HTTP 錯誤響應:', text)
-      throw new Error(`HTTP ${response.status}: ${text}`)
-    }
-
-    const contentType = response.headers.get('content-type')
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text()
-      console.error('非 JSON 響應:', text)
-      throw new Error(`預期 JSON 響應，但收到: ${contentType}`)
-    }
-
-    const result = await response.json()
-    console.log('測試推送結果:', result)
-
-    if (result.success) {
-      alert('測試推送已排程！您將在5秒後收到推送通知。')
-      // 5秒後重置按鈕狀態
-      setTimeout(() => {
-        pushTesting.value = false
-      }, 5000)
-    } else {
-      alert(`測試推送失敗：${result.message}`)
-      pushTesting.value = false
-    }
-  } catch (error) {
-    console.error('測試推送失敗:', error)
-    alert(`測試推送失敗: ${error instanceof Error ? error.message : String(error)}`)
-    pushTesting.value = false
-  }
+  showConfirmDialog.value = true
 }
 
 // 數據重置相關方法

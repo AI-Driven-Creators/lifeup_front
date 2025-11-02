@@ -88,22 +88,17 @@
           </button>
         </div>
 
-        <!-- 通知頻率說明 -->
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900 mb-3">通知頻率</h2>
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div class="flex items-start">
-              <svg class="w-6 h-6 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <h3 class="font-semibold text-blue-900">測試階段：每分鐘推送</h3>
-                <p class="text-blue-800 text-sm mt-1">
-                  目前為測試模式，系統會每分鐘發送一次通知。正式版本將改為每天一次。
-                </p>
-              </div>
-            </div>
-          </div>
+        <!-- 清除所有訂閱 -->
+        <div class="border-b pb-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-3">清除所有訂閱</h2>
+          <p class="text-sm text-gray-600 mb-4">清除所有裝置上的推送訂閱記錄。這不會影響您的帳號，但需要重新訂閱才能接收推送。</p>
+          <button
+            @click="clearAllSubscriptions"
+            :disabled="isLoading || clearingAll"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {{ clearingAll ? '清除中...' : '清除所有訂閱' }}
+          </button>
         </div>
 
         <!-- 通知內容說明 -->
@@ -164,6 +159,16 @@
         </div>
       </div>
     </div>
+
+    <!-- 確認對話框 -->
+    <ConfirmDialog
+      v-model:visible="showConfirmDialog"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :danger="confirmDialog.danger"
+      :confirm-text="confirmDialog.confirmText"
+      @confirm="confirmDialog.onConfirm"
+    />
   </div>
 </template>
 
@@ -171,6 +176,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { notificationService } from '../services/notification';
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 
 const router = useRouter();
 
@@ -182,6 +188,17 @@ const permissionStatus = ref<NotificationPermission>('default');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
+const clearingAll = ref(false);
+
+// 確認對話框相關狀態
+const showConfirmDialog = ref(false);
+const confirmDialog = ref({
+  title: '確認',
+  message: '',
+  danger: false,
+  confirmText: '確定',
+  onConfirm: () => {}
+});
 
 // 計算屬性
 const permissionStatusClass = computed(() => {
@@ -296,6 +313,54 @@ const sendTestNotification = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const clearAllSubscriptions = () => {
+  confirmDialog.value = {
+    title: '確認清除所有訂閱',
+    message: '確定要清除所有推送訂閱嗎？此操作會移除所有裝置上的訂閱記錄，您需要重新訂閱才能接收推送通知。',
+    danger: true,
+    confirmText: '確定清除',
+    onConfirm: async () => {
+      clearingAll.value = true;
+      clearMessages();
+
+      try {
+        const url = `${import.meta.env.VITE_API_BASE_URL}/api/push/clear-all`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: null // 清除所有訂閱，不限定用戶
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          // 同時取消瀏覽器的訂閱
+          await notificationService.removePushNotification();
+          // 更新狀態
+          isSubscribed.value = false;
+          subscription.value = null;
+          showSuccess(`成功清除 ${result.data.deleted_count} 個訂閱`);
+        } else {
+          showError(`清除訂閱失敗：${result.message}`);
+        }
+      } catch (error) {
+        console.error('清除訂閱失敗:', error);
+        showError(error instanceof Error ? error.message : '清除訂閱時發生錯誤');
+      } finally {
+        clearingAll.value = false;
+      }
+    }
+  };
+  showConfirmDialog.value = true;
 };
 
 // 生命週期
