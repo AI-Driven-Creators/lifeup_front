@@ -3,7 +3,7 @@
     <!-- 頂部導航區域 -->
     <div class="bg-white px-4 py-4 flex items-center shadow-sm shrink-0">
       <!-- 返回按鈕 -->
-      <button 
+      <button
         @click="goBack"
         class="w-8 h-8 flex items-center justify-center mr-3 hover:bg-gray-100 rounded-full transition-colors"
       >
@@ -11,7 +11,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
       </button>
-      
+
       <!-- 任務類型標題 -->
       <div class="flex-1">
         <div class="flex items-center space-x-3">
@@ -22,12 +22,17 @@
           </div>
         </div>
       </div>
-      
-      <!-- 任務統計 -->
-      <div class="text-right">
-        <div class="text-lg font-bold text-primary-600">{{ filteredTasks.length }}</div>
-        <div class="text-xs text-gray-500">個任務</div>
-      </div>
+
+      <!-- 新手教學按鈕 -->
+      <button
+        @click="showTutorialManually"
+        class="w-8 h-8 flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-sm transition-all"
+        title="查看新手教學"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
     </div>
     
     <!-- 可滾動內容區域 -->
@@ -147,16 +152,44 @@
       @close="handleCloseCreateDialog"
       @created="handleTaskCreated"
     />
+
+    <!-- 新手指引：歡迎卡片 -->
+    <WelcomeBanner
+      :show="showWelcomeBanner"
+      :title="welcomeBannerConfig.title"
+      :description="welcomeBannerConfig.description"
+      :icon="welcomeBannerConfig.icon"
+      :features="welcomeBannerConfig.features"
+      @start-tutorial="startTutorial"
+      @skip="skipTutorial"
+    />
+
+    <!-- 新手指引：浮動提示 -->
+    <TutorialTooltip
+      :show="showTutorialTooltip"
+      :targetSelector="currentTutorialStep.targetSelector"
+      :title="currentTutorialStep.title"
+      :description="currentTutorialStep.description"
+      :icon="currentTutorialStep.icon"
+      :currentStep="currentStepIndex + 1"
+      :totalSteps="tutorialSteps.length"
+      :placement="currentTutorialStep.placement"
+      @next="nextTutorialStep"
+      @prev="prevTutorialStep"
+      @skip="skipTutorial"
+    />
   </div>
 </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TaskStatusFilter from '@/components/features/TaskStatusFilter.vue'
 import MissionTaskCard from '@/components/features/MissionTaskCard.vue'
 import CreateTaskDialog from '@/components/features/CreateTaskDialog.vue'
+import WelcomeBanner from '@/components/common/WelcomeBanner.vue'
+import TutorialTooltip from '@/components/common/TutorialTooltip.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
@@ -166,6 +199,7 @@ const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
 const userStore = useUserStore()
+const showToast = inject<(text: string, duration?: number) => void>('showToast')
 
 // 響應式數據
 const tasks = ref<Task[]>([])
@@ -413,11 +447,178 @@ const handleTaskCreated = async (newTask: Task) => {
   }
 }
 
+// ========== 新手指引系統 ==========
+const getTutorialKey = () => `task-type-${taskType.value}-tutorial-completed`
+
+// 新手指引狀態
+const showWelcomeBanner = ref(false)
+const showTutorialTooltip = ref(false)
+const currentStepIndex = ref(0)
+
+// 歡迎卡片配置（根據任務類型動態生成）
+const welcomeBannerConfig = computed(() => {
+  const configs = {
+    daily: {
+      title: '歡迎來到每日任務！',
+      description: '每日任務幫助您培養良好習慣，透過每天的小進步累積大成就。堅持就是力量！',
+      icon: '📅',
+      features: [
+        '查看所有每日任務的完成情況',
+        '使用狀態篩選快速找到待辦任務',
+        '追蹤完成率和進度統計',
+        '創建新的每日習慣任務'
+      ]
+    },
+    main: {
+      title: '歡迎來到主線任務！',
+      description: '主線任務是您的核心目標，專注於這些重點突破，讓您的成長更有方向性。',
+      icon: '🎯',
+      features: [
+        '管理您的核心目標和重點任務',
+        '追蹤任務進度和完成狀態',
+        '查看詳細的統計數據',
+        '創建新的主線任務挑戰自己'
+      ]
+    },
+    side: {
+      title: '歡迎來到支線任務！',
+      description: '支線任務是輔助成長的好幫手，拓展視野、豐富技能，讓您的成長更全面。',
+      icon: '🌟',
+      features: [
+        '探索各種輔助成長的任務',
+        '靈活管理支線目標',
+        '追蹤多元化的成長路徑',
+        '創建感興趣的支線任務'
+      ]
+    },
+    challenge: {
+      title: '歡迎來到挑戰任務！',
+      description: '挑戰任務是突破極限的舞台，勇敢面對高難度目標，證明您的實力！',
+      icon: '🔥',
+      features: [
+        '接受高難度的挑戰任務',
+        '追蹤挑戰進度和成就',
+        '突破自我，獲得更多獎勵',
+        '創建專屬的挑戰目標'
+      ]
+    }
+  }
+  return configs[taskType.value as keyof typeof configs] || configs.main
+})
+
+// 教學步驟定義
+interface TutorialStep {
+  targetSelector: string
+  title: string
+  description: string
+  icon: string
+  placement: 'top' | 'bottom' | 'left' | 'right'
+}
+
+const tutorialSteps = ref<TutorialStep[]>([
+  {
+    targetSelector: '.bg-white.px-4.py-4',
+    title: '任務類型標題',
+    description: '這裡顯示當前任務類型的名稱、圖標和說明，以及該類型的任務總數。',
+    icon: '📌',
+    placement: 'bottom'
+  },
+  {
+    targetSelector: '.bg-white.rounded-xl.p-4.shadow-sm',
+    title: '任務統計卡片',
+    description: '快速查看待辦、進行中、已完成的任務數量，以及整體完成率。',
+    icon: '📊',
+    placement: 'bottom'
+  },
+  {
+    targetSelector: '.space-y-3:has(.bg-white.rounded-lg.p-4.border)',
+    title: '任務列表',
+    description: '這裡顯示所有任務卡片。點擊任務可查看詳情，長按或點擊更多選項可進行編輯、刪除等操作。',
+    icon: '📋',
+    placement: 'top'
+  },
+  {
+    targetSelector: '.fixed.bottom-24.right-6',
+    title: '創建新任務',
+    description: '點擊浮動按鈕即可創建該類型的新任務。任務類型會自動鎖定為當前類型。',
+    icon: '➕',
+    placement: 'left'
+  }
+])
+
+const currentTutorialStep = computed(() => {
+  return tutorialSteps.value[currentStepIndex.value] || tutorialSteps.value[0]
+})
+
+// 檢查是否已完成教學
+const checkTutorialStatus = () => {
+  const completed = localStorage.getItem(getTutorialKey())
+  if (!completed) {
+    // 延遲顯示歡迎卡片，確保頁面已渲染
+    setTimeout(() => {
+      showWelcomeBanner.value = true
+    }, 500)
+  }
+}
+
+// 手動顯示教學（點擊 info 按鈕時）
+const showTutorialManually = () => {
+  // 重置教學狀態
+  currentStepIndex.value = 0
+  showTutorialTooltip.value = false
+  // 顯示歡迎卡片
+  showWelcomeBanner.value = true
+}
+
+// 開始教學
+const startTutorial = () => {
+  showWelcomeBanner.value = false
+  currentStepIndex.value = 0
+
+  // 延遲顯示提示，確保歡迎卡片已關閉
+  setTimeout(() => {
+    showTutorialTooltip.value = true
+  }, 300)
+}
+
+// 下一步
+const nextTutorialStep = () => {
+  if (currentStepIndex.value < tutorialSteps.value.length - 1) {
+    currentStepIndex.value++
+  } else {
+    // 完成教學
+    completeTutorial()
+  }
+}
+
+// 上一步
+const prevTutorialStep = () => {
+  if (currentStepIndex.value > 0) {
+    currentStepIndex.value--
+  }
+}
+
+// 跳過教學
+const skipTutorial = () => {
+  showWelcomeBanner.value = false
+  showTutorialTooltip.value = false
+  completeTutorial()
+}
+
+// 完成教學
+const completeTutorial = () => {
+  localStorage.setItem(getTutorialKey(), 'true')
+  showTutorialTooltip.value = false
+  showToast && showToast('新手指引已完成！', 2000)
+}
+
 // 頁面載入時獲取任務
 onMounted(() => {
   loadTasks()
   // 啟動輪詢
   startPollingForSubtasks()
+  // 檢查並顯示新手指引
+  checkTutorialStatus()
 })
 
 // 頁面卸載時清理定時器

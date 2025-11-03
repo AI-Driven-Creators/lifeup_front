@@ -2,8 +2,18 @@
   <!-- 調整高度避免被底部導航影響，並確保內容區域可滾動 -->
   <div class="flex flex-col min-h-screen bg-primary-50">
     <!-- 頁面標題 -->
-    <div class="shrink-0">
+    <div class="shrink-0 relative">
       <PageHeader title="任務總覽" />
+      <!-- 新手教學按鈕 -->
+      <button
+        @click="showTutorialManually"
+        class="absolute top-1/2 -translate-y-1/2 right-4 w-8 h-8 flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-sm transition-all"
+        title="查看新手教學"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
     </div>
 
     <!-- 可滾動內容區域 -->
@@ -105,6 +115,37 @@
       @close="handleCloseCreateDialog"
       @created="handleTaskCreated"
     />
+
+    <!-- 新手指引：歡迎卡片 -->
+    <WelcomeBanner
+      :show="showWelcomeBanner"
+      title="歡迎來到任務總覽！"
+      description="這裡是您的任務指揮中心，管理所有類型的任務，追蹤您的成長進度。讓我們快速了解如何使用這個頁面吧！"
+      icon="🎯"
+      :features="[
+        '查看所有任務類型的概覽和完成情況',
+        '快速進入不同類型的任務頁面',
+        '透過浮動按鈕創建新任務',
+        '追蹤活躍任務數量和完成率'
+      ]"
+      @start-tutorial="startTutorial"
+      @skip="skipTutorial"
+    />
+
+    <!-- 新手指引：浮動提示 -->
+    <TutorialTooltip
+      :show="showTutorialTooltip"
+      :targetSelector="currentTutorialStep.targetSelector"
+      :title="currentTutorialStep.title"
+      :description="currentTutorialStep.description"
+      :icon="currentTutorialStep.icon"
+      :currentStep="currentStepIndex + 1"
+      :totalSteps="tutorialSteps.length"
+      :placement="currentTutorialStep.placement"
+      @next="nextTutorialStep"
+      @prev="prevTutorialStep"
+      @skip="skipTutorial"
+    />
   </div>
 </template>
 
@@ -114,6 +155,8 @@ import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import TaskTypeCard from '@/components/features/TaskTypeCard.vue'
 import CreateTaskDialog from '@/components/features/CreateTaskDialog.vue'
+import WelcomeBanner from '@/components/common/WelcomeBanner.vue'
+import TutorialTooltip from '@/components/common/TutorialTooltip.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
@@ -301,6 +344,113 @@ const navigateToCreateTask = () => {
   showCreateDialog.value = true
 }
 
+// ========== 新手指引系統 ==========
+const TUTORIAL_KEY = 'mission-page-tutorial-completed'
+
+// 新手指引狀態
+const showWelcomeBanner = ref(false)
+const showTutorialTooltip = ref(false)
+const currentStepIndex = ref(0)
+
+// 教學步驟定義
+interface TutorialStep {
+  targetSelector: string
+  title: string
+  description: string
+  icon: string
+  placement: 'top' | 'bottom' | 'left' | 'right'
+}
+
+const tutorialSteps = ref<TutorialStep[]>([
+  {
+    targetSelector: '.bg-white.rounded-lg.p-4.mb-6.shadow-sm',
+    title: '任務統計總覽',
+    description: '這裡顯示您所有任務的統計數據，包括活躍任務數量、任務完成數和整體完成率。',
+    icon: '📊',
+    placement: 'bottom'
+  },
+  {
+    targetSelector: '.space-y-3.pb-4',
+    title: '任務類型卡片',
+    description: '點擊任意卡片可進入該類型的任務列表。每個卡片顯示任務數量和完成進度。',
+    icon: '📋',
+    placement: 'top'
+  },
+  {
+    targetSelector: '.fixed.bottom-24.right-6',
+    title: '創建新任務',
+    description: '點擊右下角的浮動按鈕可以快速創建新任務。您可以選擇任務類型、設定難度和獎勵。',
+    icon: '➕',
+    placement: 'left'
+  }
+])
+
+const currentTutorialStep = computed(() => {
+  return tutorialSteps.value[currentStepIndex.value] || tutorialSteps.value[0]
+})
+
+// 檢查是否已完成教學
+const checkTutorialStatus = () => {
+  const completed = localStorage.getItem(TUTORIAL_KEY)
+  if (!completed) {
+    // 延遲顯示歡迎卡片，確保頁面已渲染
+    setTimeout(() => {
+      showWelcomeBanner.value = true
+    }, 500)
+  }
+}
+
+// 手動顯示教學（點擊 info 按鈕時）
+const showTutorialManually = () => {
+  // 重置教學狀態
+  currentStepIndex.value = 0
+  showTutorialTooltip.value = false
+  // 顯示歡迎卡片
+  showWelcomeBanner.value = true
+}
+
+// 開始教學
+const startTutorial = () => {
+  showWelcomeBanner.value = false
+  currentStepIndex.value = 0
+
+  // 延遲顯示提示，確保歡迎卡片已關閉
+  setTimeout(() => {
+    showTutorialTooltip.value = true
+  }, 300)
+}
+
+// 下一步
+const nextTutorialStep = () => {
+  if (currentStepIndex.value < tutorialSteps.value.length - 1) {
+    currentStepIndex.value++
+  } else {
+    // 完成教學
+    completeTutorial()
+  }
+}
+
+// 上一步
+const prevTutorialStep = () => {
+  if (currentStepIndex.value > 0) {
+    currentStepIndex.value--
+  }
+}
+
+// 跳過教學
+const skipTutorial = () => {
+  showWelcomeBanner.value = false
+  showTutorialTooltip.value = false
+  completeTutorial()
+}
+
+// 完成教學
+const completeTutorial = () => {
+  localStorage.setItem(TUTORIAL_KEY, 'true')
+  showTutorialTooltip.value = false
+  showToast && showToast('新手指引已完成！', 2000)
+}
+
 // 處理創建任務對話框關閉
 const handleCloseCreateDialog = () => {
   showCreateDialog.value = false
@@ -373,6 +523,9 @@ onMounted(() => {
       }
     }
   }
+
+  // 檢查並顯示新手指引
+  checkTutorialStatus()
 })
 
 // 清理 sessionStorage
