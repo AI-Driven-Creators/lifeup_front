@@ -359,6 +359,13 @@ import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
 import type { Task } from '@/types'
 import TaskProgressBar from '@/components/common/TaskProgressBar.vue'
+import SimpleDailyTaskDetail from '@/components/features/SimpleDailyTaskDetail.vue'
+import RecurringTaskDetail from '@/components/features/RecurringTaskDetail.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import SkillTags from '@/components/common/SkillTags.vue'
+import CreateSubtaskDialog from '@/components/features/CreateSubtaskDialog.vue'
+import EditSubtaskDialog from '@/components/features/EditSubtaskDialog.vue'
+import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
 import { AlertTriangle, Calendar } from 'lucide-vue-next'
 
 const route = useRoute()

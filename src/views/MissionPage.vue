@@ -349,17 +349,6 @@ const handleTaskCreated = async (newTask: Task) => {
   }
 }
 
-// 快速操作方法
-const showActiveTasksOnly = () => {
-  // 導航到主線任務頁面並預設篩選活躍任務
-  router.push('/mission/main')
-}
-
-const showTodayTasks = () => {
-  // 導航到每日任務頁面
-  router.push('/mission/daily')
-}
-
 // 頁面載入時獲取任務
 onMounted(() => {
   loadTasksByType()

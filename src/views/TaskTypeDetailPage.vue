@@ -128,6 +128,25 @@
         </button>
       </div>
     </div>
+
+    <!-- 創建任務浮動按鈕 -->
+    <button
+      @click="navigateToCreateTask"
+      class="fixed bottom-24 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center z-10"
+      :title="`創建${taskTypeConfig.title}`"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+
+    <!-- 創建任務對話框 -->
+    <CreateTaskDialog
+      :show="showCreateDialog"
+      :defaultTaskType="taskType"
+      @close="handleCloseCreateDialog"
+      @created="handleTaskCreated"
+    />
   </div>
 </div>
 </template>
@@ -137,6 +156,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TaskStatusFilter from '@/components/features/TaskStatusFilter.vue'
 import MissionTaskCard from '@/components/features/MissionTaskCard.vue'
+import CreateTaskDialog from '@/components/features/CreateTaskDialog.vue'
 import { useTaskStore } from '@/stores/task'
 import { useUserStore } from '@/stores/user'
 import { apiClient } from '@/services/api'
@@ -154,6 +174,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const activeStatusFilters = ref<string[]>([])
 const pollingTimer = ref<number | null>(null) // 輪詢定時器
+const showCreateDialog = ref(false) // 顯示創建任務對話框
 
 // 獲取任務類型
 const taskType = computed(() => route.params.type as string)
@@ -362,6 +383,33 @@ const stopPolling = () => {
     clearInterval(pollingTimer.value)
     pollingTimer.value = null
     console.log('[TaskTypeDetailPage] 輪詢已停止')
+  }
+}
+
+// 顯示創建任務對話框
+const navigateToCreateTask = () => {
+  showCreateDialog.value = true
+}
+
+// 處理創建任務對話框關閉
+const handleCloseCreateDialog = () => {
+  showCreateDialog.value = false
+}
+
+// 處理任務創建成功
+const handleTaskCreated = async (newTask: Task) => {
+  try {
+    // 關閉對話框
+    showCreateDialog.value = false
+
+    // 重新載入任務以確保數據同步
+    await loadTasks()
+
+    console.log('任務創建成功:', newTask)
+    console.log('當前任務列表:', tasks.value)
+  } catch (error) {
+    console.error('處理新任務失敗:', error)
+    await loadTasks()
   }
 }
 

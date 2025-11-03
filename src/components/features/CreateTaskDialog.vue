@@ -36,18 +36,22 @@
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">
               任務類型 <span class="text-red-500">*</span>
+              <span v-if="defaultTaskType" class="text-xs text-gray-500 ml-2">(已鎖定類型)</span>
             </label>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="type in taskTypes"
                 :key="type.value"
                 type="button"
-                @click="form.task_type = type.value"
+                @click="!defaultTaskType && (form.task_type = type.value)"
+                :disabled="!!defaultTaskType"
                 :class="[
                   'p-3 rounded-lg border-2 transition-all text-left',
                   form.task_type === type.value
                     ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-gray-200',
+                  defaultTaskType && type.value !== form.task_type ? 'opacity-30' : '',
+                  defaultTaskType ? 'cursor-not-allowed' : 'cursor-pointer hover:border-gray-300'
                 ]"
               >
                 <div class="flex items-center gap-2">
@@ -371,6 +375,7 @@ import { useUserStore } from '@/stores/user'
 interface Props {
   show: boolean
   editTaskData?: any
+  defaultTaskType?: string // 預設任務類型，如果提供則鎖定類型選擇
 }
 
 interface Emits {
@@ -522,7 +527,7 @@ const validateForm = () => {
 const resetForm = () => {
   form.value = {
     title: '',
-    task_type: 'main',
+    task_type: props.defaultTaskType || 'main', // 使用預設任務類型
     description: '',
     priority: 1,
     difficulty: 1,
@@ -836,8 +841,11 @@ onMounted(() => {
 })
 
 // 監聽對話框顯示狀態和編輯資料，檢查是否有預填資料
-watch([() => props.show, () => props.editTaskData], ([isShow, editData]) => {
-  if (isShow && editData) {
+watch([() => props.show, () => props.editTaskData, () => props.defaultTaskType], ([isShow, editData, defaultType]) => {
+  if (isShow && !editData && defaultType) {
+    // 如果打開對話框且有預設類型但沒有編輯資料，設置任務類型
+    form.value.task_type = defaultType
+  } else if (isShow && editData) {
     try {
       console.log('載入編輯資料:', editData)
 
