@@ -4,7 +4,7 @@
     <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="text-2xl">🔄</span>
-        <h3 class="text-lg font-bold text-purple-900">常駐目標概覽</h3>
+        <h3 class="text-lg font-bold text-purple-900">目標概覽</h3>
       </div>
 
       <div class="space-y-2 text-sm">
@@ -28,49 +28,6 @@
           <span class="text-purple-700">剩餘天數：</span>
           <span class="font-medium text-purple-900">{{ remainingDays }} 天</span>
         </div>
-      </div>
-    </div>
-
-    <!-- 今日快速操作 -->
-    <div class="bg-white border border-gray-200 rounded-lg p-4">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-xl">⚡</span>
-        <h3 class="text-base font-bold text-gray-900">今日操作</h3>
-      </div>
-
-      <!-- 今日狀態 -->
-      <div class="mb-3 p-3 rounded-lg" :class="todayStatusBgClass">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">{{ todayStatusIcon }}</span>
-            <div>
-              <p class="font-medium" :class="todayStatusTextClass">{{ todayStatusText }}</p>
-              <p class="text-xs text-gray-500 mt-0.5">{{ formatDate(new Date()) }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 快速操作按鈕 -->
-      <div class="flex gap-2">
-        <button
-          v-if="!isTodayCompleted"
-          @click="$emit('toggle-status', todaySubtask?.id)"
-          :disabled="loading"
-          class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          <span>✅</span>
-          <span>{{ todaySubtask ? '標記完成' : '開始並完成' }}</span>
-        </button>
-        <button
-          v-else
-          @click="$emit('toggle-status', todaySubtask?.id, true)"
-          :disabled="loading"
-          class="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          <span>↩️</span>
-          <span>取消完成</span>
-        </button>
       </div>
     </div>
 

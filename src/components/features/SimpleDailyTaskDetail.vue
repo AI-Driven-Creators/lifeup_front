@@ -47,49 +47,6 @@
       <SkillTags :skill-tags="skillObjects" />
     </div>
 
-    <!-- 快速操作區 -->
-    <div class="bg-white border border-gray-200 rounded-lg p-4">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-xl">⚡</span>
-        <h3 class="text-base font-bold text-gray-900">今日操作</h3>
-      </div>
-
-      <!-- 今日狀態 -->
-      <div class="mb-3 p-3 rounded-lg" :class="statusBgClass">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">{{ statusIcon }}</span>
-            <div>
-              <p class="font-medium" :class="statusTextClass">{{ statusText }}</p>
-              <p class="text-xs text-gray-500 mt-0.5">{{ todayDate }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 快速操作按鈕 -->
-      <div class="flex gap-2">
-        <button
-          v-if="!isCompleted"
-          @click="$emit('toggle-status')"
-          :disabled="loading"
-          class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          <span>{{ isInProgress ? '✅' : '▶️' }}</span>
-          <span>{{ isInProgress ? '標記完成' : '開始任務' }}</span>
-        </button>
-        <button
-          v-else
-          @click="$emit('toggle-status', true)"
-          :disabled="loading"
-          class="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          <span>↩️</span>
-          <span>取消完成</span>
-        </button>
-      </div>
-    </div>
-
     <!-- 簡易歷史記錄 -->
     <!-- 今日行動不會有子任務，暫時隱藏此區塊 -->
     <!-- <div class="bg-white border border-gray-200 rounded-lg p-4">
