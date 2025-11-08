@@ -3,20 +3,20 @@
     <!-- 職業選擇引導 -->
     <CareerSelectionGuide />
 
-    <!-- 重新測驗按鈕 - 固定在頁面右上角 -->
-    <div class="absolute top-6 right-6 z-10">
-      <button
-        @click="$emit('reset')"
-        class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-lg shadow-gray-200/50 flex items-center space-x-2 transition-colors"
-      >
-        <span>🔄</span>
-        <span>重新測驗</span>
-      </button>
-    </div>
-
     <div class="max-w-4xl mx-auto px-4 py-8 pb-20 space-y-12">
       <!-- 標題區域 -->
-      <div class="text-center pt-16">
+      <div class="relative text-center pt-16">
+        <!-- 重新測驗按鈕 -->
+        <div class="absolute top-0 right-0">
+          <button
+            @click="$emit('reset')"
+            class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-lg shadow-gray-200/50 flex items-center space-x-2 transition-colors"
+          >
+            <RotateCcw :size="16" />
+            <span>重新測驗</span>
+          </button>
+        </div>
+
         <h1 class="text-3xl font-semibold text-gray-800 mb-4">
           你的天職分析報告
         </h1>
@@ -75,8 +75,7 @@
 
       <!-- 價值觀區域 -->
       <div>
-        <div class="flex items-center space-x-3 mb-4">
-          <span class="text-blue-600 text-xl">❤️</span>
+        <div class="mb-4">
           <div>
             <h2 class="text-xl font-semibold text-gray-900">你的核心價值觀</h2>
             <p class="text-gray-500 text-sm">
@@ -107,8 +106,7 @@
 
       <!-- 興趣領域區域 -->
       <div>
-        <div class="flex items-center space-x-3 mb-4">
-          <span class="text-emerald-600 text-xl">📖</span>
+        <div class="mb-4">
           <div>
             <h2 class="text-xl font-semibold text-gray-900">你的興趣領域</h2>
             <p class="text-gray-500 text-sm">
@@ -139,8 +137,7 @@
 
       <!-- 天賦區域 -->
       <div>
-        <div class="flex items-center space-x-3 mb-4">
-          <span class="text-violet-600 text-xl">🧠</span>
+        <div class="mb-4">
           <div>
             <h2 class="text-xl font-semibold text-gray-900">你的天賦特質</h2>
             <p class="text-gray-500 text-sm">這些是你天生具備的能力優勢</p>
@@ -172,8 +169,7 @@
 
       <!-- Career Suggestions -->
       <div>
-        <div class="flex items-center space-x-3 mb-4">
-          <span class="text-green-600 text-xl">💼</span>
+        <div class="mb-4">
           <div>
             <h2 class="text-xl font-semibold text-gray-900">適合你的職業建議</h2>
             <div class="text-gray-600 text-sm leading-relaxed">
@@ -210,8 +206,7 @@
 
               <!-- 推薦理由 -->
               <div class="mb-4">
-                <h4 class="text-sm font-medium text-green-700 mb-2 flex items-center">
-                  <span class="mr-2">📈</span>
+                <h4 class="text-sm font-medium text-green-700 mb-2">
                   推薦理由
                 </h4>
                 <p class="text-sm text-gray-700 leading-relaxed pl-6">{{ career.reasonText }}</p>
@@ -221,10 +216,9 @@
               <div class="pl-6">
                 <button
                   @click="selectCareer(career)"
-                  class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm inline-flex items-center space-x-2"
+                  class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm"
                 >
-                  <span>🎯</span>
-                  <span>選擇此職業並開始規劃</span>
+                  選擇職業並開始規劃
                 </button>
               </div>
 
@@ -273,10 +267,9 @@
               <div class="pl-6">
                 <button
                   @click="selectCareer(career)"
-                  class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm inline-flex items-center space-x-2"
+                  class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm"
                 >
-                  <span>🎯</span>
-                  <span>選擇此職業並開始規劃</span>
+                  選擇職業並開始規劃
                 </button>
               </div>
 
@@ -312,10 +305,9 @@
               <div class="pl-6">
                 <button
                   @click="selectCareer(career)"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg font-medium transition-colors text-sm inline-flex items-center space-x-1"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg font-medium transition-colors text-sm"
                 >
-                  <span>🎯</span>
-                  <span>選擇此職業</span>
+                  選擇職業並開始規劃
                 </button>
               </div>
             </div>
@@ -361,7 +353,7 @@
 
     <!-- 說明文字 (只在結果階段顯示) -->
     <div v-if="currentStage === 'results'" class="text-center text-sm text-gray-500 py-8 max-w-4xl mx-auto px-4">
-      <p>⏰ 測驗完成時間約15分鐘 | 結果供參考，建議搭配實際體驗驗證</p>
+      <p>測驗完成時間約15分鐘 | 結果供參考，建議搭配實際體驗驗證</p>
     </div>
   </div>
 </template>
@@ -371,6 +363,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import careerDatabaseData from '../../data/careerDatabase.js'
+import { RotateCcw } from 'lucide-vue-next'
 const { CAREER_DATABASE } = careerDatabaseData
 import CareerSurveyModal from './CareerSurveyModal.vue'
 import CareerSelectionGuide from '@/components/common/CareerSelectionGuide.vue'

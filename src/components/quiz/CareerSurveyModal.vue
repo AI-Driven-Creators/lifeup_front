@@ -12,8 +12,7 @@
         <div v-if="currentStage === 'survey'">
           <!-- Modal Header with Close Button -->
           <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center space-x-3">
-              <span class="text-blue-600 text-xl">💼</span>
+            <div>
               <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
             </div>
             <button

@@ -69,7 +69,10 @@
 
             <!-- 能力特色 -->
             <div v-if="talents?.attributes">
-              <h4 class="text-sm font-medium text-gray-600 mb-3">⚡ 你的能力特色</h4>
+              <h4 class="text-sm font-medium text-gray-600 mb-3 flex items-center">
+                <Zap class="h-4 w-4 mr-1.5" />
+                你的能力特色
+              </h4>
               <div class="grid grid-cols-3 gap-3">
                 <div 
                   v-for="(attr, index) in topAttributes" 
@@ -89,8 +92,7 @@
       <!-- Values Section -->
       <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8">
         <div class="mb-6">
-          <div class="flex items-center space-x-3 mb-3">
-            <Heart class="h-6 w-6 text-blue-600" />
+          <div class="mb-3">
             <h2 class="text-xl font-semibold text-gray-900">你的核心價值觀</h2>
           </div>
           <p class="text-gray-500 text-sm font-normal">
@@ -120,8 +122,7 @@
       <!-- Interests Section -->
       <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8">
         <div class="mb-6">
-          <div class="flex items-center space-x-3 mb-3">
-            <BookOpen class="h-6 w-6 text-emerald-600" />
+          <div class="mb-3">
             <h2 class="text-xl font-semibold text-gray-900">你的興趣領域</h2>
           </div>
           <p class="text-gray-500 text-sm font-normal">
@@ -153,8 +154,7 @@
         <!-- 前五大天賦 -->
         <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8">
           <div class="mb-6">
-            <div class="flex items-center space-x-3 mb-3">
-              <Brain class="h-6 w-6 text-violet-600" />
+            <div class="mb-3">
               <h2 class="text-xl font-semibold text-gray-900">你的前五大天賦</h2>
             </div>
             <p class="text-gray-500 text-sm font-normal">基於蓋洛普天賦測驗的評估結果</p>
@@ -213,8 +213,7 @@
           <div v-if="isScenarioWorkStyle" class="space-y-6">
             <!-- 工作風格類型 -->
             <div class="mb-10">
-              <h3 class="text-base font-semibold text-gray-800 mb-6 flex items-center">
-                <Briefcase class="h-5 w-5 mr-2 text-green-600" />
+              <h3 class="text-base font-semibold text-gray-800 mb-6">
                 你的工作風格類型
               </h3>
               <div class="text-center p-6">
@@ -235,8 +234,7 @@
             
             <!-- 核心工作特質 -->
             <div v-if="workstyle.traitScores" class="mb-10">
-              <h3 class="text-base font-semibold text-gray-800 mb-6 flex items-center">
-                <Star class="h-5 w-5 mr-2 text-yellow-600" />
+              <h3 class="text-base font-semibold text-gray-800 mb-6">
                 核心工作特質
               </h3>
               <div class="grid md:grid-cols-2 gap-4">
@@ -261,20 +259,19 @@
             
             <!-- 維度分析 -->
             <div v-if="workstyle.dimensionScores" class="mb-10">
-              <h3 class="text-base font-semibold text-gray-800 mb-6 flex items-center">
-                <Brain class="h-5 w-5 mr-2 text-blue-600" />
+              <h3 class="text-base font-semibold text-gray-800 mb-6">
                 你是什麼樣的工作者？
               </h3>
               <p class="text-gray-600 mb-4 text-sm">
                 根據你在30個工作情境中的選擇，我們發現你是這樣的人：
               </p>
               <div class="space-y-3">
-                <div 
-                  v-for="([dimension, data], index) in topDimensions" 
+                <div
+                  v-for="([dimension, data], index) in topDimensions"
                   :key="dimension"
                   class="flex items-center space-x-4 py-4 border-b border-gray-100 last:border-b-0"
                 >
-                  <div class="text-2xl">{{ getDimensionIcon(data.name || dimension) }}</div>
+                  <component :is="getDimensionIcon(data.name || dimension)" class="h-6 w-6 text-blue-600" />
                   <div class="flex-1">
                     <p class="text-gray-800 font-medium">
                       {{ getPersonalityDescription(data.name || dimension) }}
@@ -289,8 +286,7 @@
           <div v-else class="space-y-6">
             <!-- 整體工作風格概況 -->
             <div class="bg-white/80 backdrop-blur-sm rounded-lg p-6 border border-blue-100">
-              <h3 class="text-base font-semibold text-gray-800 mb-6 flex items-center">
-                <Brain class="h-5 w-5 mr-2 text-blue-600" />
+              <h3 class="text-base font-semibold text-gray-800 mb-6">
                 工作風格概況
               </h3>
               <div class="grid md:grid-cols-2 gap-4">
@@ -339,8 +335,7 @@
 
             <!-- 主要工作風格 -->
             <div v-if="workstyle.primaryStyles" class="bg-purple-50 rounded-lg p-6 border border-purple-100">
-              <h3 class="text-base font-semibold text-gray-800 mb-4 flex items-center">
-                <Zap class="h-5 w-5 mr-2 text-purple-600" />
+              <h3 class="text-base font-semibold text-gray-800 mb-4">
                 你的核心工作風格
               </h3>
               <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -363,8 +358,7 @@
 
           <!-- 工作環境建議 -->
           <div v-if="workstyle.recommendations" class="bg-green-50 rounded-lg p-6 border border-green-100">
-            <h3 class="text-base font-semibold text-gray-800 mb-4 flex items-center">
-              <MessageSquare class="h-5 w-5 mr-2 text-green-600" />
+            <h3 class="text-base font-semibold text-gray-800 mb-4">
               個人化工作建議
             </h3>
             <div class="grid md:grid-cols-2 gap-6">
@@ -375,7 +369,10 @@
                 </ul>
               </div>
               <div v-if="workstyle.recommendations.collaborationTips?.length > 0">
-                <h4 class="font-medium text-blue-700 mb-2">🤝 協作建議</h4>
+                <h4 class="font-medium text-blue-700 mb-2 flex items-center">
+                  <Handshake class="h-4 w-4 mr-1.5" />
+                  協作建議
+                </h4>
                 <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
                   <li v-for="tip in workstyle.recommendations.collaborationTips" :key="tip">{{ tip }}</li>
                 </ul>
@@ -387,7 +384,10 @@
                 </ul>
               </div>
               <div v-if="workstyle.recommendations.developmentAreas?.length > 0">
-                <h4 class="font-medium text-orange-700 mb-2">📈 發展建議</h4>
+                <h4 class="font-medium text-orange-700 mb-2 flex items-center">
+                  <TrendingUp class="h-4 w-4 mr-1.5" />
+                  發展建議
+                </h4>
                 <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
                   <li v-for="area in workstyle.recommendations.developmentAreas" :key="area">{{ area }}</li>
                 </ul>
@@ -401,8 +401,7 @@
       <!-- Career Suggestions -->
       <div class="bg-white rounded-2xl lg:rounded-3xl shadow-lg lg:shadow-xl shadow-gray-200/50 border p-6 lg:p-8">
         <div class="mb-8">
-          <div class="flex items-center space-x-3 mb-4">
-            <Target class="h-6 w-6 text-blue-500" />
+          <div class="mb-4">
             <h2 class="text-xl font-semibold text-gray-900">天職方向建議</h2>
           </div>
           <div class="text-gray-500 text-sm font-normal">
@@ -422,22 +421,18 @@
               <div v-if="index > 0" class="border-t border-gray-300 mx-4 my-8"></div>
               <div class="border border-green-200 rounded-xl lg:rounded-2xl p-6 lg:p-8 bg-emerald-50 mb-8 lg:mb-12">
                 <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center space-x-3">
-                    <Briefcase class="h-6 w-6 text-green-600" />
-                    <div>
-                      <h3 class="text-xl font-medium text-gray-900">{{ career.name }}</h3>
-                      <p class="text-gray-500 mt-2 text-sm font-light">{{ career.description }}</p>
-                    </div>
+                  <div class="flex-1">
+                    <h3 class="text-xl font-medium text-gray-900">{{ career.name }}</h3>
+                    <p class="text-gray-500 mt-2 text-sm font-light">{{ career.description }}</p>
                   </div>
-                  <div class="bg-green-100 text-green-800 text-sm font-medium px-4 py-1 rounded-full whitespace-nowrap">
+                  <div class="bg-green-100 text-green-800 text-sm font-medium px-4 py-1 rounded-full whitespace-nowrap ml-4">
                     匹配度 {{ career.matchPercentage }}%
                   </div>
                 </div>
                 
                 <div class="space-y-4">
                   <div>
-                    <h4 class="font-medium text-gray-700 mb-3 flex items-center">
-                      <TrendingUp class="h-4 w-4 mr-2" />
+                    <h4 class="font-medium text-gray-700 mb-3">
                       為什麼推薦這個職業給你？
                     </h4>
                     
@@ -447,12 +442,12 @@
                       <div class="grid md:grid-cols-2 gap-4">
                         
                         <!-- 價值觀匹配詳情 -->
-                        <div v-if="career.valueMatches > 0" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-red-700 mb-2">價值觀契合 ({{ career.valueMatches }} 項)</h6>
+                        <div v-if="getMatchedValues(career).length > 0" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-red-700 mb-2">價值觀契合 ({{ getMatchedValues(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="value in getMatchedValues(career)" 
-                              :key="value.id" 
+                            <span
+                              v-for="value in getMatchedValues(career)"
+                              :key="value.id"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ value.name }}
@@ -461,12 +456,12 @@
                         </div>
                         
                         <!-- 興趣匹配詳情 -->
-                        <div v-if="career.interestMatches > 0" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-green-700 mb-2">興趣吻合 ({{ career.interestMatches }} 項)</h6>
+                        <div v-if="getMatchedInterests(career).length > 0" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-green-700 mb-2">興趣吻合 ({{ getMatchedInterests(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="interest in getMatchedInterests(career)" 
-                              :key="interest.id" 
+                            <span
+                              v-for="interest in getMatchedInterests(career)"
+                              :key="interest.id"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ interest.name }}
@@ -475,12 +470,12 @@
                         </div>
                         
                         <!-- 天賦匹配詳情 -->
-                        <div v-if="career.talentMatches > 0 && talents?.topTalents" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-purple-700 mb-2">天賦優勢 ({{ career.talentMatches }} 項)</h6>
+                        <div v-if="getMatchedTalents(career).length > 0 && talents?.topTalents" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-purple-700 mb-2">天賦優勢 ({{ getMatchedTalents(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="talentName in getMatchedTalents(career)" 
-                              :key="talentName" 
+                            <span
+                              v-for="talentName in getMatchedTalents(career)"
+                              :key="talentName"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ talentName }}
@@ -500,7 +495,10 @@
 
                     <!-- 發展建議 -->
                     <div v-if="career.nextSteps?.length" class="bg-white rounded-xl lg:rounded-2xl p-5 lg:p-6 mb-4 lg:mb-6 border border-green-100 shadow-lg shadow-gray-200/50">
-                      <h5 class="text-lg font-medium text-gray-900 mb-4">🚀 發展建議</h5>
+                      <h5 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                        <Rocket class="h-5 w-5 mr-2" />
+                        發展建議
+                      </h5>
                       <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
                         <li v-for="step in career.nextSteps" :key="step">{{ step }}</li>
                       </ul>
@@ -510,10 +508,9 @@
                     <div v-if="currentStage === 'results'" class="bg-white rounded-xl lg:rounded-2xl p-5 lg:p-6 border border-green-100 shadow-lg shadow-gray-200/50 text-center">
                       <button
                         @click="selectCareer(career)"
-                        class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                        class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                       >
-                        <Target class="h-5 w-5" />
-                        <span>選擇此職業並開始規劃</span>
+                        選擇職業並開始規劃
                       </button>
                     </div>
                   </div>
@@ -534,22 +531,18 @@
               <div v-if="index > 0" class="border-t border-gray-300 mx-4 my-8"></div>
               <div class="border border-purple-200 rounded-xl lg:rounded-2xl p-6 lg:p-8 bg-violet-50 mb-8 lg:mb-12">
                 <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center space-x-3">
-                    <Briefcase class="h-6 w-6 text-purple-600" />
-                    <div>
-                      <h3 class="text-xl font-medium text-gray-900">{{ career.name }}</h3>
-                      <p class="text-gray-500 mt-2 text-sm font-light">{{ career.description }}</p>
-                    </div>
+                  <div class="flex-1">
+                    <h3 class="text-xl font-medium text-gray-900">{{ career.name }}</h3>
+                    <p class="text-gray-500 mt-2 text-sm font-light">{{ career.description }}</p>
                   </div>
-                  <div class="bg-purple-100 text-purple-800 text-sm font-medium px-4 py-1 rounded-full whitespace-nowrap">
+                  <div class="bg-purple-100 text-purple-800 text-sm font-medium px-4 py-1 rounded-full whitespace-nowrap ml-4">
                     匹配度 {{ career.matchPercentage }}%
                   </div>
                 </div>
                 
                 <div class="space-y-4">
                   <div>
-                    <h4 class="font-medium text-gray-700 mb-3 flex items-center">
-                      <TrendingUp class="h-4 w-4 mr-2" />
+                    <h4 class="font-medium text-gray-700 mb-3">
                       為什麼推薦這個職業給你？
                     </h4>
                     
@@ -559,12 +552,12 @@
                       <div class="grid md:grid-cols-2 gap-4">
                         
                         <!-- 價值觀匹配詳情 -->
-                        <div v-if="career.valueMatches > 0" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-red-700 mb-2">價值觀契合 ({{ career.valueMatches }} 項)</h6>
+                        <div v-if="getMatchedValues(career).length > 0" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-red-700 mb-2">價值觀契合 ({{ getMatchedValues(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="value in getMatchedValues(career)" 
-                              :key="value.id" 
+                            <span
+                              v-for="value in getMatchedValues(career)"
+                              :key="value.id"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ value.name }}
@@ -573,12 +566,12 @@
                         </div>
                         
                         <!-- 興趣匹配詳情 -->
-                        <div v-if="career.interestMatches > 0" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-green-700 mb-2">興趣吻合 ({{ career.interestMatches }} 項)</h6>
+                        <div v-if="getMatchedInterests(career).length > 0" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-green-700 mb-2">興趣吻合 ({{ getMatchedInterests(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="interest in getMatchedInterests(career)" 
-                              :key="interest.id" 
+                            <span
+                              v-for="interest in getMatchedInterests(career)"
+                              :key="interest.id"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ interest.name }}
@@ -587,12 +580,12 @@
                         </div>
                         
                         <!-- 天賦匹配詳情 -->
-                        <div v-if="career.talentMatches > 0 && talents?.topTalents" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-purple-700 mb-2">天賦優勢 ({{ career.talentMatches }} 項)</h6>
+                        <div v-if="getMatchedTalents(career).length > 0 && talents?.topTalents" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-purple-700 mb-2">天賦優勢 ({{ getMatchedTalents(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="talentName in getMatchedTalents(career)" 
-                              :key="talentName" 
+                            <span
+                              v-for="talentName in getMatchedTalents(career)"
+                              :key="talentName"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ talentName }}
@@ -612,7 +605,10 @@
 
                     <!-- 發展建議 -->
                     <div v-if="career.nextSteps?.length" class="bg-white rounded-xl p-5 mb-4 border border-purple-100 shadow-lg shadow-gray-200/50">
-                      <h5 class="text-lg font-medium text-gray-900 mb-4">🚀 發展建議</h5>
+                      <h5 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                        <Rocket class="h-5 w-5 mr-2" />
+                        發展建議
+                      </h5>
                       <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
                         <li v-for="step in career.nextSteps" :key="step">{{ step }}</li>
                       </ul>
@@ -620,12 +616,11 @@
 
                     <!-- 職業選擇按鈕 - 只在結果階段顯示 -->
                     <div v-if="currentStage === 'results'" class="bg-white rounded-xl p-5 border border-purple-100 shadow-lg shadow-gray-200/50 text-center">
-                      <button 
+                      <button
                         @click="selectCareer(career)"
-                        class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                       >
-                        <Target class="h-5 w-5" />
-                        <span>選擇此職業並開始規劃</span>
+                        選擇職業並開始規劃
                       </button>
                     </div>
                   </div>
@@ -646,22 +641,18 @@
               <div v-if="index > 0" class="border-t border-gray-300 mx-4 my-8"></div>
               <div class="border border-blue-200 rounded-xl lg:rounded-2xl p-6 lg:p-8 bg-blue-50 mb-8 lg:mb-12">
                 <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center space-x-3">
-                    <Briefcase class="h-6 w-6 text-blue-600" />
-                    <div>
-                      <h3 class="text-xl font-medium text-gray-900">{{ career.name }}</h3>
-                      <p class="text-gray-500 mt-2 text-sm font-light">{{ career.description }}</p>
-                    </div>
+                  <div class="flex-1">
+                    <h3 class="text-xl font-medium text-gray-900">{{ career.name }}</h3>
+                    <p class="text-gray-500 mt-2 text-sm font-light">{{ career.description }}</p>
                   </div>
-                  <div class="bg-blue-100 text-blue-800 text-sm font-medium px-4 py-1 rounded-full whitespace-nowrap">
+                  <div class="bg-blue-100 text-blue-800 text-sm font-medium px-4 py-1 rounded-full whitespace-nowrap ml-4">
                     匹配度 {{ career.matchPercentage }}%
                   </div>
                 </div>
                 
                 <div class="space-y-4">
                   <div>
-                    <h4 class="font-medium text-gray-700 mb-3 flex items-center">
-                      <TrendingUp class="h-4 w-4 mr-2" />
+                    <h4 class="font-medium text-gray-700 mb-3">
                       為什麼值得考慮這個職業？
                     </h4>
                     
@@ -671,12 +662,12 @@
                       <div class="grid md:grid-cols-2 gap-4">
                         
                         <!-- 價值觀匹配詳情 -->
-                        <div v-if="career.valueMatches > 0" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-red-700 mb-2">價值觀契合 ({{ career.valueMatches }} 項)</h6>
+                        <div v-if="getMatchedValues(career).length > 0" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-red-700 mb-2">價值觀契合 ({{ getMatchedValues(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="value in getMatchedValues(career)" 
-                              :key="value.id" 
+                            <span
+                              v-for="value in getMatchedValues(career)"
+                              :key="value.id"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ value.name }}
@@ -685,12 +676,12 @@
                         </div>
                         
                         <!-- 興趣匹配詳情 -->
-                        <div v-if="career.interestMatches > 0" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-green-700 mb-2">興趣吻合 ({{ career.interestMatches }} 項)</h6>
+                        <div v-if="getMatchedInterests(career).length > 0" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-green-700 mb-2">興趣吻合 ({{ getMatchedInterests(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="interest in getMatchedInterests(career)" 
-                              :key="interest.id" 
+                            <span
+                              v-for="interest in getMatchedInterests(career)"
+                              :key="interest.id"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ interest.name }}
@@ -699,12 +690,12 @@
                         </div>
                         
                         <!-- 天賦匹配詳情 -->
-                        <div v-if="career.talentMatches > 0 && talents?.topTalents" class="bg-white/70 rounded-lg p-3">
-                          <h6 class="text-base font-medium text-purple-700 mb-2">天賦優勢 ({{ career.talentMatches }} 項)</h6>
+                        <div v-if="getMatchedTalents(career).length > 0 && talents?.topTalents" class="bg-white/70 rounded-lg p-3">
+                          <h6 class="text-base font-medium text-purple-700 mb-2">天賦優勢 ({{ getMatchedTalents(career).length }} 項)</h6>
                           <div class="text-sm text-gray-700">
-                            <span 
-                              v-for="talentName in getMatchedTalents(career)" 
-                              :key="talentName" 
+                            <span
+                              v-for="talentName in getMatchedTalents(career)"
+                              :key="talentName"
                               class="inline-block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-sm font-medium mr-2 mb-2"
                             >
                               {{ talentName }}
@@ -724,7 +715,10 @@
 
                     <!-- 發展建議 -->
                     <div v-if="career.nextSteps?.length" class="bg-white rounded-xl p-5 mb-4 border border-blue-100 shadow-lg shadow-gray-200/50">
-                      <h5 class="text-lg font-medium text-gray-900 mb-4">🚀 發展建議</h5>
+                      <h5 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                        <Rocket class="h-5 w-5 mr-2" />
+                        發展建議
+                      </h5>
                       <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
                         <li v-for="step in career.nextSteps" :key="step">{{ step }}</li>
                       </ul>
@@ -732,12 +726,11 @@
 
                     <!-- 職業選擇按鈕 - 只在結果階段顯示 -->
                     <div v-if="currentStage === 'results'" class="bg-white rounded-xl p-5 border border-blue-100 shadow-lg shadow-gray-200/50 text-center">
-                      <button 
+                      <button
                         @click="selectCareer(career)"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                       >
-                        <Target class="h-5 w-5" />
-                        <span>選擇此職業並開始規劃</span>
+                        選擇職業並開始規劃
                       </button>
                     </div>
                   </div>
@@ -768,8 +761,7 @@
 
         <!-- 天職發展原則 -->
         <div class="mt-8 p-6 bg-gray-50 rounded-lg">
-          <h3 class="text-base font-semibold text-gray-800 mb-4 flex items-center">
-            <Lightbulb class="h-5 w-5 mr-2" />
+          <h3 class="text-base font-semibold text-gray-800 mb-4">
             天職發展的核心原則
           </h3>
           <ul class="text-sm text-gray-600 space-y-2">
@@ -810,20 +802,25 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import CareerSurveyModal from './CareerSurveyModal.vue'
 import CareerSelectionGuide from '@/components/common/CareerSelectionGuide.vue'
-import { 
-  Heart, 
-  BookOpen, 
-  Brain, 
-  Target, 
-  Lightbulb, 
-  Briefcase, 
-  Users, 
-  TrendingUp, 
-  Star, 
-  Settings, 
-  Zap, 
-  MessageSquare, 
-  RotateCcw
+import {
+  Heart,
+  BookOpen,
+  Brain,
+  Target,
+  Lightbulb,
+  Briefcase,
+  Users,
+  TrendingUp,
+  Star,
+  Settings,
+  Zap,
+  MessageSquare,
+  RotateCcw,
+  Building,
+  Handshake,
+  BarChart,
+  Clock,
+  Rocket
 } from 'lucide-vue-next'
 import { Radar } from 'vue-chartjs'
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js'
@@ -1113,19 +1110,19 @@ const getTraitName = (trait: string) => {
 }
 
 const getDimensionIcon = (dimensionName: string) => {
-  const icons: Record<string, string> = {
-    '認知風格': '🧠',
-    '社交能量': '👥',
-    '工作環境': '🏢',
-    '協作模式': '🤝',
-    '回饋需求': '📊',
-    '壓力反應': '⚡',
-    '決策風格': '🎯',
-    '溝通偏好': '💬',
-    '學習方式': '📚',
-    '時間管理': '⏰'
+  const icons: Record<string, any> = {
+    '認知風格': Brain,
+    '社交能量': Users,
+    '工作環境': Building,
+    '協作模式': Handshake,
+    '回饋需求': BarChart,
+    '壓力反應': Zap,
+    '決策風格': Target,
+    '溝通偏好': MessageSquare,
+    '學習方式': BookOpen,
+    '時間管理': Clock
   }
-  return icons[dimensionName] || '💼'
+  return icons[dimensionName] || Briefcase
 }
 
 const getPersonalityDescription = (dimensionName: string) => {
