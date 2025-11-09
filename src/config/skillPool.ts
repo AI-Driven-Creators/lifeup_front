@@ -17,8 +17,7 @@ export const ATTRIBUTES = [
   { key: 'creativity', label: '創造力', icon: 'Palette', color: 'purple' },
   { key: 'social', label: '社交力', icon: 'Users', color: 'green' },
   { key: 'focus', label: '專注力', icon: 'Target', color: 'yellow' },
-  { key: 'adaptability', label: '適應力', icon: 'RefreshCw', color: 'indigo' },
-  { key: 'general', label: '日常技能包', icon: 'Star', color: 'gray' }
+  { key: 'adaptability', label: '適應力', icon: 'RefreshCw', color: 'indigo' }
 ] as const
 
 /**

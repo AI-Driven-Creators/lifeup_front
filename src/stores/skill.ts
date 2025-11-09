@@ -53,6 +53,7 @@ export const useSkillStore = defineStore('skill', {
       name: string;
       description?: string;
       category: Skill['category'];
+      attribute?: Skill['attribute'];
     }) {
       this.loading = true;
       this.error = null;
@@ -62,6 +63,7 @@ export const useSkillStore = defineStore('skill', {
         const backendSkillData = {
           name: skillData.name,
           description: skillData.description,
+          attribute: skillData.attribute, // 傳遞屬性到後端
           level: 1, // 新技能從等級 1 開始
           user_id: userStore.user.id, // 使用當前用戶ID
         };

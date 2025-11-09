@@ -601,8 +601,9 @@ const submitForm = async () => {
   errors.value = {}
 
   try {
-    // 先使用 AI 生成技能標籤
+    // 先使用 AI 生成技能標籤（包含屬性映射）
     let aiGeneratedSkills: string[] = []
+    let skillAttributeMap: Map<string, string> = new Map()
     try {
       const skillTagsResponse = await apiClient.generateSkillTags(
         form.value.title,
@@ -611,9 +612,14 @@ const submitForm = async () => {
       )
 
       if (skillTagsResponse.success && skillTagsResponse.data?.skills) {
-        aiGeneratedSkills = skillTagsResponse.data.skills
+        // 提取技能名稱和建立屬性映射
+        aiGeneratedSkills = skillTagsResponse.data.skills.map(item => {
+          skillAttributeMap.set(item.skill, item.attribute)
+          return item.skill
+        })
         suggestedSkills.value = aiGeneratedSkills
         console.log('✨ AI 生成技能標籤:', aiGeneratedSkills)
+        console.log('✨ 技能屬性映射:', Object.fromEntries(skillAttributeMap))
       }
     } catch (aiError) {
       console.warn('AI 生成技能標籤失敗，將繼續創建任務:', aiError)
@@ -682,12 +688,14 @@ const submitForm = async () => {
               // 檢查技能是否已存在
               const existingSkill = skillStore.skills.find(s => s.name === skillName)
               if (!existingSkill) {
-                // 創建新技能
+                // 創建新技能，使用AI返回的屬性
+                const attribute = skillAttributeMap.get(skillName) || 'intelligence'
                 await skillStore.createSkill({
                   name: skillName,
                   category: 'soft', // 預設為軟技能
+                  attribute: attribute as any, // 使用AI返回的六大屬性
                 })
-                console.log('✨ 創建新技能:', skillName)
+                console.log(`✨ 創建新技能: ${skillName} (${attribute})`)
               }
             } catch (skillError) {
               console.warn(`創建/解鎖技能 ${skillName} 失敗:`, skillError)
@@ -781,6 +789,29 @@ const createRecurringTask = async () => {
   loading.value = true
 
   try {
+    // 先使用 AI 生成技能標籤（包含屬性映射）
+    let aiGeneratedSkills: string[] = []
+    let skillAttributeMap: Map<string, string> = new Map()
+    try {
+      const skillTagsResponse = await apiClient.generateSkillTags(
+        formData.value.title,
+        formData.value.description || undefined,
+        userStore.user.id
+      )
+
+      if (skillTagsResponse.success && skillTagsResponse.data?.skills) {
+        // 提取技能名稱和建立屬性映射
+        aiGeneratedSkills = skillTagsResponse.data.skills.map(item => {
+          skillAttributeMap.set(item.skill, item.attribute)
+          return item.skill
+        })
+        console.log('✨ AI 生成技能標籤:', aiGeneratedSkills)
+        console.log('✨ 技能屬性映射:', Object.fromEntries(skillAttributeMap))
+      }
+    } catch (aiError) {
+      console.warn('AI 生成技能標籤失敗，將繼續創建任務:', aiError)
+    }
+
     // 構建請求数據
     const taskData: any = {
       title: formData.value.title,
@@ -797,9 +828,9 @@ const createRecurringTask = async () => {
       user_id: userStore.user.id
     }
 
-    // 添加技能標籤
-    if (form.value.skill_tags && form.value.skill_tags.length > 0) {
-      taskData.skill_tags = form.value.skill_tags
+    // 添加 AI 生成的技能標籤
+    if (aiGeneratedSkills.length > 0) {
+      taskData.skill_tags = aiGeneratedSkills
     }
 
     // 調用後端 API
@@ -808,13 +839,52 @@ const createRecurringTask = async () => {
     if (response.success) {
       loading.value = false
 
-      // 顯示成功提示
-      if (showToast) {
-        showToast('🎉 常駐目標創建成功！', 3000)
-      }
+      // 自動解鎖 AI 生成的技能並顯示動畫
+      if (aiGeneratedSkills.length > 0) {
+        try {
+          showSkillAnimation.value = true
 
-      emit('created', response.data)
-      closeDialog()
+          // 為每個 AI 生成的技能創建或解鎖
+          for (const skillName of aiGeneratedSkills) {
+            try {
+              // 檢查技能是否已存在
+              const existingSkill = skillStore.skills.find(s => s.name === skillName)
+              if (!existingSkill) {
+                // 創建新技能，使用AI返回的屬性
+                const attribute = skillAttributeMap.get(skillName) || 'intelligence'
+                await skillStore.createSkill({
+                  name: skillName,
+                  category: 'soft',
+                  attribute: attribute as any,
+                })
+                console.log(`✨ 創建新技能: ${skillName} (${attribute})`)
+              }
+            } catch (skillError) {
+              console.warn(`創建/解鎖技能 ${skillName} 失敗:`, skillError)
+            }
+          }
+
+          // 發送創建事件（但不關閉對話框，讓用戶觀看動畫）
+          emit('created', response.data)
+
+          // 2秒後自動關閉對話框
+          setTimeout(() => {
+            showSkillAnimation.value = false
+            closeDialog()
+          }, 2000)
+        } catch (error) {
+          console.error('技能解鎖動畫執行失敗:', error)
+          emit('created', response.data)
+          closeDialog()
+        }
+      } else {
+        // 沒有技能標籤，直接顯示成功提示並關閉
+        if (showToast) {
+          showToast('🎉 常駐目標創建成功！', 3000)
+        }
+        emit('created', response.data)
+        closeDialog()
+      }
     } else {
       throw new Error(response.message || '創建失敗')
     }

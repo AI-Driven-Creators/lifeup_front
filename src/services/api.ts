@@ -250,7 +250,7 @@ export class ApiClient {
   async generateSkillTags(taskTitle: string, taskDescription: string | undefined, userId: string) {
     return this.request<{
       success: boolean,
-      data: { skills: string[], reasoning?: string },
+      data: { skills: { skill: string, attribute: string }[] },
       message: string
     }>('/api/tasks/generate-skill-tags', {
       method: 'POST',
