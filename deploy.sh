@@ -112,7 +112,12 @@ print_info "步骤 5/5: 部署到 Nginx..."
 # 确保目标目录存在
 sudo mkdir -p "$NGINX_DIR"
 
-# 复制文件
+# 清理旧文件（避免多版本文件冲突）
+print_info "清理旧的部署文件..."
+sudo rm -rf "$NGINX_DIR"/*
+print_success "旧文件已清理"
+
+# 复制新文件
 sudo cp -r dist/* "$NGINX_DIR/"
 
 # 设置权限

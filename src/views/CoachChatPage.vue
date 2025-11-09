@@ -793,37 +793,39 @@ const generateTaskFromExpert = async () => {
 
 // 處理專家選項
 const handleExpertOption = async (option: string) => {
+  // 記錄選項（允許重複點擊）
   if (!selectedExpertOptions.value.includes(option)) {
     selectedExpertOptions.value.push(option)
-    
-    // 添加選項訊息到對話記錄
-    const optionMessages = {
-      'analyze': '📊 已選擇：分析加強方向',
-      'goals': '🎯 已選擇：生成明確目標', 
-      'resources': '📚 已選擇：建議學習資源'
-    }
-    
-    const optionMessage: ChatMessageType = {
-      id: (Date.now() + Math.random()).toString(),
-      role: 'coach',
-      content: optionMessages[option as keyof typeof optionMessages],
-      timestamp: new Date()
-    }
-    messages.value.push(optionMessage)
+  }
 
-    // 保存選項選擇訊息到資料庫
-    try {
-      await apiClient.saveChatMessage(
-        currentUserId.value,
-        'coach',
-        optionMessage.content
-      )
-    } catch (error) {
-      console.error('保存選項訊息失敗:', error)
-    }
-    
-    // 立即調用專家分析
-    if (matchedExpert.value) {
+  // 添加選項訊息到對話記錄
+  const optionMessages = {
+    'analyze': '📊 已選擇：分析加強方向',
+    'goals': '🎯 已選擇：生成明確目標',
+    'resources': '📚 已選擇：建議學習資源'
+  }
+
+  const optionMessage: ChatMessageType = {
+    id: (Date.now() + Math.random()).toString(),
+    role: 'coach',
+    content: optionMessages[option as keyof typeof optionMessages],
+    timestamp: new Date()
+  }
+  messages.value.push(optionMessage)
+
+  // 保存選項選擇訊息到資料庫
+  try {
+    await apiClient.saveChatMessage(
+      currentUserId.value,
+      'coach',
+      optionMessage.content
+    )
+  } catch (error) {
+    console.error('保存選項訊息失敗:', error)
+  }
+
+  // 立即調用專家分析
+  if (matchedExpert.value) {
       isAnalyzing.value = true
       
       // 添加分析中的訊息
@@ -935,19 +937,23 @@ const handleExpertOption = async (option: string) => {
             }
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('專家分析失敗:', error)
-        
+
+        // 顯示 Toast 錯誤通知
+        const errorMsg = error?.response?.data?.message || error?.message || '未知錯誤'
+        showToast && showToast(`分析失敗：${errorMsg}，請重試`, 3000)
+
         // 移除分析中的訊息
         const analyzingIndex = messages.value.findIndex(msg => msg.content === '正在分析中，請稍候...')
         if (analyzingIndex > -1) {
           messages.value.splice(analyzingIndex, 1)
         }
-        
+
         const errorMessage: ChatMessageType = {
           id: (Date.now() + Math.random()).toString(),
           role: 'coach',
-          content: '抱歉，分析時發生了錯誤。請稍後再試。',
+          content: '抱歉，分析時發生了錯誤。您可以再次點擊按鈕重試。',
           timestamp: new Date(),
           ephemeral: true
         }
@@ -957,25 +963,24 @@ const handleExpertOption = async (option: string) => {
       }
     }
 
-    // 添加生成任務按鈕（每次都重新添加，確保按鈕在最新位置）
-    const generateButtonMessage: ChatMessageType = {
-      id: (Date.now() + Math.random()).toString(),
-      role: 'coach',
-      content: '選項已選擇完成，點擊下方按鈕生成任務：',
-      timestamp: new Date(),
-      showGenerateButton: true
-    }
-    messages.value.push(generateButtonMessage)
-
-    // 保存生成按鈕提示到資料庫
-    try {
-      await apiClient.saveChatMessage(currentUserId.value, 'coach', generateButtonMessage.content)
-    } catch (error) {
-      console.error('保存生成按鈕提示失敗:', error)
-    }
-
-    nextTick(() => scrollToBottom())
+  // 添加生成任務按鈕（每次都重新添加，確保按鈕在最新位置）
+  const generateButtonMessage: ChatMessageType = {
+    id: (Date.now() + Math.random()).toString(),
+    role: 'coach',
+    content: '選項已選擇完成，點擊下方按鈕生成任務：',
+    timestamp: new Date(),
+    showGenerateButton: true
   }
+  messages.value.push(generateButtonMessage)
+
+  // 保存生成按鈕提示到資料庫
+  try {
+    await apiClient.saveChatMessage(currentUserId.value, 'coach', generateButtonMessage.content)
+  } catch (error) {
+    console.error('保存生成按鈕提示失敗:', error)
+  }
+
+  nextTick(() => scrollToBottom())
 }
 
 // 處理加強方向選擇
