@@ -13,6 +13,31 @@
             {{ task.title }}
           </h3>
 
+          <!-- 任務狀態標籤 -->
+          <span
+            class="px-2 py-0.5 rounded-full text-xs font-medium"
+            :class="{
+              'bg-gray-200 text-gray-700': task.status === 'pending',
+              'bg-blue-100 text-blue-700': task.status === 'in_progress' || task.status === 'daily_in_progress',
+              'bg-green-100 text-green-700': task.status === 'completed' || task.status === 'daily_completed',
+              'bg-red-100 text-red-700': task.status === 'cancelled',
+              'bg-yellow-100 text-yellow-700': task.status === 'paused',
+              'bg-orange-100 text-orange-700': task.status === 'daily_not_completed'
+            }"
+          >
+            {{
+              task.status === 'pending' ? '待開始' :
+              task.status === 'in_progress' ? '進行中' :
+              task.status === 'daily_in_progress' ? '進行中' :
+              task.status === 'completed' ? '已完成' :
+              task.status === 'daily_completed' ? '已完成' :
+              task.status === 'cancelled' ? '已取消' :
+              task.status === 'paused' ? '已暫停' :
+              task.status === 'daily_not_completed' ? '未完成' :
+              '未知'
+            }}
+          </span>
+
           <!-- 每日任務子類型標籤 -->
           <span
             v-if="task.dailyTaskSubtype === 'recurring'"
@@ -23,24 +48,14 @@
             class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
           >今日行動</span>
 
-          <!-- 編輯和刪除圖標 -->
-          <div class="ml-auto flex items-center space-x-2">
-            <!-- 編輯按鈕 -->
+          <!-- 編輯按鈕 -->
+          <div class="ml-auto">
             <button
               @click.stop="showEditDialog = true"
-              class="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
               title="編輯任務"
             >
               ✏️
-            </button>
-
-            <!-- 刪除按鈕 -->
-            <button
-              @click.stop="showDeleteDialog = true"
-              class="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded-full transition-colors"
-              title="刪除任務"
-            >
-              🗑️
             </button>
           </div>
         </div>
@@ -48,6 +63,9 @@
         <div class="flex items-center space-x-4 text-sm text-primary-700 mb-2">
           <span class="flex items-center">
             等級：{{ task.difficulty }}
+          </span>
+          <span v-if="task.priority" class="flex items-center">
+            優先級：{{ task.priority }}
           </span>
           <span class="flex items-center text-primary-600 font-medium">
             成長：{{ task.experience }} XP
@@ -83,7 +101,7 @@
         <div class="flex items-center justify-between">
           <SkillTags
             :skill-tags="skillObjects"
-            :max-display="task.is_parent_task ? 1 : undefined"
+            :dynamic-display="task.is_parent_task"
           />
 
           <!-- 難度星級 -->
@@ -99,80 +117,7 @@
           </div>
         </div>
       </div>
-      
-      <!-- 大任務控制按鈕 -->
-      <div v-if="task.is_parent_task || task.type === 'daily'" class="ml-4 flex space-x-2">
-        <button
-          v-if="task.status === 'pending' || task.status === 'daily_not_completed'"
-          class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
-          @click.stop="handleStartTask"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '處理中...' : '開始' }}
-        </button>
-        
-        <button
-          v-if="task.status === 'in_progress' || task.status === 'daily_in_progress'"
-          class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 transition-colors"
-          @click.stop="handlePauseTask"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '處理中...' : '暫停' }}
-        </button>
-        
-        <button 
-          v-if="task.status === 'paused'"
-          class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-          @click.stop="handleStartTask"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '處理中...' : '繼續' }}
-        </button>
-        
-        <button
-          v-if="['pending', 'in_progress', 'paused', 'daily_in_progress', 'daily_not_completed'].includes(task.status)"
-          class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-          @click.stop="showCancelDialog = true"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '處理中...' : '取消' }}
-        </button>
 
-        <span v-if="task.status === 'completed' || task.status === 'daily_completed'" class="px-3 py-1 bg-gray-400 text-white rounded text-sm">
-          已完成
-        </span>
-        
-        <button 
-          v-if="task.status === 'cancelled'"
-          class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-          @click.stop="showRestartDialog = true"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '處理中...' : '重新開始' }}
-        </button>
-      </div>
-      
-      <!-- 一般任務切換按鈕 -->
-      <button
-        v-else-if="!task.is_parent_task"
-        class="btn-primary ml-4"
-        :class="{
-          'bg-gray-400': task.status === 'completed' || task.status === 'daily_completed',
-          'bg-green-600': task.status === 'in_progress',
-          'bg-blue-500': task.status === 'daily_in_progress'
-        }"
-        @click.stop="handleToggle"
-      >
-        {{
-          task.status === 'completed' || task.status === 'daily_completed'
-            ? '已完成'
-            : task.status === 'in_progress'
-            ? '完成'
-            : task.status === 'daily_in_progress'
-            ? '進行中'
-            : '開始'
-        }}
-      </button>
     </div>
     
     <!-- 任務類型標籤 -->
@@ -212,6 +157,7 @@
     :task="task"
     @close="showEditDialog = false"
     @updated="handleTaskEdited"
+    @delete="showDeleteDialog = true"
   />
 
   <!-- 刪除任務確認對話框 -->

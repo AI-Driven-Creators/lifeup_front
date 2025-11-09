@@ -185,6 +185,14 @@
           <div class="flex gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
+              @click="handleDelete"
+              class="px-4 py-2 text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              :disabled="loading"
+            >
+              刪除
+            </button>
+            <button
+              type="button"
               @click="closeDialog"
               class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               :disabled="loading"
@@ -218,6 +226,7 @@ interface Props {
 interface Emits {
   (e: 'close'): void
   (e: 'updated', task: Task): void
+  (e: 'delete'): void
 }
 
 const props = defineProps<Props>()
@@ -547,5 +556,11 @@ const isQuickDuration = (days: number) => {
   const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
   return diffDays === days
+}
+
+// 處理刪除
+const handleDelete = () => {
+  emit('delete')
+  closeDialog()
 }
 </script>

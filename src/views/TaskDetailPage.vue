@@ -27,15 +27,6 @@
         >
           ✏️
         </button>
-
-        <!-- 刪除按鈕 -->
-        <button
-          @click="showDeleteDialog = true"
-          class="w-8 h-8 flex items-center justify-center text-red-600 hover:bg-red-50 rounded-full transition-colors"
-          title="刪除任務"
-        >
-          🗑️
-        </button>
       </div>
     </div>
 
@@ -71,9 +62,24 @@
         <h2 class="text-2xl font-bold text-primary-900 mb-2">
           {{ task.title }}
         </h2>
-        <p class="text-primary-700 text-base">
-          等級：{{ task.difficulty }} | 成長：{{ task.experience }} XP
-        </p>
+        <div class="flex items-center flex-wrap gap-4 text-base text-primary-700">
+          <span class="flex items-center">
+            等級：{{ task.difficulty }}
+          </span>
+          <span v-if="task.priority" class="flex items-center">
+            優先級：{{ task.priority }}
+          </span>
+          <span class="flex items-center">
+            成長：{{ task.experience }} XP
+          </span>
+        </div>
+
+        <!-- 技能標籤 -->
+        <SkillTags
+          v-if="task.skillTags && task.skillTags.length > 0"
+          :skill-tags="getSkillObjectsForTask(task)"
+          class="mt-2"
+        />
         
         <!-- 任務日期顯示 -->
         <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1 flex items-center">
@@ -108,6 +114,54 @@
             :progress="taskProgress"
             :showDailyStats="task.isRecurring || task.status === 'daily_in_progress' || task.status === 'daily_completed'"
           />
+        </div>
+
+        <!-- 父任務操作按鈕 -->
+        <div v-if="task.is_parent_task || task.type === 'daily'" class="mt-4 flex flex-wrap gap-2">
+          <button
+            v-if="task.status === 'pending' || task.status === 'daily_not_completed'"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
+            @click="handleStartTask"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? '處理中...' : '開始' }}
+          </button>
+
+          <button
+            v-if="task.status === 'in_progress' || task.status === 'daily_in_progress'"
+            class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm hover:bg-yellow-700 transition-colors"
+            @click="handlePauseTask"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? '處理中...' : '暫停' }}
+          </button>
+
+          <button
+            v-if="task.status === 'paused'"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+            @click="handleResumeTask"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? '處理中...' : '繼續' }}
+          </button>
+
+          <button
+            v-if="['pending', 'in_progress', 'paused', 'daily_in_progress', 'daily_not_completed'].includes(task.status)"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+            @click="showCancelDialog = true"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? '處理中...' : '取消任務' }}
+          </button>
+
+          <button
+            v-if="task.status === 'cancelled'"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+            @click="handleRestartTask"
+            :disabled="isLoading"
+          >
+            {{ isLoading ? '處理中...' : '重新開始' }}
+          </button>
         </div>
       </div>
 
@@ -324,6 +378,7 @@
       :task="task"
       @close="showEditDialog = false"
       @updated="handleTaskUpdated"
+      @delete="showDeleteDialog = true"
     />
 
     <!-- 刪除任務確認對話框 -->
@@ -335,6 +390,16 @@
       cancelText="取消"
       @confirm="handleDeleteTask"
       danger
+    />
+
+    <!-- 取消任務確認對話框 -->
+    <ConfirmDialog
+      v-model:visible="showCancelDialog"
+      title="取消任務"
+      :message="`確定要取消「${task?.title}」嗎？\n\n此操作將會：\n• 相關的子任務將會被刪除`"
+      confirmText="確認取消"
+      cancelText="返回"
+      @confirm="handleCancelTask"
     />
 
     <!-- 重新生成子任務確認對話框 -->
@@ -388,6 +453,7 @@ const showCreateSubtaskDialog = ref(false)
 const showEditSubtaskDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
+const showCancelDialog = ref(false)
 const showRegenerateDialog = ref(false)
 const editingSubtask = ref<Task | null>(null)
 
@@ -1090,6 +1156,98 @@ const handleDeleteTask = async () => {
     console.error('Failed to delete task:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// 處理開始任務
+const handleStartTask = async () => {
+  if (!task.value) return
+  isLoading.value = true
+  try {
+    const response = await apiClient.startTask(task.value.id)
+    if (response.success) {
+      task.value.status = 'in_progress'
+      console.log('任務已開始')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '開始任務失敗'
+    console.error('Failed to start task:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 處理暫停任務
+const handlePauseTask = async () => {
+  if (!task.value) return
+  isLoading.value = true
+  try {
+    const response = await apiClient.pauseTask(task.value.id)
+    if (response.success) {
+      task.value.status = 'paused'
+      console.log('任務已暫停')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '暫停任務失敗'
+    console.error('Failed to pause task:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 處理繼續任務
+const handleResumeTask = async () => {
+  if (!task.value) return
+  isLoading.value = true
+  try {
+    const response = await apiClient.startTask(task.value.id)
+    if (response.success) {
+      task.value.status = 'in_progress'
+      console.log('任務已繼續')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '繼續任務失敗'
+    console.error('Failed to resume task:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 處理取消任務
+const handleCancelTask = async () => {
+  if (!task.value) return
+  showCancelDialog.value = false
+  isLoading.value = true
+  try {
+    const response = await apiClient.cancelTask(task.value.id)
+    if (response.success) {
+      task.value.status = 'cancelled'
+      task.value.cancel_count = response.data?.cancel_count || (task.value.cancel_count || 0) + 1
+      console.log('任務已取消')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '取消任務失敗'
+    console.error('Failed to cancel task:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 處理重新開始任務
+const handleRestartTask = async () => {
+  if (!task.value) return
+  isLoading.value = true
+  try {
+    const response = await apiClient.restartTask(task.value.id)
+    if (response.success) {
+      task.value.status = 'pending'
+      console.log('任務已重新開始')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '重新開始任務失敗'
+    console.error('Failed to restart task:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 
