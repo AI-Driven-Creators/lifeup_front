@@ -197,6 +197,24 @@
             顯示最近3天（包含今天）
           </div>
         </div>
+
+        <!-- 子任務操作按鈕 -->
+        <div class="flex gap-3 mb-4">
+          <button
+            @click="showCreateSubtaskDialog = true"
+            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            :disabled="isLoading"
+          >
+            手動創建子任務
+          </button>
+          <button
+            @click="generateSubtasksWithAI"
+            class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            :disabled="isLoading"
+          >
+            AI 生成子任務
+          </button>
+        </div>
         
         <div class="space-y-3">
           <div
