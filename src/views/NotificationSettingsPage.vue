@@ -180,7 +180,7 @@
                 v-model="notificationSettings.morning_time"
                 @change="saveSettings"
                 :disabled="!notificationSettings.morning_enabled"
-                class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="time-input-mobile"
               />
             </div>
             <p class="text-xs text-gray-500 ml-6">提醒您今天的待辦任務</p>
@@ -203,7 +203,7 @@
                 v-model="notificationSettings.evening_time"
                 @change="saveSettings"
                 :disabled="!notificationSettings.evening_enabled"
-                class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="time-input-mobile"
               />
             </div>
             <p class="text-xs text-gray-500 ml-6">總結今天的完成進度和獲得經驗值</p>
@@ -241,7 +241,7 @@
                     v-model="schedule.time"
                     @change="saveSettings"
                     :disabled="!schedule.enabled"
-                    class="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                    class="time-input-mobile"
                   />
                   <button
                     @click="removeCustomSchedule(index)"
@@ -484,7 +484,7 @@ const toggleNotification = async () => {
       }
     } else {
       // 訂閱
-      const success = await notificationService.setupPushNotification();
+      const success = await notificationService.setupPushNotification(userStore.user?.id);
       if (success) {
         await checkSubscriptionStatus();
         permissionStatus.value = notificationService.getPermissionStatus();
@@ -504,11 +504,16 @@ const toggleNotification = async () => {
 const sendTestNotification = async () => {
   if (isLoading.value || !isSubscribed.value) return;
 
+  if (!userStore.user?.id) {
+    showError('無法發送測試通知：用戶未登入');
+    return;
+  }
+
   isLoading.value = true;
   clearMessages();
 
   try {
-    const success = await notificationService.sendTestNotification();
+    const success = await notificationService.sendTestNotification(userStore.user.id);
     if (success) {
       showSuccess('測試通知已發送，請檢查您的通知');
     } else {
@@ -768,5 +773,47 @@ onMounted(async () => {
 .slide-fade-leave-to {
   opacity: 0;
   transform: translateY(-5px);
+}
+
+/* 移動端優化的時間選擇器 */
+.time-input-mobile {
+  min-height: 44px;          /* iOS 推薦的最小觸控區域 */
+  font-size: 16px;           /* 防止 iOS Safari 自動縮放 */
+  padding: 10px 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;  /* 移除 iOS 預設樣式 */
+  appearance: none;
+}
+
+.time-input-mobile:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.time-input-mobile:hover:not(:disabled) {
+  border-color: #9ca3af;
+}
+
+.time-input-mobile:disabled {
+  background-color: #f3f4f6;
+  opacity: 0.6;
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+
+/* 針對 WebKit 瀏覽器的時間選擇器優化 */
+.time-input-mobile::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.time-input-mobile::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 </style>

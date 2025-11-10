@@ -245,9 +245,14 @@ export class NotificationService {
   /**
    * 發送測試通知
    */
-  async sendTestNotification(): Promise<boolean> {
+  async sendTestNotification(userId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseURL}/api/push/test`, {
+      if (!userId) {
+        console.error('發送測試通知失敗: 缺少 userId');
+        return false;
+      }
+
+      const response = await fetch(`${this.baseURL}/api/push/test/${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
