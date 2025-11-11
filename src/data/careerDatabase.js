@@ -611,7 +611,7 @@ export const CAREER_DATABASE = {
     matchValues: ['helping', 'fairness', 'development'],
     matchInterests: ['business', 'psychology'],
     matchTalents: ['伯樂', '和諧', '個別'],
-    matchWorkStyles: ['人才管理', '組織發展', '沟通協調', '法規遵循', '績效管理'],
+    matchWorkStyles: ['人才管理', '組織發展', '溝通協調', '法規遵循', '績效管理'],
     requirements: '需要人際技巧、法規知識和組織能力',
     nextSteps: ['學習人資管理', '累積招募經驗', '考取人資證照']
   },

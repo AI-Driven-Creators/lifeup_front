@@ -1,15 +1,15 @@
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="$emit('cancel')">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
       <!-- 標題區域 -->
-      <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+      <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
         <h2 class="text-xl font-bold text-white">🎯 檢測到您的任務意圖</h2>
       </div>
 
       <!-- 內容區域 -->
       <div class="p-6 space-y-4">
         <!-- AI 分析結果 -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="bg-primary-100 border border-primary-300 rounded-lg p-4">
           <div class="flex items-start gap-3">
             <div class="flex-shrink-0 text-2xl">
               {{ intentType === 'detailed_task' ? '📋' : '🎨' }}
@@ -23,7 +23,7 @@
                 <span class="text-xs text-gray-500">信心度:</span>
                 <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    class="h-full bg-blue-500 transition-all duration-500"
+                    class="h-full bg-primary-600 transition-all duration-500"
                     :style="{ width: `${confidence * 100}%` }"
                   ></div>
                 </div>
@@ -40,7 +40,7 @@
           </p>
           <button
             @click="$emit('direct-generate')"
-            class="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors text-left flex items-center justify-between group"
+            class="w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors text-left flex items-center justify-between group"
           >
             <span class="flex items-center gap-2">
               <span class="text-xl">⚡</span>
@@ -64,7 +64,7 @@
           </p>
           <button
             @click="$emit('expert-analyze')"
-            class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-lg font-medium transition-all text-left flex items-center gap-2"
+            class="w-full px-4 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-lg font-medium transition-all text-left flex items-center gap-2"
           >
             <span class="text-xl">🚀</span>
             <span>開始專家規劃</span>

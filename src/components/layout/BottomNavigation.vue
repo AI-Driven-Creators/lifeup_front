@@ -71,7 +71,7 @@ const navItems = [
   { name: 'home', path: '/', label: '首頁', icon: Home },
   { name: 'mission', path: '/mission', label: '任務', icon: ClipboardList },
   { name: 'skills', path: '/skills', label: '技能', icon: TreePine },
-  { name: 'personal', path: '/personal', label: '我的', icon: User },
+  { name: 'personal', path: '/personal', label: '個人資訊', icon: User },
   { name: 'coach', path: '/coach', label: '小教練', icon: Bot }
 ]
 

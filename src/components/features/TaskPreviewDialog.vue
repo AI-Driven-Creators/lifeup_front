@@ -151,6 +151,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 interface Props {
   taskJson: any
@@ -165,16 +166,24 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['confirm', 'cancel', 'edit'])
 
-// 渲染 Markdown 格式的預覽文字
+// 渲染 Markdown 格式的預覽文字，並使用 DOMPurify 清理 HTML 防止 XSS 攻擊
 const renderedPreview = computed(() => {
   if (!props.taskPreview) return ''
-  return marked(props.taskPreview) as string
+  const rawHtml = marked(props.taskPreview) as string
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'hr'],
+    ALLOWED_ATTR: []
+  })
 })
 
-// 渲染任務描述的 Markdown
+// 渲染任務描述的 Markdown，並使用 DOMPurify 清理 HTML 防止 XSS 攻擊
 const renderedDescription = computed(() => {
   if (!props.taskJson?.description) return ''
-  return marked(props.taskJson.description) as string
+  const rawHtml = marked(props.taskJson.description) as string
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'hr'],
+    ALLOWED_ATTR: []
+  })
 })
 
 // 是否包含子任務

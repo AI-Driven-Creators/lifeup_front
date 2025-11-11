@@ -172,6 +172,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import type { ChatMessage } from '@/types'
 import { Bot, User } from 'lucide-vue-next'
 
@@ -290,10 +291,14 @@ const formatTime = (timestamp: Date) => {
   })
 }
 
-// 使用 marked 進行 Markdown 格式化
+// 使用 marked 進行 Markdown 格式化，並使用 DOMPurify 清理 HTML 防止 XSS 攻擊
 const formattedContent = computed(() => {
   if (!props.message.content) return ''
-  return marked(props.message.content) as string
+  const rawHtml = marked(props.message.content) as string
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'hr', 'a'],
+    ALLOWED_ATTR: ['href', 'target', 'rel']
+  })
 })
 </script>
 
