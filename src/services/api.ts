@@ -1,4 +1,5 @@
 import { loadApiConfig, type ApiConfig } from '../config/api';
+import { getToken, isTokenExpired, logout as clearAuth } from '@/utils/auth';
 
 // API 客戶端配置
 export class ApiClient {
@@ -19,16 +20,49 @@ export class ApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
+    // 檢查 token 是否過期（登入/註冊請求除外）
+    if (!endpoint.includes('/auth/login') && !endpoint.includes('/users') || endpoint.includes('/users/')) {
+      const token = getToken();
+      if (token && isTokenExpired(token)) {
+        console.warn('Token 已過期，正在登出...');
+        clearAuth();
+        // 導航到登入頁
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Token 已過期，請重新登入');
+      }
+    }
+
+    // 準備請求頭，自動添加 JWT token
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    // 如果有 token，添加 Authorization header（登入請求除外）
+    const token = getToken();
+    if (token && !endpoint.includes('/auth/login')) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
       ...options,
     };
 
     try {
       const response = await fetch(url, config);
+
+      // 處理 401 未授權錯誤
+      if (response.status === 401) {
+        console.warn('收到 401 錯誤，token 可能無效');
+        clearAuth();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('認證失敗，請重新登入');
+      }
 
       const contentType = response.headers.get('content-type') || '';
       const isJson = contentType.includes('application/json');
@@ -72,7 +106,7 @@ export class ApiClient {
   }
 
   async login(credentials: { email: string, password: string }) {
-    return this.request<{ success: boolean, data: { user: any, message: string }, message: string }>('/api/auth/login', {
+    return this.request<{ success: boolean, data: { user: any, token: string, message: string }, message: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });

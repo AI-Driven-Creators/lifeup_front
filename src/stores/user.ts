@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { apiClient } from '@/services/api'
 import type { User, UserAttributes } from '@/types'
 import { useRewardsStore } from './rewards'
+import { setToken, setCurrentUser, logout as clearAuth } from '@/utils/auth'
 
 export const useUserStore = defineStore('user', {
   persist: true,
@@ -150,9 +151,16 @@ export const useUserStore = defineStore('user', {
         const res = await apiClient.login(payload);
         if (res.success && res.data?.user) {
           const u = res.data.user;
+          // 保存 JWT token
+          if (res.data.token) {
+            setToken(res.data.token);
+            console.log('JWT token 已保存');
+          }
           // 僅保留必要欄位到本地 user 狀態
           this.user.name = u.name ?? this.user.name;
           this.user.id = u.id ?? this.user.id;
+          // 保存用戶信息
+          setCurrentUser({ id: this.user.id, name: this.user.name });
           try {
             if (this.user.id) localStorage.setItem('lifeup_current_user_id', this.user.id);
           } catch {}
@@ -179,7 +187,8 @@ export const useUserStore = defineStore('user', {
         if (!res.success) {
           this.error = res.message || '登出失敗';
         }
-        // 清理本地簡易會話（如有擴展可改為 token/session）
+        // 清理所有認證信息（token + user data）
+        clearAuth();
         this.resetUser();
         try {
           const { default: router } = await import('@/router');
