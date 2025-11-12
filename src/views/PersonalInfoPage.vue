@@ -1,7 +1,19 @@
 <template>
   <div class="min-h-screen bg-primary-50 pb-16">
     <!-- 頁面標題 -->
-    <PageHeader title="我的進度" />
+    <div class="shrink-0 relative">
+      <PageHeader title="我的進度" />
+      <!-- 新手教學按鈕 -->
+      <button
+        @click="handleInfoClick"
+        class="absolute top-1/2 -translate-y-1/2 right-4 w-8 h-8 flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-sm transition-all"
+        title="查看新手教學"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
     
     <!-- 設定按鈕 -->
     <div class="px-4 py-2 flex justify-between items-center">
@@ -30,20 +42,11 @@
       <div class="flex items-center gap-2 flex-wrap">
         <RouterLink
           to="/settings/notifications"
-          class="flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 bg-indigo-50 border border-indigo-300 rounded-lg hover:bg-indigo-100 transition-colors"
+          class="notification-settings-link flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 bg-indigo-50 border border-indigo-300 rounded-lg hover:bg-indigo-100 transition-colors"
         >
           <span>⚙️</span>
           <span>推送通知設定</span>
         </RouterLink>
-
-        <button
-          @click="refreshSubscriptions"
-          :disabled="loadingSubscriptions"
-          class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          <span>🔄</span>
-          <span>{{ loadingSubscriptions ? '載入中...' : '查看訂閱' }}</span>
-        </button>
       </div>
     </div>
 
@@ -205,10 +208,14 @@
       <!-- 用戶數據已載入 -->
       <template v-else-if="userStore.user && userStore.user.id">
         <!-- 用戶等級卡片 -->
-        <UserLevelCard :user="userStore.user" />
-        
+        <div class="user-level-card">
+          <UserLevelCard :user="userStore.user" />
+        </div>
+
         <!-- 冒險統計 -->
-        <AdventureStats :user="userStore.user" :loading="userStore.loading" />
+        <div class="adventure-stats">
+          <AdventureStats :user="userStore.user" :loading="userStore.loading" />
+        </div>
         
         <!-- 成就 -->
         <AchievementSection />
@@ -257,6 +264,31 @@
 
     <!-- Toast 通知 -->
     <Toast ref="toastRef" />
+
+    <!-- 新手教學 - 歡迎橫幅 -->
+    <WelcomeBanner
+      :show="showWelcome && !tutorialDismissed"
+      title="歡迎來到個人進度頁面！"
+      description="在這裡你可以查看你的學習進度、等級、成就等資訊。讓我們快速了解一下重點功能吧！"
+      @start-tutorial="startTutorial"
+      @skip="handleTutorialSkip"
+    />
+
+    <!-- 新手教學 - 分步指引 -->
+    <TutorialTooltip
+      v-if="showTutorial"
+      :show="showTutorial"
+      :target-selector="tutorialSteps[currentStep - 1].targetSelector"
+      :title="tutorialSteps[currentStep - 1].title"
+      :description="tutorialSteps[currentStep - 1].description"
+      :icon="tutorialSteps[currentStep - 1].icon"
+      :current-step="currentStep"
+      :total-steps="tutorialSteps.length"
+      :placement="tutorialSteps[currentStep - 1].placement"
+      @next="handleTutorialNext"
+      @prev="handleTutorialPrev"
+      @skip="handleTutorialSkip"
+    />
   </div>
 </template>
 
@@ -274,8 +306,19 @@ import ApiSettingsDialog from '@/components/settings/ApiSettingsDialog.vue'
 import TaskHistoryTimeline from '@/components/features/TaskHistoryTimeline.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Toast from '@/components/common/Toast.vue'
+import WelcomeBanner from '@/components/common/WelcomeBanner.vue'
+import TutorialTooltip from '@/components/common/TutorialTooltip.vue'
 import { useUserStore } from '@/stores/user'
 import { notificationService } from '@/services/notification'
+
+// 新手教學步驟類型定義
+interface TutorialStep {
+  targetSelector: string
+  title: string
+  description: string
+  icon: string
+  placement?: 'top' | 'bottom' | 'left' | 'right'
+}
 
 const userStore = useUserStore()
 const showApiSettings = ref(false)
@@ -303,9 +346,39 @@ const resetResult = ref<{
 
 // Web Push 相關狀態
 const showSubscriptions = ref(false)
-const loadingSubscriptions = ref(false)
 const subscriptions = ref<any[]>([])
 const clearingSubscriptions = ref(false)
+
+// 新手教學相關狀態
+const showWelcome = ref(false)
+const showTutorial = ref(false)
+const currentStep = ref(1)
+const tutorialDismissed = ref(false)
+
+// 新手教學步驟定義
+const tutorialSteps: TutorialStep[] = [
+  {
+    targetSelector: '.notification-settings-link',
+    title: '推送通知設定',
+    description: '點擊這裡可以設定推送通知功能。啟用後，系統會在重要時刻提醒你，讓你不錯過任何學習進度！',
+    icon: '🔔',
+    placement: 'bottom'
+  },
+  {
+    targetSelector: '.user-level-card',
+    title: '查看你的等級',
+    description: '這裡顯示你當前的等級和經驗值。完成任務可以獲得經驗值，提升你的等級！',
+    icon: '⭐',
+    placement: 'top'
+  },
+  {
+    targetSelector: '.adventure-stats',
+    title: '冒險統計',
+    description: '查看你的學習統計數據，包括完成的任務數、獲得的成就等。這些數據能幫助你了解自己的學習進度。',
+    icon: '📊',
+    placement: 'top'
+  }
+]
 
 // 重置類型定義
 type ResetType = 'tasks' | 'skills' | 'chat' | 'progress' | 'achievements' | 'profile' | 'all'
@@ -327,30 +400,50 @@ const formatDate = (dateStr: string) => {
   return date.toLocaleString('zh-TW')
 }
 
-// 刷新訂閱列表
-const refreshSubscriptions = async () => {
-  loadingSubscriptions.value = true
-  try {
-    const url = `${import.meta.env.VITE_API_BASE_URL}/api/push/subscriptions`
-    const response = await fetch(url)
+// 新手教學相關方法
+const startTutorial = () => {
+  showWelcome.value = false
+  showTutorial.value = true
+  currentStep.value = 1
+}
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    const result = await response.json()
-    if (result.success) {
-      subscriptions.value = result.data || []
-      showSubscriptions.value = true
-    } else {
-      toastRef.value?.showToast(`獲取訂閱列表失敗：${result.message}`)
-    }
-  } catch (error) {
-    console.error('獲取訂閱列表失敗:', error)
-    toastRef.value?.showToast(`獲取訂閱列表失敗: ${error instanceof Error ? error.message : String(error)}`)
-  } finally {
-    loadingSubscriptions.value = false
+const handleTutorialNext = () => {
+  if (currentStep.value < tutorialSteps.length) {
+    currentStep.value++
+  } else {
+    // 完成教學
+    showTutorial.value = false
+    localStorage.setItem('personalinfo_tutorial_completed', 'true')
   }
+}
+
+const handleTutorialPrev = () => {
+  if (currentStep.value > 1) {
+    currentStep.value--
+  }
+}
+
+const handleTutorialSkip = () => {
+  showWelcome.value = false
+  showTutorial.value = false
+  tutorialDismissed.value = true
+  localStorage.setItem('personalinfo_tutorial_completed', 'true')
+}
+
+const checkTutorialStatus = () => {
+  const completed = localStorage.getItem('personalinfo_tutorial_completed')
+  if (!completed) {
+    // 延遲顯示歡迎橫幅，確保頁面已完全載入
+    setTimeout(() => {
+      showWelcome.value = true
+    }, 500)
+  }
+}
+
+const handleInfoClick = () => {
+  // 重新顯示教學
+  showWelcome.value = true
+  tutorialDismissed.value = false
 }
 
 // 清除所有訂閱
@@ -563,6 +656,7 @@ const retryLoadUser = () => {
 // 頁面載入時獲取最新的遊戲化用戶數據
 onMounted(() => {
   loadUserData()
+  checkTutorialStatus()
 })
 
 const onLogout = async () => {
