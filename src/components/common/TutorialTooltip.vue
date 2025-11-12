@@ -126,7 +126,7 @@ const updatePosition = () => {
   }
 
   // 計算提示框位置
-  const tooltipWidth = 384 // max-w-sm = 24rem = 384px
+  const tooltipWidth = 384 + 40 // max-w-sm = 24rem = 384px + p-5 左右各 20px
   const tooltipHeight = 200 // 估計高度
   const gap = 20 // 提示框與目標的間距
 
@@ -163,11 +163,15 @@ const updatePosition = () => {
   }
 
   // 確保提示框不超出視窗
-  if (left < 10) left = 10
-  if (left + tooltipWidth > window.innerWidth - 10) {
-    left = window.innerWidth - tooltipWidth - 10
+  const margin = 10 // 視窗邊緣留白
+  if (left < margin) left = margin
+  if (left + tooltipWidth > window.innerWidth - margin) {
+    left = Math.max(margin, window.innerWidth - tooltipWidth - margin)
   }
-  if (top < 10) top = 10
+  if (top < margin) top = margin
+  if (top + tooltipHeight > window.innerHeight - margin) {
+    top = Math.max(margin, window.innerHeight - tooltipHeight - margin)
+  }
 
   tooltipStyle.value = {
     top: `${top}px`,
