@@ -276,7 +276,6 @@
 
     <!-- 新手教學 - 分步指引 -->
     <TutorialTooltip
-      v-if="showTutorial"
       :show="showTutorial"
       :target-selector="tutorialSteps[currentStep - 1].targetSelector"
       :title="tutorialSteps[currentStep - 1].title"

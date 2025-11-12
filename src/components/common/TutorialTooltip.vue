@@ -7,13 +7,13 @@
       <!-- 高亮區域 (挖空效果) -->
       <div
         v-if="targetElement"
-        class="absolute border-4 border-primary-500 rounded-lg shadow-2xl"
+        class="absolute border-4 border-primary-500 rounded-lg shadow-2xl z-10"
         :style="highlightStyle"
       ></div>
 
       <!-- 提示氣泡 -->
       <div
-        class="absolute bg-white rounded-xl shadow-2xl p-5 max-w-sm"
+        class="absolute bg-white rounded-xl shadow-2xl p-5 max-w-sm w-full z-20"
         :style="tooltipStyle"
       >
         <!-- 箭頭 -->
@@ -106,12 +106,8 @@ const highlightStyle = ref({})
 const tooltipStyle = ref({})
 const arrowStyle = ref({})
 
-// 更新元素位置
-const updatePosition = () => {
-  if (!props.show || !props.targetSelector) return
-
-  // 查找目標元素
-  targetElement.value = document.querySelector(props.targetSelector)
+// 計算並更新提示框位置（不滾動）
+const calculatePosition = () => {
   if (!targetElement.value) return
 
   const rect = targetElement.value.getBoundingClientRect()
@@ -125,10 +121,16 @@ const updatePosition = () => {
     height: `${rect.height + padding * 2}px`,
   }
 
-  // 計算提示框位置
-  const tooltipWidth = 384 + 40 // max-w-sm = 24rem = 384px + p-5 左右各 20px
+  // 計算提示框位置 - 響應式寬度
+  const screenWidth = window.innerWidth
+  const isMobile = screenWidth < 640 // Tailwind sm breakpoint
+
+  // 在手機上使用更小的寬度，留出足夠的邊距
+  const margin = isMobile ? 16 : 10 // 手機上留更多邊距
+  const maxTooltipWidth = screenWidth - (margin * 2) // 最大寬度 = 螢幕寬度 - 兩側邊距
+  const tooltipWidth = Math.min(isMobile ? 320 : 424, maxTooltipWidth) // 手機上最大320px，桌面424px
   const tooltipHeight = 200 // 估計高度
-  const gap = 20 // 提示框與目標的間距
+  const gap = isMobile ? 12 : 20 // 手機上縮小間距
 
   let top = 0
   let left = 0
@@ -163,7 +165,6 @@ const updatePosition = () => {
   }
 
   // 確保提示框不超出視窗
-  const margin = 10 // 視窗邊緣留白
   if (left < margin) left = margin
   if (left + tooltipWidth > window.innerWidth - margin) {
     left = Math.max(margin, window.innerWidth - tooltipWidth - margin)
@@ -176,11 +177,49 @@ const updatePosition = () => {
   tooltipStyle.value = {
     top: `${top}px`,
     left: `${left}px`,
+    width: `${tooltipWidth}px`, // 明確設定寬度
+    maxWidth: `${maxTooltipWidth}px`, // 確保不超過螢幕
   }
 
   arrowStyle.value = {
     top: arrowTop,
     left: arrowLeft,
+  }
+}
+
+// 滾動到目標元素並更新位置
+const updatePosition = () => {
+  if (!props.show || !props.targetSelector) return
+
+  // 查找目標元素
+  targetElement.value = document.querySelector(props.targetSelector)
+  if (!targetElement.value) return
+
+  // 檢查元素是否在視窗內可見
+  const rect = targetElement.value.getBoundingClientRect()
+  const isInViewport = (
+    rect.top >= 0 &&
+    rect.bottom <= window.innerHeight &&
+    rect.left >= 0 &&
+    rect.right <= window.innerWidth
+  )
+
+  // 只有當元素不在視窗內時才滾動
+  if (!isInViewport) {
+    const elementTop = targetElement.value.getBoundingClientRect().top + window.scrollY
+    const offset = window.innerHeight * 0.2
+    const scrollToPosition = elementTop - offset
+
+    window.scrollTo({
+      top: Math.max(0, scrollToPosition),
+      behavior: 'instant' // 立即跳轉，不使用平滑動畫
+    })
+
+    // 滾動後計算位置
+    setTimeout(() => calculatePosition(), 100)
+  } else {
+    // 元素已在視窗內，直接計算位置
+    calculatePosition()
   }
 }
 
@@ -198,20 +237,26 @@ watch(() => props.targetSelector, () => {
   }
 })
 
-// 視窗大小改變時重新計算位置
+// 視窗大小改變或滾動時重新計算位置（不觸發新的滾動）
 const handleResize = () => {
-  if (props.show) {
-    updatePosition()
+  if (props.show && targetElement.value) {
+    calculatePosition()
+  }
+}
+
+const handleScroll = () => {
+  if (props.show && targetElement.value) {
+    calculatePosition()
   }
 }
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
-  window.addEventListener('scroll', handleResize)
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  window.removeEventListener('scroll', handleResize)
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
