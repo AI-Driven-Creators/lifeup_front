@@ -351,6 +351,7 @@ import { useRouter } from 'vue-router';
 import { notificationService } from '../services/notification';
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
 import { useUserStore } from '@/stores/user';
+import { fetchWithAuth } from '@/utils/auth';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -539,7 +540,7 @@ const clearAllSubscriptions = () => {
 
       try {
         const url = `${import.meta.env.VITE_API_BASE_URL}/api/push/clear-all`;
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -581,7 +582,7 @@ const loadSettings = async () => {
 
   try {
     const url = `${import.meta.env.VITE_API_BASE_URL}/api/notification-settings/${userStore.user.id}`;
-    const response = await fetch(url);
+    const response = await fetchWithAuth(url);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -616,7 +617,7 @@ const saveSettings = async () => {
 
   try {
     const url = `${import.meta.env.VITE_API_BASE_URL}/api/notification-settings/${userStore.user.id}`;
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(url, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -674,7 +675,7 @@ const previewMorningNotification = async () => {
 
   try {
     const url = `${import.meta.env.VITE_API_BASE_URL}/api/notifications/preview-morning/${userStore.user.id}`;
-    const response = await fetch(url, { method: 'POST' });
+    const response = await fetchWithAuth(url, { method: 'POST' });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -713,7 +714,7 @@ const previewEveningNotification = async () => {
 
   try {
     const url = `${import.meta.env.VITE_API_BASE_URL}/api/notifications/preview-evening/${userStore.user.id}`;
-    const response = await fetch(url, { method: 'POST' });
+    const response = await fetchWithAuth(url, { method: 'POST' });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);

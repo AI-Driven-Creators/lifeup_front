@@ -364,6 +364,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import careerDatabaseData from '../../data/careerDatabase.js'
 import { RotateCcw } from 'lucide-vue-next'
+import { fetchWithAuth } from '@/utils/auth'
 const { CAREER_DATABASE } = careerDatabaseData
 import CareerSurveyModal from './CareerSurveyModal.vue'
 import CareerSelectionGuide from '@/components/common/CareerSelectionGuide.vue'
@@ -951,7 +952,7 @@ const generateTasks = async () => {
 
     console.log('📤 發送 SSE 漸進式生成請求:', payload)
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks-progressive`, {
+    const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/api/career/generate-tasks-progressive`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1191,7 +1192,7 @@ const acceptTasks = async () => {
   loading.value = true
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/career/accept-tasks`, {
+    const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/api/career/accept-tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1240,7 +1241,7 @@ const saveQuizResults = async () => {
     console.log('📤 保存測驗結果請求:', payload)
     console.log('📤 JSON 字串:', JSON.stringify(payload))
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/quiz/save-results`, {
+    const response = await fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/api/quiz/save-results`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
