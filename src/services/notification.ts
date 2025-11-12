@@ -4,6 +4,7 @@
  */
 
 import { loadApiConfig } from '../config/api';
+import { fetchWithAuth } from '@/utils/auth';
 
 // VAPID 公鑰 (需要從後端獲取或配置)
 // 這是一個臨時的佔位符，實際使用時需要從環境變數或後端 API 獲取
@@ -190,7 +191,7 @@ export class NotificationService {
     };
 
     try {
-      const response = await fetch(`${this.baseURL}/api/push/subscribe`, {
+      const response = await fetchWithAuth(`${this.baseURL}/api/push/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +222,7 @@ export class NotificationService {
     const subscriptionJSON = subscription.toJSON();
 
     try {
-      const response = await fetch(`${this.baseURL}/api/push/unsubscribe`, {
+      const response = await fetchWithAuth(`${this.baseURL}/api/push/unsubscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +253,7 @@ export class NotificationService {
         return false;
       }
 
-      const response = await fetch(`${this.baseURL}/api/push/test/${userId}`, {
+      const response = await fetchWithAuth(`${this.baseURL}/api/push/test/${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

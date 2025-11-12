@@ -28,7 +28,14 @@ export class ApiClient {
         clearAuth();
         // 導航到登入頁
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // 清除所有應用狀態
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {
+            console.error('清除儲存失敗:', e);
+          }
+          window.location.href = '/auth/login';
         }
         throw new Error('Token 已過期，請重新登入');
       }
@@ -59,7 +66,15 @@ export class ApiClient {
         console.warn('收到 401 錯誤，token 可能無效');
         clearAuth();
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // 清除所有應用狀態
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {
+            console.error('清除儲存失敗:', e);
+          }
+          // 使用正確的登入頁面路徑
+          window.location.href = '/auth/login';
         }
         throw new Error('認證失敗，請重新登入');
       }
@@ -700,6 +715,29 @@ export class ApiClient {
         content: content
       }),
     });
+  }
+
+  // 獲取用戶任務歷史
+  async getTaskHistory(userId: string, options?: { limit?: number, offset?: number, task_type?: string }) {
+    const params = new URLSearchParams();
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.offset) params.append('offset', options.offset.toString());
+    if (options?.task_type) params.append('task_type', options.task_type);
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `/api/users/${userId}/task-history?${queryString}`
+      : `/api/users/${userId}/task-history`;
+
+    return this.request<{
+      success: boolean,
+      data: {
+        tasks: any[],
+        total: number,
+        has_more: boolean
+      },
+      message: string
+    }>(url);
   }
 }
 

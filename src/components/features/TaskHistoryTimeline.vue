@@ -86,6 +86,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { apiClient } from '@/services/api'
 
 interface TaskHistoryItem {
   id: string
@@ -179,21 +180,16 @@ const scrollToBottom = async () => {
 const fetchTaskHistory = async (append = false) => {
   loading.value = true
   try {
-    const params = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.value.toString(),
+    const result = await apiClient.getTaskHistory(props.userId, {
+      limit: limit,
+      offset: offset.value,
       task_type: selectedType.value
     })
 
-    const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/api/users/${props.userId}/task-history?${params}`
-    )
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch task history')
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to fetch task history')
     }
 
-    const result = await response.json()
     const data: TaskHistoryResponse = result.data
 
     if (append) {

@@ -138,3 +138,44 @@ export function checkAndHandleTokenExpiration(): boolean {
   }
   return true;
 }
+
+/**
+ * 帶有 JWT 認證的 fetch 封裝
+ * 自動添加 Authorization header
+ */
+export async function fetchWithAuth(url: string | URL, options: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+
+  // 準備請求頭
+  const headers: HeadersInit = {
+    ...options.headers,
+  };
+
+  // 添加 JWT token
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // 執行請求
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // 處理 401 錯誤
+  if (response.status === 401) {
+    console.warn('收到 401 錯誤，token 可能無效');
+    logout();
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.error('清除儲存失敗:', e);
+      }
+      window.location.href = '/auth/login';
+    }
+  }
+
+  return response;
+}
