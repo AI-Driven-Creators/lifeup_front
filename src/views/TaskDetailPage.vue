@@ -74,13 +74,6 @@
           </span>
         </div>
 
-        <!-- 技能標籤 -->
-        <SkillTags
-          v-if="task.skillTags && task.skillTags.length > 0"
-          :skill-tags="getSkillObjectsForTask(task)"
-          class="mt-2"
-        />
-        
         <!-- 任務日期顯示 -->
         <p v-if="(task as any).task_date" class="text-primary-600 text-sm mt-1 flex items-center">
           <Calendar class="w-4 h-4 mr-1" />
@@ -88,9 +81,9 @@
         </p>
         
         <!-- 任務描述 -->
-        <p v-if="task.description" class="text-primary-700 text-sm mt-3">
-          {{ task.description }}
-        </p>
+        <div v-if="task.description" class="text-primary-700 text-sm mt-3 whitespace-pre-line leading-none">
+          {{ removeEmojis(task.description) }}
+        </div>
         
         <!-- 任務狀態標籤 -->
         <div class="mt-3 flex items-center space-x-2">
@@ -647,6 +640,13 @@ const taskProgress = computed(() => {
     remaining_days: isCompleted ? 0 : 1
   }
 })
+
+// 移除表情符號的函數
+const removeEmojis = (text: string) => {
+  if (!text) return ''
+  // 移除常見的表情符號和 emoji
+  return text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|💡|📚|🎯|✨|🔥|💪|📖|🏃|🎨|🎵|📝|🌟|⭐|🎓|🏆/gu, '').trim()
+}
 
 // 返回上一頁
 const goBack = () => {

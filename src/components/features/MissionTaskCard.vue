@@ -97,24 +97,16 @@
           </div>
         </div>
         
-        <!-- 技能標籤和星級 -->
-        <div class="flex items-center justify-between">
-          <SkillTags
-            :skill-tags="skillObjects"
-            :dynamic-display="task.is_parent_task"
-          />
-
-          <!-- 難度星級 -->
-          <div class="flex items-center space-x-1 ml-auto">
-            <span
-              v-for="n in 5"
-              :key="n"
-              class="text-xs"
-              :class="n <= task.difficulty ? 'text-yellow-400' : 'text-gray-300'"
-            >
-              ★
-            </span>
-          </div>
+        <!-- 難度星級 -->
+        <div class="flex items-center space-x-1">
+          <span
+            v-for="n in 5"
+            :key="n"
+            class="text-xs"
+            :class="n <= task.difficulty ? 'text-yellow-400' : 'text-gray-300'"
+          >
+            ★
+          </span>
         </div>
       </div>
 
@@ -173,12 +165,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Task } from '@/types'
 import { apiClient } from '@/services/api'
-import SkillTags from '@/components/common/SkillTags.vue'
-import { useSkillStore } from '@/stores/skill'
 import { useTaskStore } from '@/stores/task'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import EditTaskDialog from '@/components/features/EditTaskDialog.vue'
@@ -195,27 +185,11 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const router = useRouter()
-const skillStore = useSkillStore()
 const taskStore = useTaskStore()
 
 // 對話框狀態
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
-
-onMounted(() => {
-  if (skillStore.skills.length === 0 && !skillStore.loading) {
-    skillStore.fetchSkills()
-  }
-})
-
-const skillObjects = computed(() => {
-  if (!props.task.skillTags || !skillStore.skills.length) {
-    return []
-  }
-  return props.task.skillTags
-    .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
-    .filter(skill => !!skill) as { id: string; name: string }[]
-})
 
 // 判斷是否正在生成子任務
 const isGeneratingSubtasks = computed(() => {
