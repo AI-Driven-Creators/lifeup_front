@@ -93,6 +93,18 @@
         </div>
       </div>
 
+      <!-- 每日任務提示（僅在每日任務頁面顯示且有進行中任務時顯示） -->
+      <div v-if="taskType === 'daily' && inProgressCount > 0" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+        <div class="flex items-start">
+          <span class="text-2xl mr-3">🏠</span>
+          <div class="flex-1">
+            <h3 class="text-base font-bold text-blue-900 mb-1">完成任務提示</h3>
+            <p class="text-sm text-blue-700">您有 <span class="font-bold text-blue-900">{{ inProgressCount }}</span> 個進行中的每日任務</p>
+            <p class="text-sm text-blue-700 mt-1">請到 <span class="font-bold">首頁</span> 標記任務為完成</p>
+          </div>
+        </div>
+      </div>
+
       <!-- 任務列表 -->
       <div v-if="filteredTasks.length > 0" class="space-y-3">
         <div class="flex items-center justify-between">

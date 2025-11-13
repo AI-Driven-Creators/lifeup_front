@@ -121,6 +121,17 @@
           />
         </div>
 
+        <!-- 每日任務提示 -->
+        <div v-if="task.type === 'daily' && (task.status === 'pending' || task.status === 'daily_not_completed')" class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div class="flex items-start">
+            <span class="text-blue-600 text-lg mr-2">💡</span>
+            <div class="flex-1">
+              <p class="text-sm text-blue-800 font-medium">每日任務完成方式</p>
+              <p class="text-sm text-blue-700 mt-1">點擊「開始」後，請到首頁完成任務</p>
+            </div>
+          </div>
+        </div>
+
         <!-- 父任務操作按鈕 -->
         <div v-if="task.is_parent_task || task.type === 'daily'" class="mt-4 flex flex-wrap gap-2">
           <button
@@ -1205,6 +1216,15 @@ const handleStartTask = async () => {
     if (response.success) {
       task.value.status = 'in_progress'
       console.log('任務已開始')
+
+      // 如果是每日任務，跳轉到首頁並提示
+      if (task.value.type === 'daily') {
+        // 延遲一下讓用戶看到狀態變化
+        setTimeout(() => {
+          alert('✅ 任務已開始！\n\n請到首頁完成任務')
+          router.push('/')
+        }, 500)
+      }
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '開始任務失敗'
