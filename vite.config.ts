@@ -37,6 +37,11 @@ export default defineConfig(({ mode }) => {
           background_color: '#ffffff',
           icons: [
             {
+              src: '/favicon.ico',
+              sizes: '48x48',
+              type: 'image/x-icon'
+            },
+            {
               src: '/icon.svg',
               sizes: 'any',
               type: 'image/svg+xml'
