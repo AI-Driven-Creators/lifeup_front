@@ -3,7 +3,7 @@
   <div
     v-if="showModal"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 md:p-6"
-    @click.self="$emit('close')"
+    @click.self="handleBackdropClick"
   >
     <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col mx-auto">
       <div class="overflow-y-auto flex-1 px-4 py-6 md:px-6 md:py-6 lg:px-8 lg:py-8">
@@ -16,7 +16,7 @@
               <h2 class="text-xl font-semibold text-gray-900">職業主線規劃調查</h2>
             </div>
             <button
-              @click="$emit('close')"
+              @click="handleClose"
               class="text-gray-400 hover:text-gray-600 transition-colors"
             >
               ✕
@@ -136,7 +136,7 @@
             <!-- 操作按鈕 -->
             <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
               <button
-                @click="$emit('close')"
+                @click="handleClose"
                 class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
               >
                 取消
@@ -386,6 +386,24 @@ const emit = defineEmits<{
   'go-to-tasks': []
   'update:surveyAnswers': [value: typeof props.surveyAnswers]
 }>()
+
+// 處理背景點擊
+const handleBackdropClick = () => {
+  // 如果正在生成任務，不允許關閉
+  if (props.currentStage === 'generating') {
+    return
+  }
+  emit('close')
+}
+
+// 處理關閉按鈕點擊
+const handleClose = () => {
+  // 如果正在生成任務，不允許關閉
+  if (props.currentStage === 'generating') {
+    return
+  }
+  emit('close')
+}
 
 // 學習動機快速選項
 const motivationOptions = [
