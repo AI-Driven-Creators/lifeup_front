@@ -194,12 +194,22 @@
 
         <!-- 任務預覽/完成階段 -->
         <div v-if="currentStage === 'preview' || currentStage === 'completed'">
-          <div class="mb-8">
-            <div class="mb-4">
+          <!-- Modal Header with Close Button -->
+          <div class="flex items-center justify-between mb-8">
+            <div>
               <h2 class="text-xl font-semibold text-gray-900">
                 {{ currentStage === 'preview' ? '任務預覽' : '職業主線任務已生成' }}
               </h2>
             </div>
+            <button
+              @click="$emit('close')"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="mb-8">
             <p class="text-gray-600">
               {{ currentStage === 'preview'
                 ? `AI 已根據你的 ${selectedCareer} 職業選擇和個人特質，生成了專屬的學習路徑。請確認後保存到你的任務列表。`
@@ -389,8 +399,8 @@ const emit = defineEmits<{
 
 // 處理背景點擊
 const handleBackdropClick = () => {
-  // 如果正在生成任務，不允許關閉
-  if (props.currentStage === 'generating') {
+  // 如果正在生成任務或預覽任務，不允許點擊背景關閉（避免誤觸）
+  if (props.currentStage === 'generating' || props.currentStage === 'preview') {
     return
   }
   emit('close')
@@ -398,7 +408,7 @@ const handleBackdropClick = () => {
 
 // 處理關閉按鈕點擊
 const handleClose = () => {
-  // 如果正在生成任務，不允許關閉
+  // 只在正在生成任務時不允許關閉，預覽階段可以用 X 關閉
   if (props.currentStage === 'generating') {
     return
   }
