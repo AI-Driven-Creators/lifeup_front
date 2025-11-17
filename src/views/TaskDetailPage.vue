@@ -95,6 +95,18 @@
           <span v-else-if="task.dailyTaskSubtype === 'simple'" class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">今日行動</span>
         </div>
 
+        <!-- 技能標籤 -->
+        <div v-if="task.skillTags && task.skillTags.length > 0" class="mt-3 bg-white border border-gray-200 rounded-lg p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">⭐</span>
+            <h3 class="text-sm font-bold text-gray-900">關聯技能</h3>
+          </div>
+          <SkillTags :skill-tags="skillObjects" />
+          <p class="text-xs text-gray-500 mt-2">
+            完成此目標可持續提升相關技能經驗值
+          </p>
+        </div>
+
         <!-- 子任務生成中提示 -->
         <div v-if="isGeneratingSubtasks" class="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
           <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
@@ -264,12 +276,6 @@
                     </span>
                   </template>
                 </div>
-
-                <!-- 技能標籤 -->
-                <SkillTags
-                  :skill-tags="getSkillObjectsForTask(subtask)"
-                  class="mt-2"
-                />
               </div>
               
               <!-- 狀態控制 -->
@@ -639,6 +645,19 @@ const taskProgress = computed(() => {
     is_daily_completed: isCompleted,
     remaining_days: isCompleted ? 0 : 1
   }
+})
+
+// 獲取技能對象
+const skillObjects = computed(() => {
+  if (!task.value?.skillTags || task.value.skillTags.length === 0) {
+    return []
+  }
+  if (!skillStore.skills.length) {
+    return undefined
+  }
+  return task.value.skillTags
+    .map(tagName => skillStore.skills.find(skill => skill.name === tagName))
+    .filter(skill => !!skill) as { id: string; name: string }[]
 })
 
 // 移除表情符號的函數
