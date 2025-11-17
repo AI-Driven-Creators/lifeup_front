@@ -1,5 +1,50 @@
 <template>
   <div class="space-y-4">
+    <!-- 今日狀態卡片 -->
+    <div class="border-2 rounded-lg p-5" :class="todayStatusBorderClass">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">{{ todayStatusIcon }}</span>
+          <h3 class="text-lg font-bold" :class="todayStatusTextClass">今日狀態</h3>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-gray-600">今天</div>
+          <div class="text-sm font-medium text-gray-900">{{ todayDate }}</div>
+        </div>
+      </div>
+
+      <!-- 狀態徽章 -->
+      <div class="flex items-center justify-center mb-4">
+        <div
+          class="px-6 py-3 rounded-full text-lg font-bold"
+          :class="todayStatusBgClass"
+        >
+          {{ todayStatusText }}
+        </div>
+      </div>
+
+      <!-- 操作按鈕區域 -->
+      <div class="mt-4 flex gap-3">
+        <!-- 完成按鈕（未完成時顯示）-->
+        <button
+          v-if="!isTodayCompleted"
+          @click="handleComplete"
+          class="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold text-base hover:bg-green-700 transition-colors shadow-sm"
+        >
+          ✓ 完成任務
+        </button>
+
+        <!-- 回復按鈕（已完成時顯示）-->
+        <button
+          v-if="isTodayCompleted"
+          @click="handleRevert"
+          class="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold text-base hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          ↶ 回復到進行中
+        </button>
+      </div>
+    </div>
+
     <!-- 任務概覽卡片 -->
     <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
       <div class="flex items-center gap-2 mb-3">
@@ -83,8 +128,19 @@ interface Props {
   loading?: boolean
 }
 
+interface Emits {
+  (e: 'toggle-status', subtaskIdOrReverse?: string | boolean, reverse?: boolean): void
+}
+
 const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 const skillStore = useSkillStore()
+
+// 今日日期
+const todayDate = computed(() => {
+  const today = new Date()
+  return `${today.getMonth() + 1}月${today.getDate()}日`
+})
 
 // 今日子任務
 const todaySubtask = computed(() => {
@@ -123,6 +179,13 @@ const todayStatusTextClass = computed(() => {
   if (isTodayCompleted.value) return 'text-green-700'
   if (todaySubtask.value?.status === 'daily_in_progress') return 'text-blue-700'
   return 'text-gray-700'
+})
+
+// 今日狀態邊框樣式
+const todayStatusBorderClass = computed(() => {
+  if (isTodayCompleted.value) return 'border-green-400 bg-green-50'
+  if (todaySubtask.value?.status === 'daily_in_progress') return 'border-blue-400 bg-blue-50'
+  return 'border-gray-300 bg-gray-50'
 })
 
 // 計算總天數（根據重複模式）
@@ -258,5 +321,23 @@ const formatDateTime = (datetime?: Date | string) => {
   if (!datetime) return '未知'
   const d = new Date(datetime)
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+// 處理完成今日目標
+const handleComplete = () => {
+  // 如果今日已有子任務，切換其狀態
+  if (todaySubtask.value) {
+    emit('toggle-status', todaySubtask.value.id, false)
+  } else {
+    // 否則創建新的今日子任務並標記為完成
+    emit('toggle-status', undefined, false)
+  }
+}
+
+// 處理取消今日完成
+const handleRevert = () => {
+  if (todaySubtask.value) {
+    emit('toggle-status', todaySubtask.value.id, true)
+  }
 }
 </script>

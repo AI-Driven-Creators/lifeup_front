@@ -36,6 +36,27 @@
           <div class="text-xl font-bold text-green-600">{{ task.experience }} XP</div>
         </div>
       </div>
+
+      <!-- 操作按鈕區域 -->
+      <div class="mt-4 flex gap-3">
+        <!-- 完成按鈕（進行中時顯示）-->
+        <button
+          v-if="isInProgress"
+          @click="handleComplete"
+          class="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold text-base hover:bg-green-700 transition-colors shadow-sm"
+        >
+          ✓ 完成任務
+        </button>
+
+        <!-- 回復到進行中按鈕（已完成時顯示）-->
+        <button
+          v-if="isCompleted"
+          @click="handleRevert"
+          class="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold text-base hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          ↶ 回復到進行中
+        </button>
+      </div>
     </div>
 
     <!-- 技能標籤 -->
@@ -245,5 +266,15 @@ const formatCompletedTime = (updatedAt: string) => {
   const hours = date.getHours()
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${hours}:${minutes}`
+}
+
+// 處理完成任務
+const handleComplete = () => {
+  emit('toggle-status', false)  // false 表示正向操作（完成任務）
+}
+
+// 處理回復到進行中
+const handleRevert = () => {
+  emit('toggle-status', true)  // true 表示反向操作（回復任務）
 }
 </script>
